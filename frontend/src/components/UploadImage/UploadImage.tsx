@@ -184,12 +184,6 @@ const UploadImage = () => {
                       required
                     />
                   </div>
-                  {touched.image && errors.image ? (
-                    <p className="p-form-validation__message">
-                      <strong>Error: </strong>
-                      {`${errors.image}`}
-                    </p>
-                  ) : null}
                 </div>
               </div>
               <ContentSection.Footer>
