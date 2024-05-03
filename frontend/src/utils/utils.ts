@@ -73,7 +73,28 @@ export const getTimeInTimezone = (date: Date, timezone: TimeZone) => {
 export const formatUTCDateString = (dateString: string) =>
   format(utcToZonedTime(parseISO(dateString), "UTC"), "yyyy-MM-dd HH:mm", { timeZone: "UTC" });
 
+export const unsecureCopyToClipboard = (text: string, callback?: (text: string) => void) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    // TODO: Investigate replacement for document.execCommand https://warthogs.atlassian.net/browse/MAASENG-3110
+    document.execCommand("copy");
+    callback && callback(text);
+  } catch (error) {
+    Sentry.captureException(new Error("unsecure copy to clipboard failed", { cause: error }));
+  } finally {
+    document.body.removeChild(textArea);
+  }
+};
+
 export const copyToClipboard = (text: string, callback?: (text: string) => void) => {
+  if (!navigator.clipboard) {
+    unsecureCopyToClipboard(text, callback);
+    return;
+  }
   navigator.clipboard
     .writeText(text)
     .then(() => {

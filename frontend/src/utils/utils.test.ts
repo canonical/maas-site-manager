@@ -7,6 +7,7 @@ import {
   formatDistanceToNow,
   getSortBy,
   computeMinZoom,
+  unsecureCopyToClipboard,
 } from "./utils";
 
 import { TimeZone } from "@/api/client";
@@ -82,4 +83,12 @@ it("calculates the minimum zoom correctly for various screen sizes (computeMinZo
   expect(computeMinZoom({ screenWidth: 829, screenHeight: 1180 })).toEqual(3);
   // Mobile
   expect(computeMinZoom({ screenWidth: 390, screenHeight: 844 })).toEqual(2);
+});
+
+it("copies a text string unsecurely", () => {
+  const originalExecCommand = document.execCommand;
+  document.execCommand = vi.fn(() => true);
+  unsecureCopyToClipboard("test");
+  expect(document.execCommand).toHaveBeenCalledWith("copy");
+  document.execCommand = originalExecCommand;
 });
