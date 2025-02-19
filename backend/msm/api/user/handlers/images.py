@@ -1,6 +1,7 @@
 import os.path
 import threading
 from typing import Annotated
+from urllib.parse import urlparse
 
 import boto3
 from boto3.s3.transfer import TransferConfig
@@ -205,6 +206,8 @@ async def post_images(
         # TODO: return error? Which one?
         raise RuntimeError("storage not ready")
     filepath = os.path.join(settings.image_upload_dir, os.path.basename(file.filename))
+    if not urlparse(settings.s3_endpoint).scheme:
+        settings.s3_endpoint = f"http://{settings.s3_endpoint}"
     s3 = boto3.resource(
         "s3",
         use_ssl=False,
