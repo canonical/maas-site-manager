@@ -63,6 +63,9 @@ class Settings(BaseSettings):
         default=None, validation_alias="MSM_S3_BUCKET"
     )
     s3_path: str | None = Field(default=None, validation_alias="MSM_S3_PATH")
+    image_upload_dir: str | None = Field(
+        default=None, validation_alias="MSM_IMAGE_UPLOAD_DIR"
+    )
     heartbeat_interval_seconds: int = Field(
         default=300, validation_alias="MSM_HEARTBEAT_INTERVAL_SEC"
     )
