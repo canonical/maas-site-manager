@@ -204,7 +204,7 @@ async def post_images(
     if settings.image_upload_dir is None:
         # TODO: return error? Which one?
         raise RuntimeError("storage not ready")
-    filepath = os.path.join(settings.image_upload_dir, file.file.name)
+    filepath = os.path.join(settings.image_upload_dir, os.path.basename(file.filename))
     s3 = boto3.resource(
         "s3",
         use_ssl=False,
