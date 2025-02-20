@@ -9,6 +9,7 @@ from fastapi import (
     APIRouter,
     Depends,
     UploadFile,
+    File,
 )
 from fastapi.responses import StreamingResponse
 
@@ -171,9 +172,8 @@ async def get_boot_source_selections(
 
 
 class ProgressPercentage:
-    def __init__(self, filename: str):
-        self._filename = filename
-        self._size = float(os.path.getsize(filename))
+    def __init__(self, size: int):
+        self._size = size
         self._seen_so_far = 0
         self._lock = threading.Lock()
         self._percentage = 0.0
@@ -199,13 +199,14 @@ class ProgressPercentage:
 async def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    file: UploadFile,
+    file: UploadFile = File(...),
 ) -> StreamingResponse:
     settings = Settings()
-    if settings.image_upload_dir is None:
-        # TODO: return error? Which one?
-        raise RuntimeError("storage not ready")
-    filepath = os.path.join(settings.image_upload_dir, os.path.basename(file.filename))
+
+    # if settings.image_upload_dir is None:
+    #     # TODO: return error? Which one?
+    #     raise RuntimeError("storage not ready")
+    # filepath = os.path.join(settings.image_upload_dir, os.path.basename(file.filename))
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
     s3 = boto3.resource(
@@ -219,9 +220,9 @@ async def post_images(
 
     config = TransferConfig(max_concurrency=10, use_threads=True)
 
-    progress_percentage = ProgressPercentage(filepath)
-    s3.meta.client.upload_file(
-        filepath,
+    progress_percentage = ProgressPercentage(file.size)
+    s3.meta.client.upload_fileobj(
+        file.file,
         settings.s3_bucket,
         file.filename,
         Config=config,
