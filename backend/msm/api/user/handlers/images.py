@@ -177,15 +177,18 @@ class ProgressPercentage:
         self._seen_so_far = 0
         self._lock = threading.Lock()
         self._percentage = 0.0
+        self._updated = False
 
     def __call__(self, bytes_amount: int):
         with self._lock:
             self._seen_so_far += bytes_amount
             self._percentage = (self._seen_so_far / self._size) * 100
+            self._updated = True
 
     def get_percentage(self):
         with self._lock:
-            if self._percentage != 100:
+            if self._updated and self._percentage != 100:
+                self._updated = False
                 yield self._percentage
 
 
