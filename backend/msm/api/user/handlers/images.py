@@ -1,7 +1,9 @@
-import os.path
 import threading
 from typing import Annotated
 from urllib.parse import urlparse
+from uuid import uuid4
+
+from logging import getLogger
 
 import boto3
 from boto3.s3.transfer import TransferConfig
@@ -11,6 +13,9 @@ from fastapi import (
     UploadFile,
     File,
 )
+from temporalio.client import Client
+from temporalio.common import WorkflowIDReusePolicy
+from temporal.resources.workflows.custom_image_upload import GreetingWorkflow
 from fastapi.responses import StreamingResponse
 
 from msm.api.dependencies import services
@@ -28,6 +33,8 @@ from msm.schema import (
 )
 from msm.service import ServiceCollection
 from msm.settings import Settings
+
+logger = getLogger()
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -231,5 +238,17 @@ async def post_images(
         Config=config,
         Callback=progress_percentage,
     )
+
+    temporal_client = await Client.connect(settings.temporal_server_host, namespace=settings.temporal_namespace)
+    workflow_id = f"image-upload-{uuid4()}"
+    res = await temporal_client.execute_workflow(
+        GreetingWorkflow.run,
+        "Site Manager",
+        id=workflow_id,
+        task_queue=settings.temporal_task_queue,
+        id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE
+    )
+
+    logger.info(f"temporal result: {res}")
 
     return StreamingResponse(progress_percentage.get_percentage)
