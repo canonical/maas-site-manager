@@ -8,13 +8,10 @@
 import asyncio
 import logging
 
-from activities.activity1 import compose_greeting
-from activities.activity2 import vault_test
-from activities.db_activity import database_test
 from temporallib.client import Client, Options
 from temporallib.encryption import EncryptionOptions
 from temporallib.worker import SentryOptions, Worker, WorkerOptions
-from workflows.custom_image_upload import DatabaseWorkflow, GreetingWorkflow, VaultWorkflow
+from workflows.custom_image_upload import GreetingWorkflow, compose_greeting
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +24,8 @@ async def run_worker():
 
     worker = Worker(
         client=client,
-        workflows=[GreetingWorkflow, VaultWorkflow, DatabaseWorkflow],
-        activities=[compose_greeting, vault_test, database_test],
+        workflows=[GreetingWorkflow,],
+        activities=[compose_greeting],
         worker_opt=WorkerOptions(sentry=SentryOptions()),
     )
 

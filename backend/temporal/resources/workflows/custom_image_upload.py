@@ -1,14 +1,27 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+from dataclasses import dataclass
+import os
 from datetime import timedelta
 
-from temporalio import workflow
+from temporalio import workflow, activity
 
-with workflow.unsafe.imports_passed_through():
-    import activities.activity1 as all_activities1
-    import activities.activity2 as all_activities2
-    import activities.db_activity as db_activity
+
+@dataclass
+class ComposeGreetingInput:
+    greeting: str
+    name: str
+
+
+# Basic activity that logs and does string concatenation
+@activity.defn(name="compose_greeting")
+async def compose_greeting(arg: ComposeGreetingInput) -> str:
+    activity.logger.info("Running activity with parameter %s" % arg)
+    env_var = os.getenv("message")
+    juju_secret1 = os.getenv("juju-key1")
+
+    return f"{env_var} {juju_secret1}"
 
 # Basic workflow that logs and invokes an activity
 @workflow.defn(name="GreetingWorkflow")
@@ -17,31 +30,7 @@ class GreetingWorkflow:
     async def run(self, name: str) -> str:
         workflow.logger.info("Running workflow with parameter %s" % name)
         return await workflow.execute_activity(
-            all_activities1.compose_greeting,
-            all_activities1.ComposeGreetingInput("Hello", name),
+            compose_greeting,
+            ComposeGreetingInput("Hello", name),
             start_to_close_timeout=timedelta(seconds=10),
-        )
-
-
-@workflow.defn(name="VaultWorkflow")
-class VaultWorkflow:
-    @workflow.run
-    async def run(self, name: str) -> str:
-        workflow.logger.info("Running workflow with parameter %s" % name)
-        return await workflow.execute_activity(
-            all_activities2.vault_test,
-            all_activities1.ComposeGreetingInput("Hello", name),
-            start_to_close_timeout=timedelta(seconds=10),
-        )
-
-
-@workflow.defn(name="DatabaseWorkflow")
-class DatabaseWorkflow:
-    @workflow.run
-    async def run(self, name: str) -> str:
-        workflow.logger.info("Running workflow with parameter %s" % name)
-        return await workflow.execute_activity(
-            db_activity.database_test,
-            all_activities1.ComposeGreetingInput("Hello", name),
-            start_to_close_timeout=timedelta(seconds=120),
         )

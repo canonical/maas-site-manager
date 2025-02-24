@@ -69,6 +69,7 @@ version = { attr = "msm.__version__" }
 [tool.setuptools.packages.find]
 include = [
   "msm*",
+  "temporal*",
 ]
 
 [tool.ruff]
@@ -100,6 +101,7 @@ skip_covered = true
 [tool.coverage.run]
 source = [
   "msm",
+  "temporal",
 ]
 omit = [
   "msm/db/alembic/env.py",
