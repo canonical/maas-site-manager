@@ -67,8 +67,8 @@ class Settings(BaseSettings):
         default=None, validation_alias="MSM_IMAGE_UPLOAD_DIR"
     )
     temporal_server_host: str | None = Field(default=None, validation_alias="MSM_TEMPORAL_SERVER_HOST")
-    temporal_namespace: str | None = Field(default=None, validation_alias="MSM_TEMPORAL_NAMESPACE")
-    temporal_task_queue: str | None = Field(default=None, validation_alias="MSM_TEMPORAL_TASK_QUEUE")
+    temporal_namespace: str | None = Field(default="msm-namespace", validation_alias="MSM_TEMPORAL_NAMESPACE")
+    temporal_task_queue: str | None = Field(default="msm-queue", validation_alias="MSM_TEMPORAL_TASK_QUEUE")
     heartbeat_interval_seconds: int = Field(
         default=300, validation_alias="MSM_HEARTBEAT_INTERVAL_SEC"
     )
