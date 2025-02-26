@@ -13,7 +13,10 @@ from fastapi import (
     Depends,
     UploadFile,
     File,
+    Request,
+    status
 )
+from pydantic import BaseModel
 from temporalio.client import Client
 from temporalio.common import WorkflowIDReusePolicy
 from temporal.resources.workflows.custom_image_upload import ImageUploadChecker, ImageUploadParams, S3Params
@@ -118,6 +121,37 @@ async def get_boot_assets(
         items=list(results),
     )
 
+class BootAssetsPostRequest(BaseModel):
+    kind: models.BootAssetKind
+    label: models.BootAssetLabel
+    os: str
+    release: str
+    codename: str
+    title: str
+    arch: str
+    subarch: str
+    compatibility: list[str]
+    flavor: str
+    base_image: str
+
+class BootAssetsPostResponse(BaseModel):
+    id: int
+
+@v1_router.post(
+    "/bootassets",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel}
+    }
+)
+async def post_boot_assets(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    post_request: BootAssetsPostRequest
+) -> BootAssetsPostResponse:
+    boot_asset = await services.boot_assets.create(models.BootAsset(**post_request.model_dump()))
+    return BootAssetsPostResponse(boot_asset.id)
+
 
 @v1_router.get(
     "/bootasset-sources",
@@ -207,11 +241,12 @@ class ProgressPercentage:
         422: {"model": ValidationErrorResponseModel},
     },
 )
-def post_images(
+async def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    file: UploadFile = File(...),
-) -> StreamingResponse:
+    request: Request
+) -> None:
+    filename = request.headers['filename']
     settings = Settings()
 
     if settings.image_upload_dir is None:
@@ -227,36 +262,25 @@ def post_images(
         aws_access_key_id=settings.s3_access_key,
         aws_secret_access_key=settings.s3_secret_key,
     )
-
-    config = TransferConfig(max_concurrency=10, use_threads=True)
-
-    progress_percentage = ProgressPercentage(file.size)
-    s3.meta.client.upload_fileobj(
-        file.file,
-        settings.s3_bucket,
-        file.filename,
-        Config=config,
-        Callback=progress_percentage,
+    multipart_upload = s3.meta.client.create_multipart_upload(
+        ACL="public-read",
+        Bucket=settings.s3_bucket,
+        Key=filename,
+        ChecksumAlgorithm="SHA256",
     )
+    upload_id = multipart_upload["UploadId"]
 
-    temporal_client = asyncio.run(Client.connect(settings.temporal_server_host, namespace=settings.temporal_namespace))
-    workflow_id = f"image-upload-{uuid4()}"
-    params = ImageUploadParams(
-        filename=file.filename,
-        s3_params=S3Params(
-            endpoint=settings.s3_endpoint,
-            access_key=settings.s3_access_key,
-            secret_key=settings.s3_secret_key,
-            bucket=settings.s3_bucket,
-            path=settings.s3_path,
+    part_no = 1
+    async for chunk in request.stream():
+        multipart_upload_part = s3.MultipartUploadPart(
+            settings.s3_bucket,
+            filename,
+            upload_id,
+            str(part_no)
         )
-    )
-    temporal_client.execute_workflow(
-        ImageUploadChecker.run,
-        params,
-        id=workflow_id,
-        task_queue=settings.temporal_task_queue,
-        id_reuse_policy=WorkflowIDReusePolicy.TERMINATE_IF_RUNNING
-    )
-
-    return StreamingResponse(progress_percentage.get_percentage)
+        multipart_upload_part.upload(
+            chunk,
+            ChecksumAlgorithm="SHA256",
+        )
+        part_no += 1
+        # TODO: update DB with % completed
