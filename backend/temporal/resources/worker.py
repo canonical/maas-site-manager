@@ -11,7 +11,7 @@ import logging
 from temporallib.client import Client, Options
 from temporallib.encryption import EncryptionOptions
 from temporallib.worker import SentryOptions, Worker, WorkerOptions
-from workflows.custom_image_upload import GreetingWorkflow, compose_greeting
+from workflows.custom_image_upload import ImageUploadChecker, get_size_and_sha
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,8 @@ async def run_worker():
 
     worker = Worker(
         client=client,
-        workflows=[GreetingWorkflow,],
-        activities=[compose_greeting],
+        workflows=[ImageUploadChecker],
+        activities=[get_size_and_sha],
         worker_opt=WorkerOptions(sentry=SentryOptions()),
     )
 

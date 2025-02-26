@@ -1,3 +1,4 @@
+import asyncio
 import threading
 from typing import Annotated
 from urllib.parse import urlparse
@@ -15,7 +16,7 @@ from fastapi import (
 )
 from temporalio.client import Client
 from temporalio.common import WorkflowIDReusePolicy
-from temporal.resources.workflows.custom_image_upload import GreetingWorkflow
+from temporal.resources.workflows.custom_image_upload import ImageUploadChecker, ImageUploadParams, S3Params
 from fastapi.responses import StreamingResponse
 
 from msm.api.dependencies import services
@@ -206,17 +207,16 @@ class ProgressPercentage:
         422: {"model": ValidationErrorResponseModel},
     },
 )
-async def post_images(
+def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     file: UploadFile = File(...),
 ) -> StreamingResponse:
     settings = Settings()
 
-    # if settings.image_upload_dir is None:
-    #     # TODO: return error? Which one?
-    #     raise RuntimeError("storage not ready")
-    # filepath = os.path.join(settings.image_upload_dir, os.path.basename(file.filename))
+    if settings.image_upload_dir is None:
+        # TODO: return error? Which one?
+        raise RuntimeError("storage not ready")
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
     s3 = boto3.resource(
@@ -239,16 +239,24 @@ async def post_images(
         Callback=progress_percentage,
     )
 
-    temporal_client = await Client.connect(settings.temporal_server_host, namespace=settings.temporal_namespace)
+    temporal_client = asyncio.run(Client.connect(settings.temporal_server_host, namespace=settings.temporal_namespace))
     workflow_id = f"image-upload-{uuid4()}"
-    res = await temporal_client.execute_workflow(
-        GreetingWorkflow.run,
-        "Site Manager",
+    params = ImageUploadParams(
+        filename=file.filename,
+        s3_params=S3Params(
+            endpoint=settings.s3_endpoint,
+            access_key=settings.s3_access_key,
+            secret_key=settings.s3_secret_key,
+            bucket=settings.s3_bucket,
+            path=settings.s3_path,
+        )
+    )
+    temporal_client.execute_workflow(
+        ImageUploadChecker.run,
+        params,
         id=workflow_id,
         task_queue=settings.temporal_task_queue,
-        id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE
+        id_reuse_policy=WorkflowIDReusePolicy.TERMINATE_IF_RUNNING
     )
-
-    logger.info(f"temporal result: {res}")
 
     return StreamingResponse(progress_percentage.get_percentage)

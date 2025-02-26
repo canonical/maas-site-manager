@@ -15,6 +15,7 @@ python = "^3.8"
 protobuf = "^3.2.0"
 PyYAML = "^6.0"
 temporal-lib-py = "^1.8.0"
+boto3
 python-json-logger = "^2.0.4"
 urllib3 = "^1.26.16"
 psycopg2 = "^2.9.10"
