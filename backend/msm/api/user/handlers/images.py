@@ -279,7 +279,7 @@ async def post_images(
             str(part_no)
         )
         multipart_upload_part.upload(
-            chunk,
+            Body=chunk,
             ChecksumAlgorithm="SHA256",
         )
         part_no += 1
