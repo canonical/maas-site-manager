@@ -254,6 +254,7 @@ async def post_images(
         raise RuntimeError("storage not ready")
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
+    boto3.sess
     s3 = boto3.resource(
         "s3",
         use_ssl=False,
@@ -276,7 +277,7 @@ async def post_images(
             settings.s3_bucket,
             filename,
             upload_id,
-            str(part_no)
+            part_no
         )
         multipart_upload_part.upload(
             Body=chunk,
@@ -284,3 +285,9 @@ async def post_images(
         )
         part_no += 1
         # TODO: update DB with % completed
+
+    s3.meta.client.complete_multipart_upload(
+        Bucket=settings.s3_bucket,
+        Key=filename,
+        UploadId=upload_id,
+    )
