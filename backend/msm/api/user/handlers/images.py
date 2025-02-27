@@ -272,6 +272,7 @@ async def post_images(
     upload_id = multipart_upload["UploadId"]
 
     part_no = 1
+    parts = []
     async for chunk in request.stream():
         multipart_upload_part = s3.MultipartUploadPart(
             settings.s3_bucket,
@@ -279,15 +280,20 @@ async def post_images(
             upload_id,
             part_no
         )
-        multipart_upload_part.upload(
+        part = multipart_upload_part.upload(
             Body=chunk,
             ChecksumAlgorithm="SHA256",
         )
+        parts.append({
+            'PartNumber': part_no,
+            'ETag': part['ETag']
+        })
         part_no += 1
         # TODO: update DB with % completed
-
+    part_info = {"Parts": parts}
     s3.meta.client.complete_multipart_upload(
         Bucket=settings.s3_bucket,
         Key=filename,
         UploadId=upload_id,
+        MultipartUpload=part_info
     )
