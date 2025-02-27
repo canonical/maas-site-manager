@@ -5,7 +5,6 @@ from mimetypes import guess_type
 import os
 from pathlib import Path
 import re
-import tempfile
 from typing import Any
 import urllib.parse
 
@@ -72,8 +71,6 @@ def create_app(
     settings = Settings()
     if not db:
         db = Database(settings.db_dsn())
-    if settings.image_upload_dir:
-        tempfile.tempdir = settings.image_upload_dir
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:

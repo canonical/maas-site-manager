@@ -7,7 +7,13 @@ from msm.db import (
     models,
     queries,
 )
-from msm.db.tables import BootAsset, BootSource, BootSourceSelection
+from msm.db.tables import (
+    BootAsset,
+    BootAssetItem,
+    BootAssetVersion,
+    BootSource,
+    BootSourceSelection,
+)
 from msm.schema import SortParam
 from msm.service.base import Service
 
@@ -236,3 +242,111 @@ class BootAssetService(Service):
 
     def _select_statement(self, *columns: Any) -> Select[Any]:
         return select(*columns).select_from(BootAsset)
+
+
+class BootAssetVersionService(Service):
+    async def get(
+        self,
+        sort_params: list[SortParam],
+        offset: int = 0,
+        limit: int | None = None,
+    ) -> tuple[int, Iterable[models.BootAssetVersion]]:
+        order_by = queries.order_by_from_arguments(sort_params=sort_params)
+        stmt = (
+            self._select_statement(
+                BootAssetVersion.c.id,
+                BootAssetVersion.c.boot_asset_id,
+                BootAssetVersion.c.version,
+            )
+            .order_by(*order_by)
+            .offset(offset)
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        result = await self.conn.execute(stmt)
+        return result.rowcount, self.objects_from_result(
+            models.BootAssetVersion, result
+        )
+
+    async def create(
+        self,
+        details: models.BootAssetVersion,
+    ) -> models.BootAssetVersion:
+        data = details.model_dump()
+        stmt = insert(BootAssetVersion).returning(
+            BootAssetVersion.c.id,
+            BootAssetVersion.c.boot_asset_id,
+            BootAssetVersion.c.version,
+        )
+        result = await self.conn.execute(stmt, [data])
+        return models.BootAssetVersion(**result.one()._asdict())
+
+    async def delete(self, boot_asset_version_id: int) -> None:
+        stmt = delete(BootAssetVersion).where(
+            BootAssetVersion.c.id == boot_asset_version_id
+        )
+        await self.conn.execute(stmt)
+
+    def _select_statement(self, *columns: Any) -> Select[Any]:
+        return select(*columns).select_from(BootAssetVersion)
+
+
+class BootAssetItemService(Service):
+    async def get(
+        self,
+        sort_params: list[SortParam],
+        offset: int = 0,
+        limit: int | None = None,
+    ) -> tuple[int, Iterable[models.BootAssetItem]]:
+        order_by = queries.order_by_from_arguments(sort_params=sort_params)
+        stmt = (
+            self._select_statement(
+                BootAssetItem.c.id,
+                BootAssetItem.c.boot_asset_version_id,
+                BootAssetItem.c.ftype,
+                BootAssetItem.c.sha256,
+                BootAssetItem.c.path,
+                BootAssetItem.c.size,
+                BootAssetItem.c.source_package,
+                BootAssetItem.c.source_version,
+                BootAssetItem.c.source_release,
+                BootAssetItem.c.percent_synced,
+            )
+            .order_by(*order_by)
+            .offset(offset)
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        result = await self.conn.execute(stmt)
+        return result.rowcount, self.objects_from_result(
+            models.BootAssetItem, result
+        )
+
+    async def create(
+        self,
+        details: models.BootAssetItem,
+    ) -> models.BootAssetItem:
+        data = details.model_dump()
+        stmt = insert(BootAssetItem).returning(
+            BootAssetItem.c.id,
+            BootAssetItem.c.boot_asset_version_id,
+            BootAssetItem.c.ftype,
+            BootAssetItem.c.sha256,
+            BootAssetItem.c.path,
+            BootAssetItem.c.size,
+            BootAssetItem.c.source_package,
+            BootAssetItem.c.source_version,
+            BootAssetItem.c.source_release,
+            BootAssetItem.c.percent_synced,
+        )
+        result = await self.conn.execute(stmt, [data])
+        return models.BootAssetItem(**result.one()._asdict())
+
+    async def delete(self, boot_asset_item_id: int) -> None:
+        stmt = delete(BootAssetItem).where(
+            BootAssetItem.c.id == boot_asset_item_id
+        )
+        await self.conn.execute(stmt)
+
+    def _select_statement(self, *columns: Any) -> Select[Any]:
+        return select(*columns).select_from(BootAssetItem)

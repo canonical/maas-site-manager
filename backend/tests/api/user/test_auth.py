@@ -20,8 +20,10 @@ from tests.fixtures.client import Client
 
 AUTHENTICATED_ROUTES = (
     ("GET", "/api/v1/bootassets"),
+    ("POST", "/api/v1/bootassets"),
     ("GET", "/api/v1/bootasset-sources"),
     ("GET", "/api/v1/bootasset-sources/{id}/selections"),
+    ("POST", "/api/v1/images"),
     ("GET", "/api/v1/settings"),
     ("PATCH", "/api/v1/settings"),
     ("GET", "/api/v1/sites"),

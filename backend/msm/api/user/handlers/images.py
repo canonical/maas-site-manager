@@ -1,26 +1,14 @@
-import asyncio
-import threading
+from logging import getLogger
 from typing import Annotated
 from urllib.parse import urlparse
-from uuid import uuid4
-
-from logging import getLogger
 
 import boto3
-from boto3.s3.transfer import TransferConfig
 from fastapi import (
     APIRouter,
     Depends,
-    UploadFile,
-    File,
     Request,
-    status
 )
 from pydantic import BaseModel
-from temporalio.client import Client
-from temporalio.common import WorkflowIDReusePolicy
-from temporal.resources.workflows.custom_image_upload import ImageUploadChecker, ImageUploadParams, S3Params
-from fastapi.responses import StreamingResponse
 
 from msm.api.dependencies import services
 from msm.api.exceptions.responses import (
@@ -121,6 +109,7 @@ async def get_boot_assets(
         items=list(results),
     )
 
+
 class BootAssetsPostRequest(BaseModel):
     kind: models.BootAssetKind
     label: models.BootAssetLabel
@@ -134,22 +123,26 @@ class BootAssetsPostRequest(BaseModel):
     flavor: str
     base_image: str
 
+
 class BootAssetsPostResponse(BaseModel):
     id: int
+
 
 @v1_router.post(
     "/bootassets",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
-        422: {"model": ValidationErrorResponseModel}
-    }
+        422: {"model": ValidationErrorResponseModel},
+    },
 )
 async def post_boot_assets(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    post_request: BootAssetsPostRequest
+    post_request: BootAssetsPostRequest,
 ) -> BootAssetsPostResponse:
-    boot_asset = await services.boot_assets.create(models.BootAsset(**post_request.model_dump()))
+    boot_asset = await services.boot_assets.create(
+        models.BootAsset(**post_request.model_dump())
+    )
     return BootAssetsPostResponse(boot_asset.id)
 
 
@@ -213,27 +206,6 @@ async def get_boot_source_selections(
     )
 
 
-class ProgressPercentage:
-    def __init__(self, size: int):
-        self._size = size
-        self._seen_so_far = 0
-        self._lock = threading.Lock()
-        self._percentage = 0.0
-        self._updated = False
-
-    def __call__(self, bytes_amount: int):
-        with self._lock:
-            self._seen_so_far += bytes_amount
-            self._percentage = (self._seen_so_far / self._size) * 100
-            self._updated = True
-
-    def get_percentage(self):
-        with self._lock:
-            if self._updated and self._percentage != 100:
-                self._updated = False
-                yield self._percentage
-
-
 @v1_router.post(
     "/images",
     responses={
@@ -244,14 +216,10 @@ class ProgressPercentage:
 async def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    request: Request
+    request: Request,
 ) -> None:
-    filename = request.headers['filename']
+    filename = request.headers["filename"]
     settings = Settings()
-
-    if settings.image_upload_dir is None:
-        # TODO: return error? Which one?
-        raise RuntimeError("storage not ready")
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
 
@@ -274,26 +242,20 @@ async def post_images(
     part_no = 1
     parts = []
     # 5MiB
-    min_part_size = 5 * 1024 ** 2
+    min_part_size = 5 * 1024**2
     part_chunk = b""
     async for chunk in request.stream():
         part_chunk += chunk
         if len(part_chunk) < min_part_size:
             continue
         multipart_upload_part = s3.MultipartUploadPart(
-            settings.s3_bucket,
-            filename,
-            upload_id,
-            part_no
+            settings.s3_bucket, filename, upload_id, part_no
         )
         part = multipart_upload_part.upload(
             Body=part_chunk,
             ChecksumAlgorithm="SHA256",
         )
-        parts.append({
-            'PartNumber': part_no,
-            'ETag': part['ETag']
-        })
+        parts.append({"PartNumber": part_no, "ETag": part["ETag"]})
         part_no += 1
         part_chunk = b""
         # TODO: update DB with % completed
@@ -303,5 +265,5 @@ async def post_images(
         Bucket=settings.s3_bucket,
         Key=filename,
         UploadId=upload_id,
-        MultipartUpload=part_info
+        MultipartUpload=part_info,
     )

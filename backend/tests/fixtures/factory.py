@@ -23,8 +23,10 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.db.models import (
     BootAsset,
+    BootAssetItem,
     BootAssetKind,
     BootAssetLabel,
+    BootAssetVersion,
     BootSource,
     BootSourceSelection,
     ConnectionStatus,
@@ -397,6 +399,52 @@ class Factory:
             ],
         )
         return BootAsset(**row)
+
+    async def make_BootAssetVersion(
+        self,
+        boot_asset_id: int,
+        version: str = "",
+    ) -> BootAssetVersion:
+        [row] = await self.create(
+            "boot_asset_version",
+            [
+                {
+                    "boot_asset_id": boot_asset_id,
+                    "version": version,
+                }
+            ],
+        )
+        return BootAssetVersion(**row)
+
+    async def make_BootAssetItem(
+        self,
+        boot_asset_version_id: int,
+        ftype: str = "",
+        sha256: str = "",
+        path: str = "",
+        size: int = 0,
+        percent_synced: float = 0,
+        source_package: str | None = None,
+        source_version: str | None = None,
+        source_release: str | None = None,
+    ) -> BootAssetItem:
+        [row] = await self.create(
+            "boot_asset_item",
+            [
+                {
+                    "boot_asset_version_id": boot_asset_version_id,
+                    "ftype": ftype,
+                    "sha256": sha256,
+                    "path": path,
+                    "size": size,
+                    "source_package": source_package,
+                    "source_version": source_version,
+                    "source_release": source_release,
+                    "percent_synced": percent_synced,
+                }
+            ],
+        )
+        return BootAssetItem(**row)
 
 
 @pytest.fixture

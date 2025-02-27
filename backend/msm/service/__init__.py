@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from msm.service.base import Service
 from msm.service.config import ConfigService
 from msm.service.images import (
+    BootAssetItemService,
     BootAssetService,
+    BootAssetVersionService,
     BootSourceSelectionService,
     BootSourceService,
 )
@@ -25,6 +27,8 @@ class ServiceCollection:
         self.users = UserService(connection)
         self.settings = SettingsService(connection)
         self.boot_assets = BootAssetService(connection)
+        self.boot_asset_items = BootAssetItemService(connection)
+        self.boot_asset_versions = BootAssetVersionService(connection)
         self.boot_sources = BootSourceService(connection)
         self.boot_source_selections = BootSourceSelectionService(connection)
 
@@ -37,6 +41,8 @@ class ServiceCollection:
             self.users,
             self.settings,
             self.boot_assets,
+            self.boot_asset_items,
+            self.boot_asset_versions,
             self.boot_sources,
             self.boot_source_selections,
         ]
@@ -54,6 +60,8 @@ class ServiceCollection:
 
 __all__ = [
     "BootAssetService",
+    "BootAssetItemService",
+    "BoootAssetVersionService",
     "BootSourceService",
     "BootSourceSelectionService",
     "ConfigService",

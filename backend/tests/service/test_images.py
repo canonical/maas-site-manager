@@ -5,15 +5,19 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.db.models import (
     BootAsset,
+    BootAssetItem,
     BootAssetKind,
     BootAssetLabel,
+    BootAssetVersion,
     BootSource,
     BootSourceSelection,
     BootSourceSelectionUpdate,
     BootSourceUpdate,
 )
 from msm.service import (
+    BootAssetItemService,
     BootAssetService,
+    BootAssetVersionService,
     BootSourceSelectionService,
     BootSourceService,
 )
@@ -352,3 +356,142 @@ class TestBootSourceService:
         await service.delete(boot_source.id)
         sources = await factory.get("boot_source")
         assert len(sources) == 0
+
+
+class TestBootAssetVersionService:
+    async def test_get(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        expected_boot_asset_version = BootAssetVersion(
+            id=0, boot_asset_id=boot_asset.id, version="20250227.1"
+        )
+        boot_asset_version = await factory.make_BootAssetVersion(
+            boot_asset.id, version=expected_boot_asset_version.version
+        )
+        expected_boot_asset_version.id = boot_asset_version.id
+
+        service = BootAssetVersionService(db_connection)
+        count, retrieved_boot_asset_versions = await service.get([])
+        assert count == 1
+        for rbav in retrieved_boot_asset_versions:
+            assert rbav == expected_boot_asset_version
+
+    async def test_create(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        expected_boot_asset_version = BootAssetVersion(
+            id=0,
+            boot_asset_id=boot_asset.id,
+            version="20250227.1",
+        )
+        service = BootAssetVersionService(db_connection)
+        boot_asset_version = await service.create(expected_boot_asset_version)
+        expected_boot_asset_version.id = boot_asset_version.id
+        versions = await factory.get("boot_asset_version")
+        assert len(versions) == 1
+        assert versions[0] == expected_boot_asset_version.model_dump()
+
+    async def test_delete(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(
+            boot_asset.id, version="20250227.1"
+        )
+
+        service = BootAssetVersionService(db_connection)
+        await service.delete(boot_asset_version.id)
+        versions = await factory.get("boot_asset_version")
+        assert len(versions) == 0
+
+
+class TestBootAssetItemService:
+    async def test_get(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(boot_asset.id)
+        expected_boot_asset_item = BootAssetItem(
+            id=0,
+            boot_asset_version_id=boot_asset_version.id,
+            ftype="kernel",
+            sha256="2349asldkfj2309854jhs",
+            path="/test",
+            size=23425323,
+            source_package="ubukernel",
+            source_version="23.2",
+            source_release="Noble",
+            percent_synced=100.0,
+        )
+        boot_asset_item = await factory.make_BootAssetItem(
+            boot_asset_version.id,
+            ftype="kernel",
+            sha256="2349asldkfj2309854jhs",
+            path="/test",
+            size=23425323,
+            source_package="ubukernel",
+            source_version="23.2",
+            source_release="Noble",
+            percent_synced=100.0,
+        )
+        expected_boot_asset_item.id = boot_asset_item.id
+
+        service = BootAssetItemService(db_connection)
+        count, retrieved_boot_asset_items = await service.get([])
+        assert count == 1
+        for rbai in retrieved_boot_asset_items:
+            assert rbai == expected_boot_asset_item
+
+    async def test_create(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(boot_asset.id)
+        expected_boot_asset_item = BootAssetItem(
+            id=0,
+            boot_asset_version_id=boot_asset_version.id,
+            ftype="kernel",
+            sha256="2349asldkfj2309854jhs",
+            path="/test",
+            size=23425323,
+            source_package="ubukernel",
+            source_version="23.2",
+            source_release="Noble",
+            percent_synced=100.0,
+        )
+        service = BootAssetItemService(db_connection)
+        boot_asset_item = await service.create(expected_boot_asset_item)
+        expected_boot_asset_item.id = boot_asset_item.id
+        items = await factory.get("boot_asset_item")
+        assert len(items) == 1
+        assert items[0] == expected_boot_asset_item.model_dump()
+
+    async def test_delete(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(boot_asset.id)
+        boot_asset_item = await factory.make_BootAssetItem(
+            boot_asset_version.id,
+            ftype="kernel",
+            sha256="2349asldkfj2309854jhs",
+            path="/test",
+            size=23425323,
+            source_package="ubukernel",
+            source_version="23.2",
+            source_release="Noble",
+            percent_synced=100.0,
+        )
+
+        service = BootAssetItemService(db_connection)
+        await service.delete(boot_asset_item.id)
+        versions = await factory.get("boot_asset_item")
+        assert len(versions) == 0
