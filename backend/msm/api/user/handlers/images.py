@@ -175,6 +175,35 @@ async def get_boot_sources(
     )
 
 
+class BootSourcesPostRequest(BaseModel):
+    priority: int
+    url: str
+    keyring: str
+    sync_interval: int
+
+
+class BootSourcesPostResponse(BaseModel):
+    id: int
+
+
+@v1_router.post(
+    "/bootasset-sources",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def post_boot_sources(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    post_request: BootSourcesPostRequest,
+) -> BootSourcesPostResponse:
+    boot_asset = await services.boot_assets.create(
+        models.BootAsset(**post_request)
+    )
+    return BootSourcesPostResponse(id=boot_asset.id)
+
+
 @v1_router.get(
     "/bootasset-sources/{id}/selections",
     responses={
@@ -206,8 +235,69 @@ async def get_boot_source_selections(
     )
 
 
+class BootAssetVersionPostRequest(BaseModel):
+    version: str
+
+
+class BootAssetVersionPostResponse(BaseModel):
+    id: int
+
+
 @v1_router.post(
-    "/images",
+    "/bootassets/{id}/versions",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def post_boot_asset_version(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    id: int,
+    post_request: BootAssetVersionPostRequest,
+) -> BootAssetVersionPostResponse:
+    boot_asset_version = await services.boot_asset_versions.create(
+        models.BootAssetVersion(boot_asset_id=id, version=post_request.version)
+    )
+    return BootAssetVersionPostResponse(id=boot_asset_version.id)
+
+
+class BootAssetItemPostRequest(BaseModel):
+    ftype: str
+    sha256: str
+    path: str
+    size: int
+    source_package: str | None = None
+    source_version: str | None = None
+    source_release: str | None = None
+    percent_synced: float
+
+
+class BootAssetItemPostResponse(BaseModel):
+    id: int
+
+
+@v1_router.post(
+    "/bootasset-versions/{id}/items",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def post_boot_asset_item(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    id: int,
+    post_request: BootAssetItemPostRequest,
+) -> BootAssetItemPostResponse:
+    item = await services.boot_asset_items.create(
+        models.BootAssetItem(boot_asset_version_id=id, **post_request)
+    )
+    return BootAssetItemPostResponse(id=item.id)
+
+
+@v1_router.post(
+    "/images/{boot_asset_version_id}",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
@@ -216,6 +306,7 @@ async def get_boot_source_selections(
 async def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    boot_asset_version_id: int,
     request: Request,
 ) -> None:
     filename = request.headers["filename"]
