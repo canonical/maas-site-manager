@@ -155,6 +155,7 @@ DmFoRWTU6CpKtwIg/lb1ncbslH2xAFeUX6ASHXR8vBOnIXWss21FuAaNmWe4lmw=
         source_package="ubukernel",
         source_version="2.3.6",
         source_release="Noble",
+        percent_synced=100.0,
     )
     collection.add(
         boot_asset_version_id=boot_asset_versions[0].id,
@@ -165,6 +166,7 @@ DmFoRWTU6CpKtwIg/lb1ncbslH2xAFeUX6ASHXR8vBOnIXWss21FuAaNmWe4lmw=
         source_package="ubukernel",
         source_version="2.2.6",
         source_release="Jammy",
+        percent_synced=100.0,
     )
     await collection.create(conn)
     return boot_assets

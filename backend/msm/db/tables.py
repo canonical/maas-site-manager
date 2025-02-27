@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     ForeignKey,
+    Float,
     Index,
     Integer,
     MetaData,
@@ -213,4 +214,5 @@ BootAssetItem = Table(
     Column("source_package", Text, nullable=True),
     Column("source_version", Text, nullable=True),
     Column("source_release", Text, nullable=True),
+    Column("percent_synced", Float, nullable=False, default=0),
 )
