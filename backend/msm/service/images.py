@@ -211,6 +211,29 @@ class BootAssetService(Service):
             models.BootAsset, result
         )
 
+    async def get_by_id(self, id: int) -> models.BootAsset | None:
+        stmt = self._select_statement(
+            BootAsset.c.id,
+            BootAsset.c.boot_source_id,
+            BootAsset.c.kind,
+            BootAsset.c.label,
+            BootAsset.c.os,
+            BootAsset.c.release,
+            BootAsset.c.codename,
+            BootAsset.c.title,
+            BootAsset.c.arch,
+            BootAsset.c.subarch,
+            BootAsset.c.compatibility,
+            BootAsset.c.flavor,
+            BootAsset.c.base_image,
+            BootAsset.c.eol,
+            BootAsset.c.esm_eol,
+        ).where(BootAsset.c.id == id)
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.BootAsset(**row._asdict())
+        return None
+
     async def create(
         self,
         details: models.BootAsset,
@@ -268,6 +291,17 @@ class BootAssetVersionService(Service):
             models.BootAssetVersion, result
         )
 
+    async def get_by_id(self, id: int) -> models.BootAsset | None:
+        stmt = self._select_statement(
+            BootAssetVersion.c.id,
+            BootAssetVersion.c.boot_asset_id,
+            BootAssetVersion.c.version,
+        ).where(BootAssetVersion.c.id == id)
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.BootAssetVersion(**row._asdict())
+        return None
+
     async def create(
         self,
         details: models.BootAssetVersion,
@@ -322,6 +356,24 @@ class BootAssetItemService(Service):
             models.BootAssetItem, result
         )
 
+    async def get_by_id(self, id: int) -> models.BootAssetItem | None:
+        stmt = self._select_statement(
+            BootAssetItem.c.id,
+            BootAssetItem.c.boot_asset_version_id,
+            BootAssetItem.c.ftype,
+            BootAssetItem.c.sha256,
+            BootAssetItem.c.path,
+            BootAssetItem.c.size,
+            BootAssetItem.c.source_package,
+            BootAssetItem.c.source_version,
+            BootAssetItem.c.source_release,
+            BootAssetItem.c.percent_synced,
+        ).where(BootAssetItem.c.id == id)
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.BootAssetItem(**row._asdict())
+        return None
+
     async def create(
         self,
         details: models.BootAssetItem,
@@ -341,6 +393,18 @@ class BootAssetItemService(Service):
         )
         result = await self.conn.execute(stmt, [data])
         return models.BootAssetItem(**result.one()._asdict())
+
+    async def update_percent_synced(
+        self,
+        id: int,
+        percent_synced: float,
+    ) -> None:
+        stmt = (
+            update(BootAssetItem)
+            .where(BootAssetItem.c.id == id)
+            .values({"percent_synced": percent_synced})
+        )
+        await self.conn.execute(stmt)
 
     async def delete(self, boot_asset_item_id: int) -> None:
         stmt = delete(BootAssetItem).where(

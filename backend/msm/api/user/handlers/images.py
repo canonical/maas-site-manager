@@ -11,6 +11,12 @@ from fastapi import (
 from pydantic import BaseModel
 
 from msm.api.dependencies import services
+from msm.api.exceptions.catalog import (
+    BadRequestException,
+    BaseExceptionDetail,
+    ExceptionCode,
+    NotFoundException,
+)
 from msm.api.exceptions.responses import (
     UnauthorizedErrorResponseModel,
     ValidationErrorResponseModel,
@@ -256,6 +262,19 @@ async def post_boot_asset_version(
     id: int,
     post_request: BootAssetVersionPostRequest,
 ) -> BootAssetVersionPostResponse:
+    if not await services.boot_assets.get_by_id(id):
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Boot Asset does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"BootAsset ID {id} does not exist"],
+                    field="id",
+                    location="path",
+                )
+            ],
+        )
     boot_asset_version = await services.boot_asset_versions.create(
         models.BootAssetVersion(boot_asset_id=id, version=post_request.version)
     )
@@ -290,6 +309,19 @@ async def post_boot_asset_item(
     id: int,
     post_request: BootAssetItemPostRequest,
 ) -> BootAssetItemPostResponse:
+    if not await services.boot_asset_versions.get_by_id(id):
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Boot Asset Version does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"BootAssetVersion ID {id} does not exist"],
+                    field="id",
+                    location="path",
+                )
+            ],
+        )
     item = await services.boot_asset_items.create(
         models.BootAssetItem(boot_asset_version_id=id, **post_request)
     )
@@ -297,7 +329,7 @@ async def post_boot_asset_item(
 
 
 @v1_router.post(
-    "/images/{boot_asset_version_id}",
+    "/images/{boot_asset_item_id}",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
@@ -306,10 +338,36 @@ async def post_boot_asset_item(
 async def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    boot_asset_version_id: int,
+    boot_asset_item_id: int,
     request: Request,
 ) -> None:
-    filename = request.headers["filename"]
+    boot_asset_item = await services.boot_asset_items.get_by_id(
+        boot_asset_item_id
+    )
+    if not boot_asset_item:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Boot Asset Item does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[
+                        f"BootAssetItem ID {boot_asset_item_id} does not exist"
+                    ],
+                    field="boot_asset_item_id",
+                    location="path",
+                )
+            ],
+        )
+    try:
+        filename = request.headers["filename"]
+    except KeyError:
+        raise BadRequestException(
+            reason=ExceptionCode.INVALID_PARAMS,
+            message="'filename' header missing",
+            field="filename",
+            location="header",
+        )
     settings = Settings()
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
@@ -335,6 +393,7 @@ async def post_images(
     # 5MiB
     min_part_size = 5 * 1024**2
     part_chunk = b""
+    bytes_sent = 0
     async for chunk in request.stream():
         part_chunk += chunk
         if len(part_chunk) < min_part_size:
@@ -349,7 +408,11 @@ async def post_images(
         parts.append({"PartNumber": part_no, "ETag": part["ETag"]})
         part_no += 1
         part_chunk = b""
-        # TODO: update DB with % completed
+        bytes_sent += len(part_chunk)
+        pct_synced = bytes_sent / boot_asset_item.size
+        services.boot_asset_items.update_percent_synced(
+            boot_asset_item_id, pct_synced
+        )
 
     part_info = {"Parts": parts}
     s3.meta.client.complete_multipart_upload(
