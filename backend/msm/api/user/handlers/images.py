@@ -273,7 +273,13 @@ async def post_images(
 
     part_no = 1
     parts = []
+    # 5MiB
+    min_part_size = 5 * 1024 ** 2
+    part_chunk = b""
     async for chunk in request.stream():
+        part_chunk += chunk
+        if len(part_chunk) < min_part_size:
+            continue
         multipart_upload_part = s3.MultipartUploadPart(
             settings.s3_bucket,
             filename,
@@ -281,7 +287,7 @@ async def post_images(
             part_no
         )
         part = multipart_upload_part.upload(
-            Body=chunk,
+            Body=part_chunk,
             ChecksumAlgorithm="SHA256",
         )
         parts.append({
@@ -289,7 +295,9 @@ async def post_images(
             'ETag': part['ETag']
         })
         part_no += 1
+        part_chunk = b""
         # TODO: update DB with % completed
+
     part_info = {"Parts": parts}
     s3.meta.client.complete_multipart_upload(
         Bucket=settings.s3_bucket,
