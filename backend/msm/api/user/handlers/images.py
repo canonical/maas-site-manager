@@ -254,7 +254,7 @@ async def post_images(
         raise RuntimeError("storage not ready")
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
-    boto3.sess
+
     s3 = boto3.resource(
         "s3",
         use_ssl=False,
