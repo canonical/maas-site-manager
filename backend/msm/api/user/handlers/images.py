@@ -1,8 +1,9 @@
+from datetime import datetime
 from logging import getLogger
 from typing import Annotated
 from urllib.parse import urlparse
 
-import boto3
+import boto3  # type: ignore
 from fastapi import (
     APIRouter,
     Depends,
@@ -14,9 +15,9 @@ from msm.api.dependencies import services
 from msm.api.exceptions.catalog import (
     BadRequestException,
     BaseExceptionDetail,
-    ExceptionCode,
     NotFoundException,
 )
+from msm.api.exceptions.constants import ExceptionCode
 from msm.api.exceptions.responses import (
     UnauthorizedErrorResponseModel,
     ValidationErrorResponseModel,
@@ -117,6 +118,7 @@ async def get_boot_assets(
 
 
 class BootAssetsPostRequest(BaseModel):
+    boot_source_id: int
     kind: models.BootAssetKind
     label: models.BootAssetLabel
     os: str
@@ -128,6 +130,8 @@ class BootAssetsPostRequest(BaseModel):
     compatibility: list[str]
     flavor: str
     base_image: str
+    eol: datetime
+    esm_eol: datetime
 
 
 class BootAssetsPostResponse(BaseModel):
@@ -146,10 +150,25 @@ async def post_boot_assets(
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     post_request: BootAssetsPostRequest,
 ) -> BootAssetsPostResponse:
+    if not await services.boot_sources.get_by_id(post_request.boot_source_id):
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Boot Source does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[
+                        f"BootSource ID {post_request.boot_source_id} does not exist"
+                    ],
+                    field="bootsource_id",
+                    location="body",
+                )
+            ],
+        )
     boot_asset = await services.boot_assets.create(
-        models.BootAsset(**post_request.model_dump())
+        models.BootAssetCreate(**post_request.model_dump())
     )
-    return BootAssetsPostResponse(boot_asset.id)
+    return BootAssetsPostResponse(id=boot_asset.id)
 
 
 @v1_router.get(
@@ -204,10 +223,10 @@ async def post_boot_sources(
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     post_request: BootSourcesPostRequest,
 ) -> BootSourcesPostResponse:
-    boot_asset = await services.boot_assets.create(
-        models.BootAsset(**post_request)
+    boot_source = await services.boot_sources.create(
+        models.BootSourceCreate(**post_request.model_dump())
     )
-    return BootSourcesPostResponse(id=boot_asset.id)
+    return BootSourcesPostResponse(id=boot_source.id)
 
 
 @v1_router.get(
@@ -276,7 +295,9 @@ async def post_boot_asset_version(
             ],
         )
     boot_asset_version = await services.boot_asset_versions.create(
-        models.BootAssetVersion(boot_asset_id=id, version=post_request.version)
+        models.BootAssetVersionCreate(
+            boot_asset_id=id, version=post_request.version
+        )
     )
     return BootAssetVersionPostResponse(id=boot_asset_version.id)
 
@@ -289,7 +310,6 @@ class BootAssetItemPostRequest(BaseModel):
     source_package: str | None = None
     source_version: str | None = None
     source_release: str | None = None
-    percent_synced: float
 
 
 class BootAssetItemPostResponse(BaseModel):
@@ -323,7 +343,9 @@ async def post_boot_asset_item(
             ],
         )
     item = await services.boot_asset_items.create(
-        models.BootAssetItem(boot_asset_version_id=id, **post_request)
+        models.BootAssetItemCreate(
+            boot_asset_version_id=id, **post_request.model_dump()
+        )
     )
     return BootAssetItemPostResponse(id=item.id)
 
@@ -363,10 +385,16 @@ async def post_images(
         filename = request.headers["filename"]
     except KeyError:
         raise BadRequestException(
-            reason=ExceptionCode.INVALID_PARAMS,
             message="'filename' header missing",
-            field="filename",
-            location="header",
+            code=ExceptionCode.INVALID_PARAMS,
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.INVALID_PARAMS,
+                    messages=["'filename' header missing"],
+                    field="filename",
+                    location="header",
+                )
+            ],
         )
     settings = Settings()
     if not urlparse(settings.s3_endpoint).scheme:
@@ -410,7 +438,7 @@ async def post_images(
         part_chunk = b""
         bytes_sent += len(part_chunk)
         pct_synced = bytes_sent / boot_asset_item.size
-        services.boot_asset_items.update_percent_synced(
+        await services.boot_asset_items.update_percent_synced(
             boot_asset_item_id, pct_synced
         )
 

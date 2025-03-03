@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 
 import pytest
@@ -108,6 +108,70 @@ class TestBootAssetsGetHandler:
 
 
 @pytest.mark.asyncio
+class TestBootAssetsPostHandler:
+    async def test_post(self, user_client: Client, factory: Factory) -> None:
+        boot_source = await factory.make_BootSource()
+        data = {
+            "boot_source_id": boot_source.id,
+            "kind": BootAssetKind.BOOTLOADER,
+            "label": BootAssetLabel.CANDIDATE,
+            "os": "ubuntu",
+            "release": "noble",
+            "codename": "Noble Numbat",
+            "title": "My Custom Image",
+            "arch": "amd64",
+            "subarch": "generic",
+            "compatibility": ["generic"],
+            "flavor": "generic",
+            "base_image": "ubuntu",
+            "eol": (now_utc() + timedelta(days=365)).isoformat(),
+            "esm_eol": (now_utc() + timedelta(days=3650)).isoformat(),
+        }
+        resp = await user_client.post("/bootassets", json=data)
+        new_id = resp.json()["id"]
+        assert resp.status_code == 200
+        stored = await factory.get("boot_asset")
+        assert len(stored) == 1
+        data["eol"] = datetime.fromisoformat(data["eol"])  # type: ignore
+        data["esm_eol"] = datetime.fromisoformat(data["esm_eol"])  # type: ignore
+        assert stored[0] == data | {"id": new_id}
+
+    async def test_post_missing_details(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        data = {
+            "boot_source_id": boot_source.id,
+            "kind": BootAssetKind.BOOTLOADER,
+            "label": BootAssetLabel.CANDIDATE,
+        }
+        resp = await user_client.post("/bootassets", json=data)
+        assert resp.status_code == 422
+
+    async def test_post_missing_boot_source(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        data = {
+            "boot_source_id": 999,
+            "kind": BootAssetKind.BOOTLOADER,
+            "label": BootAssetLabel.CANDIDATE,
+            "os": "ubuntu",
+            "release": "noble",
+            "codename": "Noble Numbat",
+            "title": "My Custom Image",
+            "arch": "amd64",
+            "subarch": "generic",
+            "compatibility": ["generic"],
+            "flavor": "generic",
+            "base_image": "ubuntu",
+            "eol": (now_utc() + timedelta(days=365)).isoformat(),
+            "esm_eol": (now_utc() + timedelta(days=3650)).isoformat(),
+        }
+        resp = await user_client.post("/bootassets", json=data)
+        assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
 class TestBootSourcesGetHandler:
     async def test_get(self, user_client: Client, factory: Factory) -> None:
         boot_source = await factory.make_BootSource(
@@ -180,6 +244,34 @@ class TestBootSourcesGetHandler:
         self, user_client: Client, factory: Factory, size: int
     ) -> None:
         resp = await user_client.get(f"/bootasset-sources?size={size}")
+        assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+class TestBootSourcesPostHandler:
+    async def test_post(self, user_client: Client, factory: Factory) -> None:
+        data = {
+            "priority": 1,
+            "url": "http://some.image.server",
+            "keyring": "testkeyring",
+            "sync_interval": 1000,
+        }
+        resp = await user_client.post("/bootasset-sources", json=data)
+        new_id = resp.json()["id"]
+        assert resp.status_code == 200
+        stored = await factory.get("boot_source")
+        assert len(stored) == 1
+        assert stored[0] == data | {"id": new_id}
+
+    async def test_post_missing_details(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        data = {
+            "priority": 1,
+            "url": "http://some.image.server",
+            "keyring": "testkeyring",
+        }
+        resp = await user_client.post("/bootasset-sources", json=data)
         assert resp.status_code == 422
 
 
@@ -279,3 +371,108 @@ class TestBootSourceSelectionsGetHandler:
             f"/bootasset-sources/1/selections?size={size}"
         )
         assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+class TestBootAssetVersionsPostHandler:
+    async def test_post(self, user_client: Client, factory: Factory) -> None:
+        bs = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(bs.id)
+        data = {
+            "version": "20250302.1",
+        }
+        resp = await user_client.post(
+            f"/bootassets/{boot_asset.id}/versions", json=data
+        )
+        new_id = resp.json()["id"]
+        assert resp.status_code == 200
+        stored = await factory.get("boot_asset_version")
+        assert len(stored) == 1
+        assert stored[0] == data | {
+            "id": new_id,
+            "boot_asset_id": boot_asset.id,
+        }
+
+    async def test_post_missing_details(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        bs = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(bs.id)
+        resp = await user_client.post(
+            f"/bootassets/{boot_asset.id}/versions",
+        )
+        assert resp.status_code == 422
+
+    async def test_post_missing_boot_source(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        data = {
+            "version": "20250302.1",
+        }
+        resp = await user_client.post(f"/bootassets/{999}/versions", json=data)
+        assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestBootAssetItemsPostHandler:
+    async def test_post(self, user_client: Client, factory: Factory) -> None:
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        boot_asset_version = await factory.make_BootAssetVersion(ba.id)
+        data = {
+            "ftype": "kernel",
+            "sha256": "testblaksjdflkj",
+            "path": "/item",
+            "size": 2321345623,
+            "source_package": "ubukernel",
+            "source_version": "23.4.1",
+            "source_release": "noble",
+        }
+        resp = await user_client.post(
+            f"/bootasset-versions/{boot_asset_version.id}/items", json=data
+        )
+        assert resp.status_code == 200
+        new_id = resp.json()["id"]
+        stored = await factory.get("boot_asset_item")
+        assert len(stored) == 1
+        assert stored[0] == data | {
+            "id": new_id,
+            "boot_asset_version_id": boot_asset_version.id,
+            "percent_synced": 0,
+        }
+
+    async def test_post_missing_details(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        boot_asset_version = await factory.make_BootAssetVersion(ba.id)
+        data = {
+            "sha256": "testblaksjdflkj",
+            "path": "/item",
+            "size": 2321345623,
+            "source_package": "ubukernel",
+            "source_version": "23.4.1",
+            "source_release": "noble",
+        }
+        resp = await user_client.post(
+            f"/bootasset-versions/{boot_asset_version.id}/items", json=data
+        )
+        assert resp.status_code == 422
+
+    async def test_post_missing_boot_asset_version(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        data = {
+            "ftype": "kernel",
+            "sha256": "testblaksjdflkj",
+            "path": "/item",
+            "size": 2321345623,
+            "source_package": "ubukernel",
+            "source_version": "23.4.1",
+            "source_release": "noble",
+        }
+        resp = await user_client.post(
+            f"/bootasset-versions/{999}/items", json=data
+        )
+        assert resp.status_code == 404

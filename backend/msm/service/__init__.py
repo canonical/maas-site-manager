@@ -61,7 +61,7 @@ class ServiceCollection:
 __all__ = [
     "BootAssetService",
     "BootAssetItemService",
-    "BoootAssetVersionService",
+    "BootAssetVersionService",
     "BootSourceService",
     "BootSourceSelectionService",
     "ConfigService",

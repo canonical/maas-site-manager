@@ -44,6 +44,19 @@ class BootSourceService(Service):
             models.BootSource, result
         )
 
+    async def get_by_id(self, id: int) -> models.BootSource | None:
+        stmt = self._select_statement(
+            BootSource.c.id,
+            BootSource.c.url,
+            BootSource.c.keyring,
+            BootSource.c.sync_interval,
+            BootSource.c.priority,
+        ).where(BootSource.c.id == id)
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.BootSource(**row._asdict())
+        return None
+
     async def update(
         self, boot_source_id: int, details: models.BootSourceUpdate
     ) -> models.BootSource:
@@ -63,7 +76,9 @@ class BootSourceService(Service):
         result = await self.conn.execute(stmt)
         return models.BootSource(**result.one()._asdict())
 
-    async def create(self, details: models.BootSource) -> models.BootSource:
+    async def create(
+        self, details: models.BootSourceCreate
+    ) -> models.BootSource:
         data = details.model_dump()
         stmt = insert(BootSource).returning(
             BootSource.c.id,
@@ -145,7 +160,7 @@ class BootSourceSelectionService(Service):
         return models.BootSourceSelection(**result.one()._asdict())
 
     async def create(
-        self, details: models.BootSourceSelection
+        self, details: models.BootSourceSelectionCreate
     ) -> models.BootSourceSelection:
         data = details.model_dump()
         stmt = insert(BootSourceSelection).returning(
@@ -236,7 +251,7 @@ class BootAssetService(Service):
 
     async def create(
         self,
-        details: models.BootAsset,
+        details: models.BootAssetCreate,
     ) -> models.BootAsset:
         data = details.model_dump()
         stmt = insert(BootAsset).returning(
@@ -291,7 +306,7 @@ class BootAssetVersionService(Service):
             models.BootAssetVersion, result
         )
 
-    async def get_by_id(self, id: int) -> models.BootAsset | None:
+    async def get_by_id(self, id: int) -> models.BootAssetVersion | None:
         stmt = self._select_statement(
             BootAssetVersion.c.id,
             BootAssetVersion.c.boot_asset_id,
@@ -304,7 +319,7 @@ class BootAssetVersionService(Service):
 
     async def create(
         self,
-        details: models.BootAssetVersion,
+        details: models.BootAssetVersionCreate,
     ) -> models.BootAssetVersion:
         data = details.model_dump()
         stmt = insert(BootAssetVersion).returning(
@@ -376,7 +391,7 @@ class BootAssetItemService(Service):
 
     async def create(
         self,
-        details: models.BootAssetItem,
+        details: models.BootAssetItemCreate,
     ) -> models.BootAssetItem:
         data = details.model_dump()
         stmt = insert(BootAssetItem).returning(
