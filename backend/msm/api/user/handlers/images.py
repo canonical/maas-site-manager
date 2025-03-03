@@ -418,6 +418,20 @@ async def post_images(
 
     part_no = 1
     parts = []
+
+    def upload_part(content: bytes) -> str:
+        """
+        Upload the part and return the ETag.
+        """
+        multipart_upload_part = s3.MultipartUploadPart(
+            settings.s3_bucket, filename, upload_id, part_no
+        )
+        part = multipart_upload_part.upload(
+            Body=content,
+            ChecksumAlgorithm="SHA256",
+        )
+        return part["ETag"]  # type: ignore
+
     # 5MiB
     min_part_size = 5 * 1024**2
     part_chunk = b""
@@ -426,14 +440,8 @@ async def post_images(
         part_chunk += chunk
         if len(part_chunk) < min_part_size:
             continue
-        multipart_upload_part = s3.MultipartUploadPart(
-            settings.s3_bucket, filename, upload_id, part_no
-        )
-        part = multipart_upload_part.upload(
-            Body=part_chunk,
-            ChecksumAlgorithm="SHA256",
-        )
-        parts.append({"PartNumber": part_no, "ETag": part["ETag"]})
+        etag = upload_part(part_chunk)
+        parts.append({"PartNumber": part_no, "ETag": etag})
         part_no += 1
         part_chunk = b""
         bytes_sent += len(part_chunk)
@@ -441,7 +449,17 @@ async def post_images(
         await services.boot_asset_items.update_percent_synced(
             boot_asset_item_id, pct_synced
         )
-
+    # last part may have been left behind if it was smaller than
+    # the minimum upload size.
+    # the last upload has no minimum upload size requirement.
+    if part_chunk:
+        etag = upload_part(part_chunk)
+        parts.append({"PartNumber": part_no, "ETag": etag})
+        bytes_sent += len(part_chunk)
+        pct_synced = bytes_sent / boot_asset_item.size
+        await services.boot_asset_items.update_percent_synced(
+            boot_asset_item_id, pct_synced
+        )
     part_info = {"Parts": parts}
     s3.meta.client.complete_multipart_upload(
         Bucket=settings.s3_bucket,
