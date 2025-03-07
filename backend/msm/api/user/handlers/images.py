@@ -521,7 +521,7 @@ async def post_images(
     upload_id = multipart_upload["UploadId"]
 
     parser = StreamingFormDataParser(
-        headers={"Content-Type": "multipart/form-data"}
+        headers=request.headers
     )
     ftype = ValueTarget(validator=BootAssetItemValueValidator(str, "ftype"))
     parser.register("ftype", ftype)
