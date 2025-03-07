@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import urlparse
 
 import boto3  # type: ignore
@@ -9,7 +9,9 @@ from fastapi import (
     Depends,
     Request,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from streaming_form_data import StreamingFormDataParser  # type: ignore
+from streaming_form_data.targets import BaseTarget, ValueTarget  # type: ignore
 
 from msm.api.dependencies import services
 from msm.api.exceptions.catalog import (
@@ -350,8 +352,110 @@ async def post_boot_asset_item(
     return BootAssetItemPostResponse(id=item.id)
 
 
+boot_asset_items_sort_parameters = SortParamParser(
+    fields=[
+        "ftype",
+        "sha256",
+        "path",
+        "size",
+        "source_package",
+        "source_version",
+        "source_release",
+        "percent_synced",
+    ]
+)
+
+
+class BootAssetItemsGetResponse(PaginatedResults):
+    items: list[models.BootAssetItem]
+
+
+@v1_router.get(
+    "/bootasset-items",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def get_boot_asset_items(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    sort_params: Annotated[
+        list[SortParam], Depends(boot_asset_items_sort_parameters)
+    ],
+    pagination_params: Annotated[PaginationParams, Depends()],
+) -> BootAssetItemsGetResponse:
+    total, results = await services.boot_asset_items.get(
+        sort_params,
+        offset=pagination_params.offset,
+        limit=pagination_params.size,
+    )
+    return BootAssetItemsGetResponse(
+        total=total,
+        page=pagination_params.page,
+        size=pagination_params.size,
+        items=list(results),
+    )
+
+
+class S3MultipartUploadTarget(BaseTarget):  # type: ignore
+    MIN_PART_SIZE = 5 * 1024**2  # 5MiB
+
+    def __init__(
+        self, s3_resource: Any, s3_bucket: str, filename: str, upload_id: int
+    ) -> None:
+        self.s3 = s3_resource
+        self.s3_bucket = s3_bucket
+        self.filename = filename
+        self.upload_id = upload_id
+        self.current_chunk = b""
+        self.part_no = 1
+        self.parts: list[dict[str, Any]] = []
+
+    def upload_part(self, chunk: bytes) -> None:
+        multipart_upload_part = self.s3.MultipartUploadPart(
+            self.s3_bucket, self.filename, self.upload_id, self.part_no
+        )
+        part = multipart_upload_part.upload(
+            Body=chunk,
+            ChecksumAlgorithm="SHA256",
+        )
+        self.parts.append({"ETag": part["ETag"], "PartNumber": self.part_no})
+        self.part_no += 1
+        self.current_chunk = b""
+
+    def on_data_received(self, chunk: bytes) -> None:
+        self.current_chunk += chunk
+        if len(self.current_chunk) < self.MIN_PART_SIZE:
+            return
+        self.upload_part(chunk)
+
+
+class BootAssetItemValueValidator:
+    def __init__(self, type: type, name: str):
+        self._type = type
+        self._name = name
+
+    def __call__(self, chunk: bytes) -> None:
+        try:
+            self._type(chunk)
+        except:
+            raise BadRequestException(
+                message=f"Invalid type for {self._name}, expected {self._type}",
+                code=ExceptionCode.INVALID_PARAMS,
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.INVALID_PARAMS,
+                        messages=[f"Invalid type for {self._name}"],
+                        field=self._name,
+                        location="body",
+                    )
+                ],
+            )
+
+
 @v1_router.post(
-    "/images/{boot_asset_item_id}",
+    "/bootasset-items/{boot_asset_version_id}",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
@@ -360,23 +464,23 @@ async def post_boot_asset_item(
 async def post_images(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    boot_asset_item_id: int,
+    boot_asset_version_id: int,
     request: Request,
 ) -> None:
-    boot_asset_item = await services.boot_asset_items.get_by_id(
-        boot_asset_item_id
+    boot_asset_version = await services.boot_asset_versions.get_by_id(
+        boot_asset_version_id
     )
-    if not boot_asset_item:
+    if not boot_asset_version:
         raise NotFoundException(
             code=ExceptionCode.MISSING_RESOURCE,
-            message="Boot Asset Item does not exist.",
+            message="Boot Asset Version does not exist.",
             details=[
                 BaseExceptionDetail(
                     reason=ExceptionCode.MISSING_RESOURCE,
                     messages=[
-                        f"BootAssetItem ID {boot_asset_item_id} does not exist"
+                        f"BootAssetVersion ID {boot_asset_version_id} does not exist"
                     ],
-                    field="boot_asset_item_id",
+                    field="boot_asset_version_id",
                     location="path",
                 )
             ],
@@ -416,51 +520,89 @@ async def post_images(
     )
     upload_id = multipart_upload["UploadId"]
 
-    part_no = 1
-    parts = []
+    parser = StreamingFormDataParser(
+        headers={"Content-Type": "multipart/form-data"}
+    )
+    ftype = ValueTarget(validator=BootAssetItemValueValidator(str, "ftype"))
+    parser.register("ftype", ftype)
+    sha256 = ValueTarget(validator=BootAssetItemValueValidator(str, "sha256"))
+    parser.register("sha256", sha256)
+    path = ValueTarget(validator=BootAssetItemValueValidator(str, "path"))
+    parser.register("path", path)
+    size = ValueTarget(validator=BootAssetItemValueValidator(int, "size"))
+    parser.register("size", size)
+    # don't need to pass type as str | None, since validator won't be called if it isn't passed
+    source_package = ValueTarget(
+        validator=BootAssetItemValueValidator(str, "source_package")
+    )
+    parser.register("source_package", source_package)
+    source_version = ValueTarget(
+        validator=BootAssetItemValueValidator(str, "source_version")
+    )
+    parser.register("source_version", source_version)
+    source_release = ValueTarget(
+        validator=BootAssetItemValueValidator(str, "source_release")
+    )
+    parser.register("source_release", source_release)
+    s3_upload_target = S3MultipartUploadTarget(
+        s3,
+        settings.s3_bucket,  # type: ignore
+        filename,
+        upload_id,
+    )
+    parser.register("file", s3_upload_target)
 
-    def upload_part(content: bytes) -> str:
-        """
-        Upload the part and return the ETag.
-        """
-        multipart_upload_part = s3.MultipartUploadPart(
-            settings.s3_bucket, filename, upload_id, part_no
-        )
-        part = multipart_upload_part.upload(
-            Body=content,
-            ChecksumAlgorithm="SHA256",
-        )
-        return part["ETag"]  # type: ignore
-
-    # 5MiB
-    min_part_size = 5 * 1024**2
-    part_chunk = b""
-    bytes_sent = 0
     async for chunk in request.stream():
-        part_chunk += chunk
-        if len(part_chunk) < min_part_size:
-            continue
-        etag = upload_part(part_chunk)
-        parts.append({"PartNumber": part_no, "ETag": etag})
-        part_no += 1
-        part_chunk = b""
-        bytes_sent += len(part_chunk)
-        pct_synced = bytes_sent / boot_asset_item.size
-        await services.boot_asset_items.update_percent_synced(
-            boot_asset_item_id, pct_synced
+        parser.data_received(chunk)
+    try:
+        boot_asset_item = await services.boot_asset_items.create(
+            models.BootAssetItemCreate(
+                boot_asset_version_id=boot_asset_version_id,
+                ftype=ftype.value.decode(),
+                sha256=sha256.value.decode(),
+                path=path.value.decode(),
+                size=int(size.value),
+                source_package=source_package.value.decode()
+                if source_package.value
+                else None,
+                source_version=source_version.value.decode()
+                if source_version.value
+                else None,
+                source_release=source_release.value.decode()
+                if source_release.value
+                else None,
+            )
+        )
+    except ValidationError as e:
+        s3.meta.client.abort_multipart_upload(
+            Bucket=settings.s3_bucket,
+            Key=filename,
+            UploadId=upload_id,
+        )
+        details = []
+        for err in e.errors():
+            details.append(
+                BaseExceptionDetail(
+                    reason=ExceptionCode.INVALID_PARAMS,
+                    messages=[err["msg"]],
+                    location="body",
+                    field=err["loc"][0],
+                )
+            )
+        raise BadRequestException(
+            message="One or more request parameters are invalid",
+            code=ExceptionCode.INVALID_PARAMS,
+            details=details,
         )
     # last part may have been left behind if it was smaller than
     # the minimum upload size.
     # the last upload has no minimum upload size requirement.
-    if part_chunk:
-        etag = upload_part(part_chunk)
-        parts.append({"PartNumber": part_no, "ETag": etag})
-        bytes_sent += len(part_chunk)
-        pct_synced = bytes_sent / boot_asset_item.size
-        await services.boot_asset_items.update_percent_synced(
-            boot_asset_item_id, pct_synced
-        )
-    part_info = {"Parts": parts}
+    if s3_upload_target.current_chunk:
+        s3_upload_target.upload_part(s3_upload_target.current_chunk)
+    await services.boot_asset_items.update_percent_synced(
+        boot_asset_item.id, 100.0
+    )
+    part_info = {"Parts": s3_upload_target.parts}
     s3.meta.client.complete_multipart_upload(
         Bucket=settings.s3_bucket,
         Key=filename,

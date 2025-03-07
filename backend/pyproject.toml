@@ -38,6 +38,7 @@ dependencies = [
   "python-multipart",
   "pytz",
   "sqlalchemy[postgresql-asyncpg,postgresql-psycopg]",
+  "streaming-form-data",
   "strenum",                                           # emulate enum.StrEnum, which is available in Python3.11
   "ujson",                                             # faster JSON encoding/decoding (for fastapi)
   "uvicorn[standard]",
