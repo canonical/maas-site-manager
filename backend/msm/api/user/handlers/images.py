@@ -413,12 +413,12 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
         self.parts: list[dict[str, Any]] = []
         super().__init__()
 
-    def upload_part(self, chunk: bytes) -> None:
+    def upload_current_chunk(self) -> None:
         multipart_upload_part = self.s3.MultipartUploadPart(
             self.s3_bucket, self.filename, self.upload_id, self.part_no
         )
         part = multipart_upload_part.upload(
-            Body=chunk,
+            Body=self.current_chunk,
             ChecksumAlgorithm="SHA256",
         )
         self.parts.append({"ETag": part["ETag"], "PartNumber": self.part_no})
@@ -429,7 +429,7 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
         self.current_chunk += chunk
         if len(self.current_chunk) < self.MIN_PART_SIZE:
             return
-        self.upload_part(chunk)
+        self.upload_current_chunk()
 
 
 class BootAssetItemValueValidator:
@@ -521,9 +521,7 @@ async def post_images(
     )
     upload_id = multipart_upload["UploadId"]
 
-    parser = StreamingFormDataParser(
-        headers=request.headers
-    )
+    parser = StreamingFormDataParser(headers=request.headers)
     ftype = ValueTarget(validator=BootAssetItemValueValidator(str, "ftype"))
     parser.register("ftype", ftype)
     sha256 = ValueTarget(validator=BootAssetItemValueValidator(str, "sha256"))
@@ -599,7 +597,7 @@ async def post_images(
     # the minimum upload size.
     # the last upload has no minimum upload size requirement.
     if s3_upload_target.current_chunk:
-        s3_upload_target.upload_part(s3_upload_target.current_chunk)
+        s3_upload_target.upload_current_chunk()
     await services.boot_asset_items.update_percent_synced(
         boot_asset_item.id, 100.0
     )
