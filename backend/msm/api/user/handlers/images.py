@@ -411,6 +411,7 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
         self.current_chunk = b""
         self.part_no = 1
         self.parts: list[dict[str, Any]] = []
+        super().__init__()
 
     def upload_part(self, chunk: bytes) -> None:
         multipart_upload_part = self.s3.MultipartUploadPart(
