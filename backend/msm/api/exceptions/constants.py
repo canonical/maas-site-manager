@@ -10,3 +10,4 @@ class ExceptionCode(StrEnum):
     MISSING_RESOURCE = "MissingResource"
     MISSING_PERMISSIONS = "MissingPermissions"
     NOT_AUTHENTICATED = "NotAuthenticated"
+    FILE_TOO_LARGE = "FileTooLarge"

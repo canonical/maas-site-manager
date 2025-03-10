@@ -46,5 +46,9 @@ class NotFoundException(MsmBaseException):
     status_code = status.HTTP_404_NOT_FOUND
 
 
+class FileTooLargeException(MsmBaseException):
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+
+
 class InternalServerErrorException(MsmBaseException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

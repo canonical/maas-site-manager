@@ -204,6 +204,28 @@ class NotFoundErrorResponse(JSONResponse):
         )
 
 
+class FileTooLargeErrorBodyResponse(ErrorBodyResponse):
+    code: ExceptionCode = ExceptionCode.FILE_TOO_LARGE
+    message: str = "Uploaded file is too large"
+    status_code: int = Field(
+        status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, exclude=True
+    )
+
+
+class FileTooLargeErrorResponseModel(
+    ErrorResponseModel[FileTooLargeErrorBodyResponse]
+):
+    pass
+
+
+class FileTooLargeErrorResponse(JSONResponse):
+    def __init__(self, err: FileTooLargeErrorResponseModel):
+        super().__init__(
+            content=jsonable_encoder(err, exclude_none=True),
+            status_code=err.error.status_code,
+        )
+
+
 class ErrorResponse(JSONResponse):
     def __init__(self, err: ErrorResponseModel[ErrorBodyResponse]):
         super().__init__(

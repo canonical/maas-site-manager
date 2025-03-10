@@ -22,11 +22,16 @@ class TestSettingsService:
             "token_lifetime_minutes",
             value=10,
         )
+        await factory.make_Setting(
+            "max_image_upload_size_gb",
+            value=50,
+        )
         service = SettingsService(db_connection)
         settings = await service.get()
         assert settings == Settings(
             service_url="https://sitemanager.example.com",
             token_lifetime_minutes=10,
+            max_image_upload_size_gb=50,
         )
 
     async def test_get_no_extra_entries(
@@ -69,6 +74,10 @@ class TestSettingsService:
                 "name": "token_rotation_interval_minutes",
                 "value": (DEFAULT_TOKEN_DURATION.total_seconds() // 60) // 2,
             },
+            {
+                "name": "max_image_upload_size_gb",
+                "value": 100,
+            },
         ]
 
     async def test_ensure_keep_existing(
@@ -81,6 +90,7 @@ class TestSettingsService:
         await factory.make_Setting(
             "token_rotation_interval_minutes", value=100
         )
+        await factory.make_Setting("max_image_upload_size_gb", value=50)
         service = SettingsService(db_connection)
         await service.ensure()
         settings = await factory.get("setting")
@@ -88,6 +98,7 @@ class TestSettingsService:
             {"name": "service_url", "value": "http://sitemanager:8000"},
             {"name": "token_lifetime_minutes", "value": 10},
             {"name": "token_rotation_interval_minutes", "value": 100},
+            {"name": "max_image_upload_size_gb", "value": 50},
         ]
 
     async def test_ensure_remove_extra(

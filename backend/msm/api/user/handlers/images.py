@@ -12,11 +12,13 @@ from fastapi import (
 from pydantic import BaseModel, ValidationError
 from streaming_form_data import StreamingFormDataParser  # type: ignore
 from streaming_form_data.targets import BaseTarget, ValueTarget  # type: ignore
+import streaming_form_data.validators
 
 from msm.api.dependencies import services
 from msm.api.exceptions.catalog import (
     BadRequestException,
     BaseExceptionDetail,
+    FileTooLargeException,
     NotFoundException,
 )
 from msm.api.exceptions.constants import ExceptionCode
@@ -402,16 +404,34 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
     MIN_PART_SIZE = 5 * 1024**2  # 5MiB
 
     def __init__(
-        self, s3_resource: Any, s3_bucket: str, filename: str, upload_id: int
+        self, settings: Settings, filename: str, max_upload_size_gb: int
     ) -> None:
-        self.s3 = s3_resource
-        self.s3_bucket = s3_bucket
+        self.s3 = boto3.resource(
+            "s3",
+            use_ssl=False,
+            verify=False,
+            endpoint_url=settings.s3_endpoint,
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+        )
+        self.s3_bucket = settings.s3_bucket
         self.filename = filename
-        self.upload_id = upload_id
+        self.max_upload_size_bytes = max_upload_size_gb * 1000000000
+        multipart_upload = self.s3.meta.client.create_multipart_upload(
+            ACL="public-read",
+            Bucket=settings.s3_bucket,
+            Key=filename,
+            ChecksumAlgorithm="SHA256",
+        )
+        self.upload_id = multipart_upload["UploadId"]
         self.current_chunk = b""
         self.part_no = 1
         self.parts: list[dict[str, Any]] = []
-        super().__init__()
+        super().__init__(
+            validator=streaming_form_data.validators.MaxSizeValidator(
+                self.max_upload_size_bytes
+            )
+        )
 
     def upload_current_chunk(self) -> None:
         multipart_upload_part = self.s3.MultipartUploadPart(
@@ -424,6 +444,21 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
         self.parts.append({"ETag": part["ETag"], "PartNumber": self.part_no})
         self.part_no += 1
         self.current_chunk = b""
+
+    def abort_upload(self) -> None:
+        self.s3.meta.client.abort_multipart_upload(
+            Bucket=self.s3_bucket,
+            Key=self.filename,
+            UploadId=self.upload_id,
+        )
+
+    def complete_upload(self) -> None:
+        self.s3.meta.client.complete_multipart_upload(
+            Bucket=self.s3_bucket,
+            Key=self.filename,
+            UploadId=self.upload_id,
+            MultipartUpload={"Parts": self.parts},
+        )
 
     def on_data_received(self, chunk: bytes) -> None:
         self.current_chunk += chunk
@@ -502,24 +537,9 @@ async def post_images(
             ],
         )
     settings = Settings()
+    api_settings = await services.settings.get()
     if not urlparse(settings.s3_endpoint).scheme:
         settings.s3_endpoint = f"http://{settings.s3_endpoint}"
-
-    s3 = boto3.resource(
-        "s3",
-        use_ssl=False,
-        verify=False,
-        endpoint_url=settings.s3_endpoint,
-        aws_access_key_id=settings.s3_access_key,
-        aws_secret_access_key=settings.s3_secret_key,
-    )
-    multipart_upload = s3.meta.client.create_multipart_upload(
-        ACL="public-read",
-        Bucket=settings.s3_bucket,
-        Key=filename,
-        ChecksumAlgorithm="SHA256",
-    )
-    upload_id = multipart_upload["UploadId"]
 
     parser = StreamingFormDataParser(headers=request.headers)
     ftype = ValueTarget(validator=BootAssetItemValueValidator(str, "ftype"))
@@ -544,15 +564,29 @@ async def post_images(
     )
     parser.register("source_release", source_release)
     s3_upload_target = S3MultipartUploadTarget(
-        s3,
-        settings.s3_bucket,  # type: ignore
+        settings,
         filename,
-        upload_id,
+        api_settings.max_image_upload_size_gb,
     )
     parser.register("file", s3_upload_target)
 
     async for chunk in request.stream():
-        parser.data_received(chunk)
+        try:
+            parser.data_received(chunk)
+        except streaming_form_data.validators.ValidationError:
+            s3_upload_target.abort_upload()
+            raise FileTooLargeException(
+                message="Uploaded file is too large",
+                code=ExceptionCode.FILE_TOO_LARGE,
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.FILE_TOO_LARGE,
+                        messages=["Uploaded file is too large"],
+                        field="file",
+                        location="body",
+                    )
+                ],
+            )
     try:
         boot_asset_item = await services.boot_asset_items.create(
             models.BootAssetItemCreate(
@@ -573,11 +607,7 @@ async def post_images(
             )
         )
     except ValidationError as e:
-        s3.meta.client.abort_multipart_upload(
-            Bucket=settings.s3_bucket,
-            Key=filename,
-            UploadId=upload_id,
-        )
+        s3_upload_target.abort_upload()
         details = []
         for err in e.errors():
             details.append(
@@ -601,10 +631,4 @@ async def post_images(
     await services.boot_asset_items.update_percent_synced(
         boot_asset_item.id, 100.0
     )
-    part_info = {"Parts": s3_upload_target.parts}
-    s3.meta.client.complete_multipart_upload(
-        Bucket=settings.s3_bucket,
-        Key=filename,
-        UploadId=upload_id,
-        MultipartUpload=part_info,
-    )
+    s3_upload_target.complete_upload()

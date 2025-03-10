@@ -39,6 +39,14 @@ class UpdateSettingsAction(DatabaseAction):
             default=None,
         )
 
+        parser.add_argument(
+            "--max_image_upload_size_gb",
+            help="Maximum file size for custom image uploads, in GB",
+            required=False,
+            type=int,
+            default=None,
+        )
+
     async def aexecute(self, options: Namespace) -> int:
         await self._update_setting(
             SettingsUpdate(**(dict(options._get_kwargs())))

@@ -27,6 +27,7 @@ async def test_settings_get(
             "service_url": "https://sitemanager.example.com/",
             "token_lifetime_minutes": 10,
             "token_rotation_interval_minutes": 100,
+            "max_image_upload_size_gb": 50,
         }
     )
     response = await admin_client.get("/settings")
@@ -35,6 +36,7 @@ async def test_settings_get(
         "service_url": "https://sitemanager.example.com/",
         "token_lifetime_minutes": 10,
         "token_rotation_interval_minutes": 100,
+        "max_image_upload_size_gb": 50,
     }
 
 
@@ -48,6 +50,7 @@ async def test_settings_patch(
             "service_url": "https://sitemanager.example.com",
             "token_lifetime_minutes": 10,
             "token_rotation_interval_minutes": 100,
+            "max_image_upload_size_gb": 50,
         },
     )
     assert response.status_code == 200
@@ -58,6 +61,7 @@ async def test_settings_patch(
         "service_url": "https://sitemanager.example.com",
         "token_lifetime_minutes": 10,
         "token_rotation_interval_minutes": 100,
+        "max_image_upload_size_gb": 50,
     }
 
 
