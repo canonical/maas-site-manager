@@ -41,6 +41,16 @@ class BootAssetItemCreate(BaseModel):
     source_release: str | None = None
 
 
+class BootAssetItemUpdate(BaseModel):
+    ftype: str | None = None
+    sha256: str | None = None
+    path: str | None = None
+    size: int | None = None
+    source_package: str | None = None
+    source_version: str | None = None
+    source_release: str | None = None
+
+
 class BootAssetVersion(BaseModel):
     id: int
     boot_asset_id: int

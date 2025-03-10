@@ -521,21 +521,6 @@ async def post_images(
                 )
             ],
         )
-    try:
-        filename = request.headers["filename"]
-    except KeyError:
-        raise BadRequestException(
-            message="'filename' header missing",
-            code=ExceptionCode.INVALID_PARAMS,
-            details=[
-                BaseExceptionDetail(
-                    reason=ExceptionCode.INVALID_PARAMS,
-                    messages=["'filename' header missing"],
-                    field="filename",
-                    location="header",
-                )
-            ],
-        )
     settings = Settings()
     api_settings = await services.settings.get()
     if not urlparse(settings.s3_endpoint).scheme:
@@ -563,9 +548,13 @@ async def post_images(
         validator=BootAssetItemValueValidator(str, "source_release")
     )
     parser.register("source_release", source_release)
+
+    tmp_item = await services.boot_asset_items.create_temporary(
+        boot_asset_version_id
+    )
     s3_upload_target = S3MultipartUploadTarget(
         settings,
-        filename,
+        str(tmp_item.id),
         api_settings.max_image_upload_size_gb,
     )
     parser.register("file", s3_upload_target)
@@ -574,6 +563,7 @@ async def post_images(
         try:
             parser.data_received(chunk)
         except streaming_form_data.validators.ValidationError:
+            await services.boot_asset_items.delete(tmp_item.id)
             s3_upload_target.abort_upload()
             raise FileTooLargeException(
                 message="Uploaded file is too large",
@@ -588,9 +578,9 @@ async def post_images(
                 ],
             )
     try:
-        boot_asset_item = await services.boot_asset_items.create(
-            models.BootAssetItemCreate(
-                boot_asset_version_id=boot_asset_version_id,
+        boot_asset_item = await services.boot_asset_items.update(
+            tmp_item.id,
+            models.BootAssetItemUpdate(
                 ftype=ftype.value.decode(),
                 sha256=sha256.value.decode(),
                 path=path.value.decode(),
@@ -604,9 +594,10 @@ async def post_images(
                 source_release=source_release.value.decode()
                 if source_release.value
                 else None,
-            )
+            ),
         )
     except ValidationError as e:
+        await services.boot_asset_items.delete(tmp_item.id)
         s3_upload_target.abort_upload()
         details = []
         for err in e.errors():

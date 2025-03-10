@@ -8,6 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from msm.api.exceptions.catalog import (
     BadRequestException,
+    FileTooLargeException,
     ForbiddenException,
     MsmBaseException,
     NotFoundException,
@@ -20,6 +21,9 @@ from msm.api.exceptions.responses import (
     ErrorBodyResponse,
     ErrorResponse,
     ErrorResponseModel,
+    FileTooLargeErrorBodyResponse,
+    FileTooLargeErrorResponse,
+    FileTooLargeErrorResponseModel,
     ForbiddenErrorBodyResponse,
     ForbiddenErrorResponse,
     ForbiddenErrorResponseModel,
@@ -67,6 +71,12 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
             return NotFoundErrorResponse(
                 err=NotFoundErrorResponseModel(
                     error=NotFoundErrorBodyResponse.from_exc(e)
+                )
+            )
+        except FileTooLargeException as e:
+            return FileTooLargeErrorResponse(
+                err=FileTooLargeErrorResponseModel(
+                    error=FileTooLargeErrorBodyResponse.from_exc(e)
                 )
             )
         except MsmBaseException as e:

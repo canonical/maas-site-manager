@@ -409,6 +409,19 @@ class BootAssetItemService(Service):
         result = await self.conn.execute(stmt, [data])
         return models.BootAssetItem(**result.one()._asdict())
 
+    async def create_temporary(
+        self, boot_asset_version_id: int
+    ) -> models.BootAssetItem:
+        """Create a temporary BootAssetItem that is meant to be overwritten."""
+        details = models.BootAssetItemCreate(
+            boot_asset_version_id=boot_asset_version_id,
+            ftype="",
+            sha256="",
+            path="",
+            size=0,
+        )
+        return await self.create(details)
+
     async def update_percent_synced(
         self,
         id: int,
@@ -420,6 +433,30 @@ class BootAssetItemService(Service):
             .values({"percent_synced": percent_synced})
         )
         await self.conn.execute(stmt)
+
+    async def update(
+        self, id: int, details: models.BootAssetItemUpdate
+    ) -> models.BootAssetItem:
+        data = details.model_dump(exclude_none=True)
+        stmt = (
+            update(BootAssetItem)
+            .where(BootAssetItem.c.id == id)
+            .values(data)
+            .returning(
+                BootAssetItem.c.id,
+                BootAssetItem.c.boot_asset_version_id,
+                BootAssetItem.c.ftype,
+                BootAssetItem.c.sha256,
+                BootAssetItem.c.path,
+                BootAssetItem.c.size,
+                BootAssetItem.c.source_package,
+                BootAssetItem.c.source_version,
+                BootAssetItem.c.source_release,
+                BootAssetItem.c.percent_synced,
+            )
+        )
+        result = await self.conn.execute(stmt)
+        return models.BootAssetItem(**result.one()._asdict())
 
     async def delete(self, boot_asset_item_id: int) -> None:
         stmt = delete(BootAssetItem).where(
