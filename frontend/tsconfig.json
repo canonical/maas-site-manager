@@ -18,6 +18,6 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "exclude": ["dist", "public", "node_modules",  "./mock-web-worker.ts"],
+  "exclude": ["dist", "public", "node_modules", "./mock-web-worker.ts", "vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

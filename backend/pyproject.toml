@@ -40,6 +40,7 @@ dependencies = [
   "sqlalchemy[postgresql-asyncpg,postgresql-psycopg]",
   "streaming-form-data",
   "strenum",                                           # emulate enum.StrEnum, which is available in Python3.11
+  "temporal-lib-py>=1.8",
   "ujson",                                             # faster JSON encoding/decoding (for fastapi)
   "uvicorn[standard]",
   "uvloop",
@@ -69,6 +70,7 @@ version = { attr = "msm.__version__" }
 [tool.setuptools.packages.find]
 include = [
   "msm*",
+  "temporal",
 ]
 
 [tool.ruff]

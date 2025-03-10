@@ -19,6 +19,7 @@ expect.extend(matchers);
 // use the Web Fetch API in tests which is used by Remix
 // expect errors, Web Fetch API types differ from jsdom implementation
 // https://github.com/remix-run/react-router/blob/b154367/packages/router/__tests__/setup.ts
+// @ts-expect-error
 if (globalThis.fetch !== fetch) {
   // Built-in lib.dom.d.ts expects `fetch(Request | string, ...)` but the web
   // fetch API allows a URL so @remix-run/web-fetch defines

@@ -11,7 +11,7 @@ import { siteFactory, statsFactory } from "@/mocks/factories";
 import { createMockSiteResolver } from "@/mocks/resolvers";
 import { getCountryName, getTimeInTimezone, getTimezoneUTCString } from "@/utils";
 import { apiUrls } from "@/utils/test-urls";
-import { screen, renderWithMemoryRouter, setupServer, waitFor } from "@/utils/test-utils";
+import { screen, renderWithMemoryRouter, setupServer, waitFor, getByTextContent } from "@/utils/test-utils";
 
 const stats = statsFactory.build();
 const site = siteFactory.build({ stats });
@@ -55,7 +55,7 @@ it("renders the correct details for a site", async () => {
   expect(screen.getByText(site.city!)).toBeInTheDocument();
   expect(screen.getByText(site.postal_code!)).toBeInTheDocument();
   expect(
-    screen.getByText(`${getTimeInTimezone(new Date(), site.timezone!)} UTC${getTimezoneUTCString(site.timezone!)}`),
+    getByTextContent(`${getTimeInTimezone(new Date(), site.timezone!)} UTC${getTimezoneUTCString(site.timezone!)}`),
   ).toBeInTheDocument();
   expect(screen.getByText(stats.machines_total)).toBeInTheDocument();
 

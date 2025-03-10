@@ -63,6 +63,15 @@ class Settings(BaseSettings):
         default=None, validation_alias="MSM_S3_BUCKET"
     )
     s3_path: str | None = Field(default=None, validation_alias="MSM_S3_PATH")
+    temporal_server_address: str | None = Field(
+        default=None, validation_alias="MSM_TEMPORAL_SERVER_ADDRESS"
+    )
+    temporal_namespace: str | None = Field(
+        default=None, validation_alias="MSM_TEMPORAL_NAMESPACE"
+    )
+    temporal_task_queue: str | None = Field(
+        default=None, validation_alias="MSM_TEMPORAL_TASK_QUEUE"
+    )
     heartbeat_interval_seconds: int = Field(
         default=300, validation_alias="MSM_HEARTBEAT_INTERVAL_SEC"
     )
