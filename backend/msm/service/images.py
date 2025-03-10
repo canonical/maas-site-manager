@@ -359,7 +359,7 @@ class BootAssetItemService(Service):
                 BootAssetItem.c.source_package,
                 BootAssetItem.c.source_version,
                 BootAssetItem.c.source_release,
-                BootAssetItem.c.percent_synced,
+                BootAssetItem.c.bytes_synced,
             )
             .order_by(*order_by)
             .offset(offset)
@@ -382,7 +382,7 @@ class BootAssetItemService(Service):
             BootAssetItem.c.source_package,
             BootAssetItem.c.source_version,
             BootAssetItem.c.source_release,
-            BootAssetItem.c.percent_synced,
+            BootAssetItem.c.bytes_synced,
         ).where(BootAssetItem.c.id == id)
         result = await self.conn.execute(stmt)
         if row := result.one_or_none():
@@ -404,7 +404,7 @@ class BootAssetItemService(Service):
             BootAssetItem.c.source_package,
             BootAssetItem.c.source_version,
             BootAssetItem.c.source_release,
-            BootAssetItem.c.percent_synced,
+            BootAssetItem.c.bytes_synced,
         )
         result = await self.conn.execute(stmt, [data])
         return models.BootAssetItem(**result.one()._asdict())
@@ -422,15 +422,15 @@ class BootAssetItemService(Service):
         )
         return await self.create(details)
 
-    async def update_percent_synced(
+    async def update_bytes_synced(
         self,
         id: int,
-        percent_synced: float,
+        bytes_synced: int,
     ) -> None:
         stmt = (
             update(BootAssetItem)
             .where(BootAssetItem.c.id == id)
-            .values({"percent_synced": percent_synced})
+            .values({"bytes_synced": bytes_synced})
         )
         await self.conn.execute(stmt)
 
@@ -452,7 +452,7 @@ class BootAssetItemService(Service):
                 BootAssetItem.c.source_package,
                 BootAssetItem.c.source_version,
                 BootAssetItem.c.source_release,
-                BootAssetItem.c.percent_synced,
+                BootAssetItem.c.bytes_synced,
             )
         )
         result = await self.conn.execute(stmt)

@@ -438,7 +438,7 @@ class TestBootAssetItemsPostHandler:
         assert stored[0] == data | {
             "id": new_id,
             "boot_asset_version_id": boot_asset_version.id,
-            "percent_synced": 0,
+            "bytes_synced": 0,
         }
 
     async def test_post_missing_details(

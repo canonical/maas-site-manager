@@ -423,7 +423,7 @@ class Factory:
         sha256: str = "",
         path: str = "",
         size: int = 0,
-        percent_synced: float = 0,
+        bytes_synced: int = 0,
         source_package: str | None = None,
         source_version: str | None = None,
         source_release: str | None = None,
@@ -440,7 +440,7 @@ class Factory:
                     "source_package": source_package,
                     "source_version": source_version,
                     "source_release": source_release,
-                    "percent_synced": percent_synced,
+                    "bytes_synced": bytes_synced,
                 }
             ],
         )

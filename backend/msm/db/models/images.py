@@ -27,7 +27,7 @@ class BootAssetItem(BaseModel):
     source_package: str | None = None
     source_version: str | None = None
     source_release: str | None = None
-    percent_synced: float
+    bytes_synced: int
 
 
 class BootAssetItemCreate(BaseModel):

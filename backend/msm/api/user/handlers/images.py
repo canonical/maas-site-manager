@@ -363,7 +363,7 @@ boot_asset_items_sort_parameters = SortParamParser(
         "source_package",
         "source_version",
         "source_release",
-        "percent_synced",
+        "bytes_synced",
     ]
 )
 
@@ -427,6 +427,7 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
         self.current_chunk = b""
         self.part_no = 1
         self.parts: list[dict[str, Any]] = []
+        self.bytes_sent = 0
         super().__init__(
             validator=streaming_form_data.validators.MaxSizeValidator(
                 self.max_upload_size_bytes
@@ -443,6 +444,7 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
         )
         self.parts.append({"ETag": part["ETag"], "PartNumber": self.part_no})
         self.part_no += 1
+        self.bytes_sent += len(self.current_chunk)
         self.current_chunk = b""
 
     def abort_upload(self) -> None:
@@ -619,7 +621,7 @@ async def post_images(
     # the last upload has no minimum upload size requirement.
     if s3_upload_target.current_chunk:
         s3_upload_target.upload_current_chunk()
-    await services.boot_asset_items.update_percent_synced(
-        boot_asset_item.id, 100.0
+    await services.boot_asset_items.update_bytes_synced(
+        boot_asset_item.id, s3_upload_target.bytes_sent
     )
     s3_upload_target.complete_upload()

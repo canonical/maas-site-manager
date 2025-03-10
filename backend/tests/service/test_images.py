@@ -478,7 +478,7 @@ class TestBootAssetItemService:
             source_package="ubukernel",
             source_version="23.2",
             source_release="Noble",
-            percent_synced=100.0,
+            bytes_synced=23425323,
         )
         boot_asset_item = await factory.make_BootAssetItem(
             boot_asset_version.id,
@@ -489,7 +489,7 @@ class TestBootAssetItemService:
             source_package="ubukernel",
             source_version="23.2",
             source_release="Noble",
-            percent_synced=100.0,
+            bytes_synced=23425323,
         )
         expected_boot_asset_item.id = boot_asset_item.id
 
@@ -543,7 +543,7 @@ class TestBootAssetItemService:
         boot_asset_item = await service.create(new_boot_asset_item)
         expected_boot_asset_item = BootAssetItem(
             id=boot_asset_item.id,
-            percent_synced=0.0,
+            bytes_synced=0,
             **new_boot_asset_item.model_dump(),
         )
         items = await factory.get("boot_asset_item")
@@ -565,7 +565,7 @@ class TestBootAssetItemService:
             source_package="ubukernel",
             source_version="23.2",
             source_release="Noble",
-            percent_synced=100.0,
+            bytes_synced=23425323,
         )
 
         service = BootAssetItemService(db_connection)
@@ -573,7 +573,7 @@ class TestBootAssetItemService:
         items = await factory.get("boot_asset_item")
         assert len(items) == 0
 
-    async def test_update_percent_synced(
+    async def test_update_bytes_synced(
         self, factory: Factory, db_connection: AsyncConnection
     ) -> None:
         boot_source = await factory.make_BootSource()
@@ -588,11 +588,11 @@ class TestBootAssetItemService:
             source_package="ubukernel",
             source_version="23.2",
             source_release="Noble",
-            percent_synced=0.0,
+            bytes_synced=0,
         )
 
         service = BootAssetItemService(db_connection)
-        await service.update_percent_synced(boot_asset_item.id, 100.0)
+        await service.update_bytes_synced(boot_asset_item.id, 23425323)
         items = await factory.get("boot_asset_item")
         assert len(items) == 1
-        assert items[0]["percent_synced"] == 100.0
+        assert items[0]["bytes_synced"] == 23425323
