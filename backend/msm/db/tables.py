@@ -5,7 +5,6 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
-    Float,
     ForeignKey,
     Index,
     Integer,

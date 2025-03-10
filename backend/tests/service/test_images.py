@@ -8,6 +8,7 @@ from msm.db.models import (
     BootAssetCreate,
     BootAssetItem,
     BootAssetItemCreate,
+    BootAssetItemUpdate,
     BootAssetKind,
     BootAssetLabel,
     BootAssetVersion,
@@ -549,6 +550,68 @@ class TestBootAssetItemService:
         items = await factory.get("boot_asset_item")
         assert len(items) == 1
         assert items[0] == expected_boot_asset_item.model_dump()
+
+    async def test_create_temporary(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(boot_asset.id)
+        service = BootAssetItemService(db_connection)
+        boot_asset_item = await service.create_temporary(boot_asset_version.id)
+        items = await factory.get("boot_asset_item")
+        assert len(items) == 1
+        assert items[0] == {
+            "id": boot_asset_item.id,
+            "boot_asset_version_id": boot_asset_version.id,
+            "ftype": "",
+            "sha256": "",
+            "path": "",
+            "size": 0,
+            "source_package": None,
+            "source_version": None,
+            "source_release": None,
+            "bytes_synced": 0,
+        }
+
+    async def test_update(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(boot_asset.id)
+        boot_asset_item = await factory.make_BootAssetItem(
+            boot_asset_version.id,
+            ftype="kernel",
+            sha256="2349asldkfj2309854jhs",
+            path="/test",
+            size=23425323,
+            source_package="ubukernel",
+            source_version="23.2",
+            source_release="Noble",
+            bytes_synced=23425323,
+        )
+
+        service = BootAssetItemService(db_connection)
+        updates = BootAssetItemUpdate(
+            ftype="initrd",
+            sha256="asdflkj234lkjsdlfkj23",
+            path="/another-test",
+            size=33425323,
+            source_package="kern",
+            source_version="34.3",
+            source_release="Jammy",
+        )
+        await service.update(boot_asset_item.id, updates)
+        items = await factory.get("boot_asset_item")
+        assert len(items) == 1
+        expected_item = BootAssetItem(
+            id=boot_asset_item.id,
+            boot_asset_version_id=boot_asset_version.id,
+            **updates.model_dump(),
+            bytes_synced=23425323,
+        )
+        assert items[0] == expected_item.model_dump()
 
     async def test_delete(
         self, factory: Factory, db_connection: AsyncConnection

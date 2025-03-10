@@ -65,6 +65,10 @@ class TestSettingsService:
         await service.ensure()
         settings = await factory.get("setting")
         assert settings == [
+            {
+                "name": "max_image_upload_size_gb",
+                "value": 100,
+            },
             {"name": "service_url", "value": ""},
             {
                 "name": "token_lifetime_minutes",
@@ -73,10 +77,6 @@ class TestSettingsService:
             {
                 "name": "token_rotation_interval_minutes",
                 "value": (DEFAULT_TOKEN_DURATION.total_seconds() // 60) // 2,
-            },
-            {
-                "name": "max_image_upload_size_gb",
-                "value": 100,
             },
         ]
 
@@ -95,10 +95,10 @@ class TestSettingsService:
         await service.ensure()
         settings = await factory.get("setting")
         assert settings == [
+            {"name": "max_image_upload_size_gb", "value": 50},
             {"name": "service_url", "value": "http://sitemanager:8000"},
             {"name": "token_lifetime_minutes", "value": 10},
             {"name": "token_rotation_interval_minutes", "value": 100},
-            {"name": "max_image_upload_size_gb", "value": 50},
         ]
 
     async def test_ensure_remove_extra(

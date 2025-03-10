@@ -12,7 +12,7 @@ from fastapi import (
 from pydantic import BaseModel, ValidationError
 from streaming_form_data import StreamingFormDataParser  # type: ignore
 from streaming_form_data.targets import BaseTarget, ValueTarget  # type: ignore
-import streaming_form_data.validators
+import streaming_form_data.validators  # type: ignore
 
 from msm.api.dependencies import services
 from msm.api.exceptions.catalog import (
@@ -621,6 +621,21 @@ async def post_images(
     # the last upload has no minimum upload size requirement.
     if s3_upload_target.current_chunk:
         s3_upload_target.upload_current_chunk()
+    if boot_asset_item.size != s3_upload_target.bytes_sent:
+        await services.boot_asset_items.delete(tmp_item.id)
+        s3_upload_target.abort_upload()
+        raise BadRequestException(
+            message="The size of the uploaded file does not match the 'size' parameter in the request",
+            code=ExceptionCode.INVALID_PARAMS,
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.INVALID_PARAMS,
+                    messages=["File size does not match uploaded bytes"],
+                    field="size",
+                    location="body",
+                )
+            ],
+        )
     await services.boot_asset_items.update_bytes_synced(
         boot_asset_item.id, s3_upload_target.bytes_sent
     )
