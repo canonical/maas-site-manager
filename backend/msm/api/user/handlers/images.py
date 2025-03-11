@@ -9,6 +9,7 @@ from fastapi import (
     Depends,
     Request,
 )
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ValidationError
 from streaming_form_data import StreamingFormDataParser  # type: ignore
 from streaming_form_data.targets import BaseTarget, ValueTarget  # type: ignore
@@ -504,7 +505,7 @@ async def post_images(
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     boot_asset_version_id: int,
     request: Request,
-) -> None:
+) -> models.BootAssetItem:
     boot_asset_version = await services.boot_asset_versions.get_by_id(
         boot_asset_version_id
     )
@@ -563,10 +564,10 @@ async def post_images(
 
     async for chunk in request.stream():
         try:
-            parser.data_received(chunk)
+            await run_in_threadpool(parser.data_received, chunk)
         except streaming_form_data.validators.ValidationError:
             await services.boot_asset_items.delete(tmp_item.id)
-            s3_upload_target.abort_upload()
+            await run_in_threadpool(s3_upload_target.abort_upload)
             raise FileTooLargeException(
                 message="Uploaded file is too large",
                 code=ExceptionCode.FILE_TOO_LARGE,
@@ -600,7 +601,7 @@ async def post_images(
         )
     except ValidationError as e:
         await services.boot_asset_items.delete(tmp_item.id)
-        s3_upload_target.abort_upload()
+        await run_in_threadpool(s3_upload_target.abort_upload)
         details = []
         for err in e.errors():
             details.append(
@@ -620,10 +621,10 @@ async def post_images(
     # the minimum upload size.
     # the last upload has no minimum upload size requirement.
     if s3_upload_target.current_chunk:
-        s3_upload_target.upload_current_chunk()
+        await run_in_threadpool(s3_upload_target.upload_current_chunk)
     if boot_asset_item.size != s3_upload_target.bytes_sent:
         await services.boot_asset_items.delete(tmp_item.id)
-        s3_upload_target.abort_upload()
+        await run_in_threadpool(s3_upload_target.abort_upload)
         raise BadRequestException(
             message="The size of the uploaded file does not match the 'size' parameter in the request",
             code=ExceptionCode.INVALID_PARAMS,
@@ -639,4 +640,5 @@ async def post_images(
     await services.boot_asset_items.update_bytes_synced(
         boot_asset_item.id, s3_upload_target.bytes_sent
     )
-    s3_upload_target.complete_upload()
+    await run_in_threadpool(s3_upload_target.complete_upload)
+    return boot_asset_item
