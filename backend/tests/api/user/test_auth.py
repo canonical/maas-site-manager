@@ -28,6 +28,7 @@ AUTHENTICATED_ROUTES = (
     ("POST", "/api/v1/bootasset-versions/{id}/items"),
     ("GET", "/api/v1/bootasset-items"),
     ("POST", "/api/v1/bootasset-items/{boot_asset_version_id}"),
+    ("PATCH", "/api/v1/bootasset-items/{id}"),
     ("GET", "/api/v1/settings"),
     ("PATCH", "/api/v1/settings"),
     ("GET", "/api/v1/sites"),

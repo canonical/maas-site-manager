@@ -476,3 +476,134 @@ class TestBootAssetItemsPostHandler:
             f"/bootasset-versions/{999}/items", json=data
         )
         assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestBootAssetItemsPatchHandler:
+    async def test_patch(self, user_client: Client, factory: Factory) -> None:
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        bv = await factory.make_BootAssetVersion(ba.id)
+        item = await factory.make_BootAssetItem(
+            bv.id,
+            ftype="testtype1",
+            sha256="testsha1",
+            path="testpath1",
+            size=1,
+            bytes_synced=1,
+            source_package="testpackage1",
+            source_version="testversion1",
+            source_release="testrelease1",
+        )
+        data = {
+            "ftype": "testtype2",
+            "sha256": "testsha2",
+            "path": "testpath2",
+            "source_package": "testpackage2",
+            "source_version": "testversion2",
+            "source_release": "testrelease2",
+        }
+        resp = await user_client.patch(
+            f"/bootasset-items/{item.id}", json=data
+        )
+        assert resp.status_code == 200
+        stored = await factory.get("boot_asset_item")
+        assert len(stored) == 1
+        assert stored[0] == data | {
+            "id": item.id,
+            "boot_asset_version_id": bv.id,
+            "size": 1,
+            "bytes_synced": 1,
+        }
+
+    async def test_patch_no_values(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        bv = await factory.make_BootAssetVersion(ba.id)
+        item = await factory.make_BootAssetItem(
+            bv.id,
+            ftype="testtype1",
+            sha256="testsha1",
+            path="testpath1",
+            size=1,
+            bytes_synced=1,
+            source_package="testpackage1",
+            source_version="testversion1",
+            source_release="testrelease1",
+        )
+        resp = await user_client.patch(
+            f"/bootasset-items/{item.id}",
+        )
+        assert resp.status_code == 422
+        stored = await factory.get("boot_asset_item")
+        assert len(stored) == 1
+        assert stored[0] == item.model_dump()
+
+    async def test_patch_extra_params(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        bv = await factory.make_BootAssetVersion(ba.id)
+        item = await factory.make_BootAssetItem(
+            bv.id,
+            ftype="testtype1",
+            sha256="testsha1",
+            path="testpath1",
+            size=1,
+            bytes_synced=1,
+            source_package="testpackage1",
+            source_version="testversion1",
+            source_release="testrelease1",
+        )
+        data = {
+            "ftype": "testtype2",
+            "sha256": "testsha2",
+            "path": "testpath2",
+            "size": 2,
+            "source_package": "testpackage2",
+            "source_version": "testversion2",
+            "source_release": "testrelease2",
+        }
+        resp = await user_client.patch(
+            f"/bootasset-items/{item.id}", json=data
+        )
+        assert resp.status_code == 422
+        stored = await factory.get("boot_asset_item")
+        assert len(stored) == 1
+        assert stored[0] == item.model_dump()
+
+    async def test_patch_bad_item_id(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        bv = await factory.make_BootAssetVersion(ba.id)
+        item = await factory.make_BootAssetItem(
+            bv.id,
+            ftype="testtype1",
+            sha256="testsha1",
+            path="testpath1",
+            size=1,
+            bytes_synced=1,
+            source_package="testpackage1",
+            source_version="testversion1",
+            source_release="testrelease1",
+        )
+        data = {
+            "ftype": "testtype2",
+            "sha256": "testsha2",
+            "path": "testpath2",
+            "source_package": "testpackage2",
+            "source_version": "testversion2",
+            "source_release": "testrelease2",
+        }
+        resp = await user_client.patch(
+            f"/bootasset-items/{item.id + 1}", json=data
+        )
+        assert resp.status_code == 404
+        stored = await factory.get("boot_asset_item")
+        assert len(stored) == 1
+        assert stored[0] == item.model_dump()

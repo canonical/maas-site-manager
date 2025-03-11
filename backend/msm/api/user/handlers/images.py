@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 from urllib.parse import urlparse
 
 import boto3  # type: ignore
@@ -10,7 +10,7 @@ from fastapi import (
     Request,
 )
 from fastapi.concurrency import run_in_threadpool
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, model_validator
 from streaming_form_data import StreamingFormDataParser  # type: ignore
 from streaming_form_data.targets import BaseTarget, ValueTarget  # type: ignore
 import streaming_form_data.validators  # type: ignore
@@ -642,3 +642,53 @@ async def post_images(
     )
     await run_in_threadpool(s3_upload_target.complete_upload)
     return boot_asset_item
+
+
+class BootAssetItemPatchRequest(BaseModel):
+    ftype: str | None = None
+    sha256: str | None = None
+    path: str | None = None
+    source_package: str | None = None
+    source_version: str | None = None
+    source_release: str | None = None
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def check_at_least_one_field_present(self) -> Self:
+        if not self.model_fields_set:
+            raise ValueError("At least one field must be set.")
+        return self
+
+
+@v1_router.patch(
+    "/bootasset-items/{id}",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def patch_boot_asset_items(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    id: int,
+    patch_request: BootAssetItemPatchRequest,
+) -> models.BootAssetItem:
+    boot_asset_item = await services.boot_asset_items.get_by_id(id)
+    if not boot_asset_item:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Boot Asset Item does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"BootAssetItem ID {id} does not exist"],
+                    field="boot_asset_item_id",
+                    location="path",
+                )
+            ],
+        )
+    updated_item = await services.boot_asset_items.update(
+        id, models.BootAssetItemUpdate(**patch_request.model_dump())
+    )
+    return updated_item
