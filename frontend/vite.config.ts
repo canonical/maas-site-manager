@@ -13,6 +13,15 @@ export default defineConfig(({ mode }) => {
   return {
     base: env.VITE_BASE_URL,
     envDir: "./",
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: "modern",
+          quietDeps: true,
+          silenceDeprecations: ["import", "global-builtin"],
+        },
+      },
+    },
     define: {
       "import.meta.env.VITE_APP_VERSION": JSON.stringify(commitHash),
       "process.env": env,
