@@ -515,6 +515,24 @@ class BootAssetItemService(Service):
             return models.BootAssetItem(**row._asdict())
         return None
 
+    async def get_by_path(self, path: str) -> models.BootAssetItem | None:
+        stmt = self._select_statement(
+            BootAssetItem.c.id,
+            BootAssetItem.c.boot_asset_version_id,
+            BootAssetItem.c.ftype,
+            BootAssetItem.c.sha256,
+            BootAssetItem.c.path,
+            BootAssetItem.c.file_size,
+            BootAssetItem.c.source_package,
+            BootAssetItem.c.source_version,
+            BootAssetItem.c.source_release,
+            BootAssetItem.c.bytes_synced,
+        ).where(BootAssetItem.c.path == path)
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.BootAssetItem(**row._asdict())
+        return None
+
     async def create(
         self,
         details: models.BootAssetItemCreate,

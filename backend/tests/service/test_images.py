@@ -721,6 +721,33 @@ class TestBootAssetItemService:
             BootAssetItem(**details) if exists else None
         )
 
+    @pytest.mark.parametrize(
+        "path,exists",
+        [
+            ("ubuntu/22.04/boot-kernel", True),
+            ("ubuntu/0000/boot-kernel", False),
+        ],
+    )
+    async def test_get_by_path(
+        self,
+        factory: Factory,
+        db_connection: AsyncConnection,
+        path: str,
+        exists: bool,
+    ) -> None:
+        boot_source = await factory.make_BootSource()
+        boot_asset = await factory.make_BootAsset(boot_source.id)
+        boot_asset_version = await factory.make_BootAssetVersion(boot_asset.id)
+        if exists:
+            item = await factory.make_BootAssetItem(
+                boot_asset_version.id, path=path
+            )
+            details = item.model_dump()
+        service = BootAssetItemService(db_connection)
+        assert await service.get_by_path(path) == (
+            BootAssetItem(**details) if exists else None
+        )
+
     async def test_create(
         self, factory: Factory, db_connection: AsyncConnection
     ) -> None:

@@ -1678,3 +1678,33 @@ class TestBootAssetItemsDeleteHandler:
     ) -> None:
         resp = await user_client.delete(f"/bootasset-items/999")
         assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestBootAssetItemsDownloadHandler:
+    async def test_download(
+        self,
+        user_client: Client,
+        factory: Factory,
+        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        mocker.patch("msm.api.user.handlers.images.boto3.resource")
+        monkeypatch.setenv("MSM_S3_BUCKET", "test-bucket")
+        monkeypatch.setenv("MSM_S3_ENDPOINT", "test-endpoint")
+        monkeypatch.setenv("MSM_S3_ACCESS_KEY", "test-access-key")
+        monkeypatch.setenv("MSM_S3_SECRET_KEY", "test-secret-key")
+        file_path = "ubuntu/noble/boot-kernel"
+        bs = await factory.make_BootSource()
+        ba = await factory.make_BootAsset(bs.id)
+        bv = await factory.make_BootAssetVersion(ba.id)
+        bi = await factory.make_BootAssetItem(bv.id, path=file_path)
+
+        resp = await user_client.get(f"/simplestream/{file_path}")
+        assert resp.status_code == 200
+
+    async def test_download_not_found(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        resp = await user_client.delete("/ubuntu/noble/unknown-file")
+        assert resp.status_code == 404

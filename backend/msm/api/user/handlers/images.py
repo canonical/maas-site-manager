@@ -8,8 +8,11 @@ from urllib.parse import urlparse
 import boto3  # type: ignore
 from fastapi import APIRouter, Depends, Path, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.exc import IntegrityError
+from starlette.background import BackgroundTask
+from starlette.types import Send
 from streaming_form_data import StreamingFormDataParser  # type: ignore
 from streaming_form_data.targets import BaseTarget, ValueTarget  # type: ignore
 import streaming_form_data.validators  # type: ignore
@@ -1089,3 +1092,88 @@ async def patch_boot_asset_items(
         id, models.BootAssetItemUpdate(**patch_request.model_dump())
     )
     return updated_item
+
+
+class S3StreamResponse(StreamingResponse):
+    def __init__(
+        self,
+        content: Any,
+        status_code: int = 200,
+        headers: dict[str, str] | None = None,
+        media_type: str = "application/octet-stream",
+        background: BackgroundTask | None = None,
+        file_id: str = "",
+    ) -> None:
+        super().__init__(content, status_code, headers, media_type, background)
+        settings = Settings()
+        self.file_path = (
+            join(
+                settings.s3_path if settings.s3_path else "",
+                file_id,
+            ),
+        )
+        self.s3_bucket = settings.s3_bucket
+        self.s3 = boto3.resource(
+            "s3",
+            use_ssl=False,
+            verify=False,
+            endpoint_url=settings.s3_endpoint,
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+        )
+
+    async def stream_response(self, send: Send) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self.status_code,
+                "headers": self.raw_headers,
+            }
+        )
+
+        result = self.s3.meta.client.get_object(
+            Bucket=self.s3_bucket, Key=self.file_path
+        )
+
+        for chunk in result["Body"]:
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": chunk,
+                    "more_body": True,
+                }
+            )
+
+        await send(
+            {"type": "http.response.body", "body": b"", "more_body": False}
+        )
+
+
+@v1_router.get(
+    "/simplestream/{file_path:path}",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
+    },
+)
+async def download(
+    services: Annotated[ServiceCollection, Depends(services)],
+    file_path: str,
+) -> StreamingResponse:
+    print(f"{file_path=}")
+    boot_item = await services.boot_asset_items.get_by_path(file_path)
+    print(f"{boot_item=}")
+    if not boot_item:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Boot Asset Item does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"BootAssetItem '{file_path}' does not exist"],
+                    field="id",
+                    location="path",
+                )
+            ],
+        )
+    return S3StreamResponse(content=None, file_id=str(boot_item.id))
