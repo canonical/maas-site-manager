@@ -1269,7 +1269,7 @@ class TestCustomImageUploadHandler:
                     files=file_data,
                 )
             mock_s3_target.assert_called_with(
-                mocker.ANY, "test/path/1", mocker.ANY
+                mocker.ANY, "1", mocker.ANY
             )
 
     async def test_post_wrong_file_size(
@@ -1700,11 +1700,29 @@ class TestBootAssetItemsDownloadHandler:
         bv = await factory.make_BootAssetVersion(ba.id)
         bi = await factory.make_BootAssetItem(bv.id, path=file_path)
 
-        resp = await user_client.get(f"/simplestream/{file_path}")
+        resp = await user_client.get(f"/images/latest/stable/{file_path}")
         assert resp.status_code == 200
 
     async def test_download_not_found(
         self, user_client: Client, factory: Factory
     ) -> None:
-        resp = await user_client.delete("/ubuntu/noble/unknown-file")
+        resp = await user_client.get(
+            "/images/latest/stable/ubuntu/noble/unknown-file"
+        )
         assert resp.status_code == 404
+
+    async def test_invalid_track(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        resp = await user_client.get(
+            "/images/1.0/stable/ubuntu/noble/boot-kernel"
+        )
+        assert resp.status_code == 400
+
+    async def test_invalid_risk(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        resp = await user_client.get(
+            "/images/latest/edge/ubuntu/noble/boot-kernel"
+        )
+        assert resp.status_code == 400

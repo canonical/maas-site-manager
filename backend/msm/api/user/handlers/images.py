@@ -710,7 +710,12 @@ class S3MultipartUploadTarget(BaseTarget):  # type: ignore
             aws_secret_access_key=settings.s3_secret_key,
         )
         self.s3_bucket = settings.s3_bucket
-        self.filename = filename
+        self.filename = (
+            join(
+                settings.s3_path if settings.s3_path else "",
+                filename,
+            ),
+        )
         self.max_upload_size_bytes = max_upload_size_gb * 1000000000
         multipart_upload = self.s3.meta.client.create_multipart_upload(
             ACL="public-read",
@@ -933,10 +938,7 @@ async def post_images(
     tmp_item = await services.boot_asset_items.create_temporary()
     s3_upload_target = S3MultipartUploadTarget(
         settings,
-        join(
-            settings.s3_path if settings.s3_path else "",
-            str(tmp_item.id),
-        ),
+        str(tmp_item.id),
         api_settings.max_image_upload_size_gb,
     )
     parser.register("file", s3_upload_target)
@@ -1150,19 +1152,49 @@ class S3StreamResponse(StreamingResponse):
 
 
 @v1_router.get(
-    "/simplestream/{file_path:path}",
+    "/images/{track}/{risk}/{file_path:path}",
     responses={
+        400: {"model": BadRequestErrorResponseModel},
         401: {"model": UnauthorizedErrorResponseModel},
         404: {"model": NotFoundErrorResponseModel},
     },
 )
 async def download(
     services: Annotated[ServiceCollection, Depends(services)],
+    track: str,
+    risk: str,
     file_path: str,
 ) -> StreamingResponse:
-    print(f"{file_path=}")
+    errors: list[BaseExceptionDetail] = []
+
+    if track != "latest":
+        errors.append(
+            BaseExceptionDetail(
+                reason=ExceptionCode.INVALID_PARAMS,
+                messages=[f"Invalid track '{track}' requested"],
+                field="track",
+                location="path",
+            )
+        )
+
+    if risk != "stable":
+        errors.append(
+            BaseExceptionDetail(
+                reason=ExceptionCode.INVALID_PARAMS,
+                messages=[f"Invalid risk '{risk}' requested"],
+                field="risk",
+                location="path",
+            )
+        )
+
+    if errors:
+        raise BadRequestException(
+            code=ExceptionCode.INVALID_PARAMS,
+            message="Invalid track/risk requested.",
+            details=errors,
+        )
+
     boot_item = await services.boot_asset_items.get_by_path(file_path)
-    print(f"{boot_item=}")
     if not boot_item:
         raise NotFoundException(
             code=ExceptionCode.MISSING_RESOURCE,
@@ -1171,7 +1203,7 @@ async def download(
                 BaseExceptionDetail(
                     reason=ExceptionCode.MISSING_RESOURCE,
                     messages=[f"BootAssetItem '{file_path}' does not exist"],
-                    field="id",
+                    field="file_path",
                     location="path",
                 )
             ],
