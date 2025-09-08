@@ -1,7 +1,4 @@
 #!/bin/bash
-sudo snap install microk8s --channel 1.31-strict/stable
-sudo usermod -a -G snap_microk8s $USER
-newgrp - snap_microk8s
 sudo snap install juju --channel=3.6/stable
 sudo snap install --classic terraform --channel latest/stable
 sudo snap install microceph
@@ -19,9 +16,8 @@ export MICROCEPH_IP=$(sudo microceph status | grep -E -o '(25[0-5]|2[0-4][0-9]|[
 sudo apt install -y s3cmd
 s3cmd --host $MICROCEPH_IP:$MICROCEPH_PORT --access_key=$MICROCEPH_ACCESS_KEY --secret_key=$MICROCEPH_SECRET_KEY --no-ssl mb s3://$MICROCEPH_BUCKET
 
-juju bootstrap microk8s
 sudo microk8s enable hostpath-storage
-# snap list && juju clouds && juju controllers
+juju bootstrap microk8s
 export CONTROLLER=$(juju whoami | yq .Controller)
 export JUJU_CONTROLLER_ADDRESSES=$(juju show-controller | yq .$CONTROLLER.details.api-endpoints | yq -r '. | join(",")')
 export JUJU_USERNAME="$(cat ~/.local/share/juju/accounts.yaml | yq .controllers.$CONTROLLER.user|tr -d '"')"
