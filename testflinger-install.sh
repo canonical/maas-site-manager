@@ -1,7 +1,7 @@
 #!/bin/bash
 sudo snap install juju --channel=3.6/stable
 sudo snap install --classic terraform --channel latest/stable
-sudo snap install microceph
+sudo snap install microceph --channel latest/edge
 sudo snap refresh --hold microceph
 sudo microceph cluster bootstrap
 
@@ -15,7 +15,7 @@ sudo radosgw-admin user create --uid=user --display-name=user
 sudo radosgw-admin key create --uid=user --key-type=s3 --access-key=$MICROCEPH_ACCESS_KEY --secret-key=$MICROCEPH_SECRET_KEY
 export MICROCEPH_IP=$(sudo microceph status | grep -E -o '(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)')
 sudo apt install -y s3cmd
-s3cmd --host $MICROCEPH_IP:$MICROCEPH_PORT --access_key=$MICROCEPH_ACCESS_KEY --secret_key=$MICROCEPH_SECRET_KEY --no-ssl mb s3://$MICROCEPH_BUCKET
+s3cmd --host $MICROCEPH_IP:$MICROCEPH_PORT --host-bucket=http://$MICROCEPH_IP/$MICROCEPH_BUCKET --access_key=$MICROCEPH_ACCESS_KEY --secret_key=$MICROCEPH_SECRET_KEY --no-ssl mb s3://$MICROCEPH_BUCKET
 
 sudo microk8s enable hostpath-storage
 juju bootstrap microk8s
