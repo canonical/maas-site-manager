@@ -3,6 +3,7 @@ sudo snap install juju --channel=3.6/stable
 sudo snap install --classic terraform --channel latest/stable
 sudo snap install microceph
 sudo snap refresh --hold microceph
+sudo microceph cluster bootstrap
 
 export MICROCEPH_PORT=7887
 export MICROCEPH_ACCESS_KEY=fooaccesskey
