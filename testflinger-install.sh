@@ -37,4 +37,4 @@ echo "s3_bucket = \"$MICROCEPH_BUCKET\"" >> $HOME/msm-deployment/terraform.tfvar
 
 cd $HOME/msm-deployment
 terraform init
-terraform apply
+terraform apply -auto-approve
