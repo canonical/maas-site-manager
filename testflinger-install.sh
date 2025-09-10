@@ -40,5 +40,5 @@ echo "s3_secret_key = \"$MICROCEPH_SECRET_KEY\"" >> $HOME/msm-deployment/terrafo
 echo "s3_bucket = \"$MICROCEPH_BUCKET\"" >> $HOME/msm-deployment/terraform.tfvars
 
 cd $HOME/msm-deployment
-terraform init
-terraform apply -auto-approve
+#terraform init
+#terraform apply -auto-approve
