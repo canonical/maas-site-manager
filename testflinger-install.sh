@@ -20,7 +20,7 @@ s3cmd --host $MICROCEPH_IP:$MICROCEPH_PORT --host-bucket=http://$MICROCEPH_IP/$M
 sudo microk8s enable hostpath-storage
 sudo microk8s enable ingress
 IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
-microk8s enable metallb:$IPADDR-$IPADDR
+sudo microk8s enable metallb:$IPADDR-$IPADDR
 
 juju bootstrap microk8s
 export CONTROLLER=$(juju whoami | yq .Controller)
