@@ -1,0 +1,23 @@
+job_queue: diglett
+provision_data:
+  distro: ubuntu/noble
+output_timeout: 3600
+reserve_data:
+  ssh_keys:
+    - lp:wyattrees
+  timeout: 2h
+test_data:
+  test_cmds: |
+    ssh ubuntu@$DEVICE_IP "sudo apt install -y sed curl"
+    ssh ubuntu@$DEVICE_IP "sudo snap install yq"
+    ssh ubuntu@$DEVICE_IP "sudo snap install microk8s --channel 1.31-strict/stable"
+    ssh ubuntu@$DEVICE_IP "sudo usermod -a -G snap_microk8s ubuntu"
+    ssh ubuntu@$DEVICE_IP "mkdir -p ~/.kube"
+    ssh ubuntu@$DEVICE_IP "chmod 0700 ~/.kube"
+    ssh ubuntu@$DEVICE_IP "curl https://git.launchpad.net/maas-site-manager/plain/testflinger-install.sh?h=testflinger -o /home/ubuntu/install-msm.sh"
+    ssh ubuntu@$DEVICE_IP "cat /home/ubuntu/install-msm.sh"
+    ssh ubuntu@$DEVICE_IP "chmod +x /home/ubuntu/install-msm.sh"
+    ssh ubuntu@$DEVICE_IP "/home/ubuntu/install-msm.sh"
+    ssh ubuntu@$DEVICE_IP "/snap/bin/juju switch msm && /snap/bin/juju status"
+    ssh ubuntu@$DEVICE_IP "/snap/bin/juju controllers"
+    ssh ubuntu@$DEVICE_IP "/snap/bin/juju models"
