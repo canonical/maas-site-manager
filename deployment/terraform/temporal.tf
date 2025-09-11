@@ -1,5 +1,5 @@
 resource "juju_model" "temporal" {
-  name = "msm-temporal"
+  name = "temporal"
   cloud {
     name = var.juju_cloud_name
   }
@@ -100,7 +100,7 @@ resource juju_integration "temporal_server_to_admin" {
 
 
 resource "juju_model" "temporal_worker" {
-  name = "msm-temporal-worker"
+  name = "temporal-worker"
   cloud {
     name = var.juju_cloud_name
   }

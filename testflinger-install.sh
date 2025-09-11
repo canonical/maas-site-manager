@@ -39,7 +39,22 @@ echo "s3_access_key = \"$MICROCEPH_ACCESS_KEY\"" >> $HOME/msm-deployment/terrafo
 echo "s3_secret_key = \"$MICROCEPH_SECRET_KEY\"" >> $HOME/msm-deployment/terraform.tfvars
 echo "s3_bucket = \"$MICROCEPH_BUCKET\"" >> $HOME/msm-deployment/terraform.tfvars
 
+MSM_EXISTS=$(microk8s kubectl get namespace | grep msm | awk '{print $1}')
+TEMPORAL_EXISTS=$(microk8s kubectl get namespace | grep temporal | grep -v "worker" | awk '{print $1}')
+WORKER_EXISTS=$(microk8s kubectl get namespace | grep -w temporal-worker | awk '{print $1}')
+if [ -n "$MSM_EXISTS" ]; then
+    echo "DELETING msm NAMESPACE"
+    microk8s kubectl delete namespace msm
+fi
+if [ -n "$TEMPORAL_EXISTS" ]; then
+    echo "DELETING temporal NAMESPACE"
+    microk8s kubectl delete namespace temporal
+fi
+if [ -n "$WORKER_EXISTS" ]; then
+    echo "DELETING temporal-worker NAMESPACE"
+    microk8s kubectl delete namespace temporal-worker
+fi
+
 cd $HOME/msm-deployment
-microk8s kubectl get namespace
-#terraform init
-#terraform apply -auto-approve
+terraform init
+terraform apply -auto-approve
