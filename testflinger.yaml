@@ -18,6 +18,3 @@ test_data:
     ssh ubuntu@$DEVICE_IP "cat /home/ubuntu/install-msm.sh"
     ssh ubuntu@$DEVICE_IP "chmod +x /home/ubuntu/install-msm.sh"
     ssh ubuntu@$DEVICE_IP "/home/ubuntu/install-msm.sh"
-    ssh ubuntu@$DEVICE_IP "/snap/bin/juju switch msm && /snap/bin/juju status"
-    ssh ubuntu@$DEVICE_IP "/snap/bin/juju controllers"
-    ssh ubuntu@$DEVICE_IP "/snap/bin/juju models"
