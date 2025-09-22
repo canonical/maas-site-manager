@@ -34,7 +34,7 @@ curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/prov
 curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/temporal.tf?h=testflinger -o $HOME/msm-deployment/temporal.tf
 curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/variables.tf?h=testflinger -o $HOME/msm-deployment/variables.tf
 
-echo "s3_endpoint = \"$MICROCEPH_IP:$MICROCEPH_PORT\"" > $HOME/msm-deployment/terraform.tfvars
+echo "s3_endpoint = \"http://$MICROCEPH_IP:$MICROCEPH_PORT\"" > $HOME/msm-deployment/terraform.tfvars
 echo "s3_access_key = \"$MICROCEPH_ACCESS_KEY\"" >> $HOME/msm-deployment/terraform.tfvars
 echo "s3_secret_key = \"$MICROCEPH_SECRET_KEY\"" >> $HOME/msm-deployment/terraform.tfvars
 echo "s3_bucket = \"$MICROCEPH_BUCKET\"" >> $HOME/msm-deployment/terraform.tfvars
