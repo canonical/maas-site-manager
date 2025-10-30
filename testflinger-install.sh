@@ -40,15 +40,64 @@ echo "s3_secret_key = \"$MICROCEPH_SECRET_KEY\"" >> $HOME/msm-deployment/terrafo
 echo "s3_bucket = \"$MICROCEPH_BUCKET\"" >> $HOME/msm-deployment/terraform.tfvars
 
 cd $HOME/msm-deployment
-export TF_LOG=DEBUG
 terraform init
 terraform apply -auto-approve > $HOME/terraform-output
 
+
+HOST_IP=$(hostname -I | cut -d' ' -f1)
 # install maas
 sudo snap install maas --channel latest/edge
 sudo snap install maas-test-db
-maas init region+rack --database-uri maas-test-db:///
+echo "\n" | sudo maas init region+rack --database-uri maas-test-db:/// --maas-url="http://${HOST_IP}:5240/MAAS"
 sudo maas createadmin --username admin --password admin --email admin@example.com
 
 # Create MSM admin
 juju run -m msm maas-site-manager-k8s/0 create-admin username=admin password=admin email=admin@example.com
+
+
+# Add source to MSM
+TOKEN=$(curl -d "username=admin@example.com&password=admin" -X POST http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/login | jq -r .access_token)
+
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: bearer ${TOKEN}"
+  -d '{"priority": 10, "url": "http://images.maas.io/ephemeral-v3/candidate/streams/v1/index.json", "sync_interval": 1, "name": "Test Source", "keyring": ""}' \
+  http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/bootasset-sources
+
+# wait for source sync
+sleep 65
+
+NOBLE_ARM_SEL_ID=$(curl -H "Authorization: bearer ${TOKEN}" \
+    http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/selectable-images \
+    | jq '.items[] | select(.os == "ubuntu" and .release == "noble" and .arch == "armhf")' \
+    | jq .selection_id)
+
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: bearer ${TOKEN}" \
+  -d "{\"selection_ids\": [$NOBLE_ARM_SEL_ID]}" \
+  http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/selectable-images:select
+
+
+# enroll
+ENROL_TOKEN=$(curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: bearer ${TOKEN}" \
+  -d '{"count": 1, "duration": "PT1H30M"}' \
+  http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/tokens | jq -r .items[0].value)
+
+sudo maas msm enrol $ENROL_TOKEN --yes
+
+sleep 5
+
+# get pending sites
+SITE_ID=$(curl -H "Authorization: bearer ${TOKEN}" \
+  http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/sites/pending \
+  | jq -r .items[0].id)
+
+# approve pending site
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: bearer ${TOKEN}" \
+  -d "{\"ids\": [$SITE_ID], \"accept\":true}" \
+  http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/sites/pending
