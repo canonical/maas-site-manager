@@ -56,11 +56,13 @@ juju run -m msm maas-site-manager-k8s/0 create-admin username=admin password=adm
 
 
 # Add source to MSM
-TOKEN=$(curl -d "username=admin@example.com&password=admin" -X POST http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/login | jq -r .access_token)
+TOKEN=$(curl -d "username=admin@example.com&password=admin" \
+-X POST http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/login \
+| jq -r .access_token)
 
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "Authorization: bearer ${TOKEN}"
+  -H "Authorization: bearer ${TOKEN}" \
   -d '{"priority": 10, "url": "http://images.maas.io/ephemeral-v3/candidate/streams/v1/index.json", "sync_interval": 1, "name": "Test Source", "keyring": ""}' \
   http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/bootasset-sources
 
