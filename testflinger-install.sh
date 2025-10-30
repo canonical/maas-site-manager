@@ -43,3 +43,12 @@ cd $HOME/msm-deployment
 export TF_LOG=DEBUG
 terraform init
 terraform apply -auto-approve > $HOME/terraform-output
+
+# install maas
+sudo snap install maas --channel latest/edge
+sudo snap install maas-test-db
+maas init region+rack --database-uri maas-test-db:///
+sudo maas createadmin --username admin --password admin --email admin@example.com
+
+# Create MSM admin
+juju run -m msm maas-site-manager-k8s/0 create-admin username=admin password=admin email=admin@example.com
