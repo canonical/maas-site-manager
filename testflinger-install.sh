@@ -45,7 +45,7 @@ terraform apply -auto-approve > $HOME/terraform-output
 
 # get latest images for worker & msm
 juju refresh -m msm maas-site-manager-k8s --resource site-manager-image=ghcr.io/canonical/maas-site-manager:0.1
-juju refresh -m temporal-worker temporal-worker-k8s temporal-worker-image=ghcr.io/canonical/maas-site-manager:0.1
+juju refresh -m temporal-worker temporal-worker-k8s --resource temporal-worker-image=ghcr.io/canonical/maas-site-manager:0.1
 
 
 HOST_IP=$(hostname -I | cut -d' ' -f1)
@@ -60,6 +60,10 @@ juju run -m msm maas-site-manager-k8s/0 create-admin username=admin password=adm
 
 
 # Add source to MSM
+
+echo "############################"
+echo "Creating image source"
+echo "############################"
 TOKEN=$(curl -d "username=admin@example.com&password=admin" \
 -X POST http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/login \
 | jq -r .access_token)
@@ -71,12 +75,21 @@ curl -X POST \
   http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/bootasset-sources
 
 # wait for source sync
-sleep 65
+echo "############################"
+echo "Waiting for initial sync"
+echo "############################"
+sleep 75
+
 
 NOBLE_ARM_SEL_ID=$(curl -H "Authorization: bearer ${TOKEN}" \
     http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/selectable-images \
     | jq '.items[] | select(.os == "ubuntu" and .release == "noble" and .arch == "armhf")' \
     | jq .selection_id)
+
+
+echo "############################"
+echo "Selecting Noble armhf (ID ${NOBLE_ARM_SEL_ID})"
+echo "############################"
 
 curl -X POST \
   -H "Content-Type: application/json" \
@@ -84,6 +97,11 @@ curl -X POST \
   -d "{\"selection_ids\": [$NOBLE_ARM_SEL_ID]}" \
   http://${HOST_IP}/msm-maas-site-manager-k8s/api/v1/selectable-images:select
 
+
+
+echo "############################"
+echo "Enrolling MAAS with MSM"
+echo "############################"
 
 # enroll
 ENROL_TOKEN=$(curl -X POST \
