@@ -120,7 +120,7 @@ variable "temporal_worker_revision" {
 variable temporal_worker_resources {
   description = "OCI Image resource for temporal worker"
   type        = map
-  default     = {temporal-worker-image:"ghcr.io/canonical/maas-site-manager:1.0"}
+  default     = {temporal-worker-image:"ghcr.io/canonical/maas-site-manager:0.1"}
 }
 
 variable "juju_cloud_name" {
