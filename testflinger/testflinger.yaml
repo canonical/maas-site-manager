@@ -2,10 +2,10 @@ job_queue: diglett
 provision_data:
   distro: ubuntu/noble
 output_timeout: 3600
-reserve_data:
-  ssh_keys:
-    - lp:wyattrees
-  timeout: 6h
+# reserve_data:
+#   ssh_keys:
+#     - lp:your-lp-username
+#   timeout: 4h
 test_data:
   test_cmds: |
     ssh ubuntu@$DEVICE_IP "sudo apt install -y sed curl"
