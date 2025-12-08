@@ -43,9 +43,8 @@ cd $HOME/msm-deployment
 terraform init
 terraform apply -auto-approve > $HOME/terraform-output
 
-# get latest images for worker & msm
+# get latest images for msm
 juju refresh -m msm maas-site-manager-k8s --resource site-manager-image=ghcr.io/canonical/maas-site-manager:0.1
-juju refresh -m temporal-worker temporal-worker-k8s --resource temporal-worker-image=ghcr.io/canonical/maas-site-manager:0.1
 
 
 HOST_IP=$(hostname -I | cut -d' ' -f1)
