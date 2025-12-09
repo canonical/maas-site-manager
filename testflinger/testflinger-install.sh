@@ -43,10 +43,6 @@ cd $HOME/msm-deployment
 terraform init
 terraform apply -auto-approve > $HOME/terraform-output
 
-# get latest images for msm
-juju refresh -m msm maas-site-manager-k8s --resource site-manager-image=ghcr.io/canonical/maas-site-manager:0.1
-
-
 HOST_IP=$(hostname -I | cut -d' ' -f1)
 # install maas
 sudo snap install maas --channel latest/edge
