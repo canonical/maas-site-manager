@@ -20,6 +20,9 @@ resource "juju_application" "msm" {
     temporal-namespace = var.temporal_namespace
     temporal-task-queue = var.temporal_task_queue
   }
+  resources = {
+    site-manager-image = "ghcr.io/canonical/maas-site-manager:0.1"
+  }
 
   units = 1
   lifecycle {
