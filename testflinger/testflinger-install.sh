@@ -29,10 +29,10 @@ export JUJU_USERNAME="$(cat ~/.local/share/juju/accounts.yaml | yq .controllers.
 export JUJU_PASSWORD="$(cat ~/.local/share/juju/accounts.yaml | yq .controllers.$CONTROLLER.password|tr -d '"')"
 export JUJU_CA_CERT="$(juju show-controller $(echo $CONTROLLER|tr -d '"') | yq '.[$CONTROLLER]'.details.\"ca-cert\"|tr -d '"'|sed 's/\\n/\n/g')"
 mkdir $HOME/msm-deployment
-curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/main.tf?h=testflinger -o $HOME/msm-deployment/main.tf
-curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/provider.tf?h=testflinger -o $HOME/msm-deployment/provider.tf
-curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/temporal.tf?h=testflinger -o $HOME/msm-deployment/temporal.tf
-curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/variables.tf?h=testflinger -o $HOME/msm-deployment/variables.tf
+curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/main.tf -o $HOME/msm-deployment/main.tf
+curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/provider.tf -o $HOME/msm-deployment/provider.tf
+curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/temporal.tf -o $HOME/msm-deployment/temporal.tf
+curl https://git.launchpad.net/maas-site-manager/plain/deployment/terraform/variables.tf -o $HOME/msm-deployment/variables.tf
 
 echo "s3_endpoint = \"http://$MICROCEPH_IP:$MICROCEPH_PORT\"" > $HOME/msm-deployment/terraform.tfvars
 echo "s3_access_key = \"$MICROCEPH_ACCESS_KEY\"" >> $HOME/msm-deployment/terraform.tfvars
