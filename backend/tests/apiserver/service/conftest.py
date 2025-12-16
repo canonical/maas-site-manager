@@ -31,7 +31,6 @@ async def service_collection(
 async def index_service(
     service_collection: ServiceCollection,
 ) -> AsyncIterator[IndexService]:
-    await service_collection.index_service.ensure()
     yield service_collection.index_service
 
 

@@ -29,7 +29,6 @@ from msm.apiserver.service import (
     BootAssetVersionService,
     BootSourceSelectionService,
     BootSourceService,
-    IndexNotFound,
     IndexService,
     S3Service,
 )
@@ -1149,7 +1148,7 @@ class TestBootAssetItemService:
 
 
 class TestImagesIndexService:
-    async def test_create(
+    async def test_refresh(
         self,
         index_service: IndexService,
         items_ubuntu_jammy_1: list[BootAssetItem],
@@ -1410,16 +1409,3 @@ class TestImagesIndexService:
         ]
         assert len(ubuntu_download["products"]) == 1
         assert len(bootloader_download["products"]) == 1
-
-    async def test_drop(
-        self,
-        index_service: IndexService,
-    ) -> None:
-        await index_service.create()
-        await index_service.drop()
-        with pytest.raises(IndexNotFound):
-            await index_service.get(
-                IndexType.DOWNLOAD,
-                "maas.site.manager",
-                partition=DownloadPartition.UBUNTU,
-            )

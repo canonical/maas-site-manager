@@ -42,7 +42,6 @@ class TestBootAssetItemsDownloadHandler:
         self, db_connection: AsyncConnection
     ) -> AsyncIterator[IndexService]:
         index_service = IndexService(db_connection)
-        await index_service.create()
         yield index_service
 
     async def test_download(

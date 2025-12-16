@@ -51,6 +51,8 @@ class Database:
         """Drop the database schema."""
 
         def drop_all(conn: Connection) -> None:
+            # Drop materialized view first since it depends on tables
+            conn.execute(text("DROP MATERIALIZED VIEW IF EXISTS images_index"))
             METADATA.drop_all(conn)
             # Alembic table is not tracked by metadata, manually delete it
             conn.execute(text("DROP TABLE IF EXISTS alembic_version"))

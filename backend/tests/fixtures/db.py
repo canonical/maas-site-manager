@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 from pytest_postgresql.executor import PostgreSQLExecutor
 from pytest_postgresql.janitor import DatabaseJanitor
-from sqlalchemy import URL
+from sqlalchemy import URL, Connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db import Database
@@ -70,8 +70,33 @@ async def db(
     """Set up the database schema."""
     echo = request.config.getoption("sqlalchemy_debug")
     db = Database(db_setup.dsn, echo=echo)
-    # don't go through migration, just apply schema, since the DB is empty
-    await db.ensure_schema(migrate=False)
+    # use migrations to ensure materialized views are created
+    await db.ensure_schema(migrate=True)
+
+    # Create test-only tables that aren't in migrations
+    from msm.apiserver.db.tables import METADATA
+
+    def create_test_tables(conn: Connection) -> None:
+        # Get all production tables from migrations
+        from sqlalchemy import inspect
+
+        inspector = inspect(conn)
+        existing_tables = set(inspector.get_table_names())
+
+        # Create only tables from METADATA that don't already exist
+        # These would be test-only tables defined in test files
+        tables_to_create = [
+            table
+            for table in METADATA.sorted_tables
+            if table.name not in existing_tables
+        ]
+
+        if tables_to_create:
+            for table in tables_to_create:
+                table.create(conn)
+
+    await db._run_sync_in_transaction(create_test_tables)
+
     yield db
     await db.drop_schema()
 
