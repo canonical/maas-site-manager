@@ -32,6 +32,7 @@ from tests.fixtures.db import (
     db,
     db_connection,
     db_setup,
+    db_template,
     transaction_middleware_class,
 )
 from tests.fixtures.env import (
@@ -75,6 +76,7 @@ __all__ = [
     "centos",
     "db_connection",
     "db_setup",
+    "db_template",
     "db",
     "factory",
     "grub",
