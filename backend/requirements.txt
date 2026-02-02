@@ -95,7 +95,7 @@ prometheus-client==0.21.1
     # via prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==7.0.2
     # via msm (pyproject.toml)
-protobuf==6.30.0
+protobuf==6.33.5
     # via
     #   macaroonbakery
     #   temporalio
