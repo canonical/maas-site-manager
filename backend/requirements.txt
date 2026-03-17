@@ -101,7 +101,7 @@ protobuf==6.30.0
     #   temporalio
 psycopg==3.2.5
     # via sqlalchemy
-pyasn1==0.4.8
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   python-jose
