@@ -151,7 +151,7 @@ pyyaml==6.0.2
     # via
     #   msm (pyproject.toml)
     #   uvicorn
-requests==2.32.3
+requests==2.33.0
     # via macaroonbakery
 rsa==4.9
     # via
