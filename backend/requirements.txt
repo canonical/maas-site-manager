@@ -45,7 +45,7 @@ charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via uvicorn
-cryptography==44.0.2
+cryptography==46.0.6
     # via python-jose
 dnspython==2.7.0
     # via email-validator
