@@ -1,14 +1,11 @@
 name: Create and publish a Docker image
-# on:
-#   workflow_dispatch:
-#     inputs:
-#       ubuntu_series:
-#         description: 'Ubuntu series for the docker container'
-#         required: true
-#         default: 'noble'
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      ubuntu_series:
+        description: 'Ubuntu series for the docker container'
+        required: true
+        default: 'noble'
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
@@ -46,17 +43,16 @@ jobs:
         id: series
         # There is only main branch as of writing this, but leaving this logic to account
         # for future version branches.
-        # run: |
-        #   case "${GITHUB_REF_NAME}" in
-        #     main)
-        #       echo "value=noble" >> "$GITHUB_OUTPUT"
-        #       ;;
-        #     *)
-        #       # Default to the input series for any other branch
-        #       echo "value=${{ github.event.inputs.ubuntu_series }}" >> "$GITHUB_OUTPUT"
-        #       ;;
-        #   esac
-        run: echo "value=noble" >> "$GITHUB_OUTPUT"
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            main)
+              echo "value=noble" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              # Default to the input series for any other branch
+              echo "value=${{ github.event.inputs.ubuntu_series }}" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
       # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
       # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see [Usage](https://github.com/docker/build-push-action#usage) in the README of the `docker/build-push-action` repository.
       # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
@@ -68,7 +64,7 @@ jobs:
           push: true
           build-args: |
             SERIES=${{ steps.series.outputs.value }}
-          tags: main
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built. It increases supply chain security for people who consume the image. For more information, see [Using artifact attestations to establish provenance for builds](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds).
