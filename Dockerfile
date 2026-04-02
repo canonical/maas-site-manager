@@ -9,8 +9,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /work
 
-ADD . checkout
-
 RUN set -ex                                                                                            ;\
     apt-get -q update                                                                                  ;\
     apt-get -q -y upgrade                                                                              ;\
@@ -24,6 +22,8 @@ RUN set -ex                                                                     
         wget \
         curl                                                                                           ;\
     apt-get -q clean
+
+ADD . checkout
 
 RUN set -ex                                                                                            ;\
     make -C /work/checkout ${MAKE_TARGET}                                                              ;\
