@@ -1,0 +1,40 @@
+name: Rock Builder
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-rock:
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: |
+          snap install rockcraft --classic
+          snap install yq
+      - name: Build rock(s)
+        run: |
+          rockcraft pack -v
+          rock_file=$(find -name *.rock -exec basename {} \;)
+          image_name=$(cat ./rockcraft.yaml | yq .name)
+          version=$(cat ./rockcraft.yaml | yq .version)
+          skopeo --insecure-policy copy \
+            --dest-creds ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} \
+            "oci-archive:${rock_file}" \
+            "docker://ghcr.io/canonical/${image_name}:${version}"
+          echo "Published rock ${image_name}:${version}"
