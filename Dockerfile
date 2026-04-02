@@ -1,6 +1,7 @@
 # This file is used by the build-env github action
-ARG SERIES=noble
-FROM ubuntu:${SERIES}
+# ARG SERIES=noble
+# FROM ubuntu:${SERIES}
+FROM ubuntu:noble
 
 ARG MAKE_TARGET="ci-dep-docker-prepare"
 
