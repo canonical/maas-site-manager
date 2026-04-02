@@ -18,7 +18,6 @@ class SettingsService(DBBackedModelService[models.Settings]):
         if model.service_url:
             return model.service_url
 
-        # this is a temporary useless comment
         settings = Settings()
         return os.environ.get(
             "MSM_BASE_PATH", f"http://{gethostname()}:{settings.api_port}"
