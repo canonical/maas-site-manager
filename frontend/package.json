@@ -2,7 +2,7 @@
   "name": "maas-site-manager",
   "type": "module",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "clean": "rm -rf dist node_modules",
     "predev": "yarn run download-map-assets",

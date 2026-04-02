@@ -1,6 +1,6 @@
 name: maas-site-manager
 base: ubuntu@24.04
-version: "1.0.0"
+version: "1.1.0"
 summary: MAAS Site Manager ROCK OCI
 description: |
     MAAS Site Manager built from the official MAAS Site Manager
