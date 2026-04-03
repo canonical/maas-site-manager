@@ -21,10 +21,10 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
 
     outputs:
-      python: ${{ steps.filter.outputs.python }}
-      go: ${{ steps.filter.outputs.go }}
-      docs: ${{ steps.filter.outputs.docs }}
       lint: ${{ steps.filter.outputs.lint }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docs: ${{ steps.filter.outputs.docs }}
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
