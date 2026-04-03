@@ -4,10 +4,18 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to build
+        required: true
+        type: string
 
 jobs:
   build-rock:
     runs-on: ubuntu-24.04
+    env:
+      BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}
 
     permissions:
       contents: read
@@ -16,6 +24,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BRANCH }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -32,7 +42,11 @@ jobs:
           rockcraft pack -v
           rock_file=$(find -name *.rock -exec basename {} \;)
           image_name=$(cat ./rockcraft.yaml | yq .name)
-          version=$(cat ./rockcraft.yaml | yq .version)
+          if [ "${BRANCH}" = "main" ]; then
+            version="latest"
+          else
+            version=$(cat ./rockcraft.yaml | yq .version)
+          fi
           skopeo --insecure-policy copy \
             --dest-creds ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} \
             "oci-archive:${rock_file}" \
