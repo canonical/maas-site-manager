@@ -33,14 +33,14 @@ jobs:
       - name: Build rock(s)
         run: |
           rockcraft pack -v
-          rock_file=$(find -name *.rock -exec basename {} \;)
+          rock_file=$(find -name "*.rock" -exec basename {} \;)
           image_name=$(cat ./rockcraft.yaml | yq .name)
           if [ "${BRANCH}" = "main" ]; then
             version="latest"
           else
             version=$(cat ./rockcraft.yaml | yq .version)
           fi
-          skopeo --insecure-policy copy \
+          rockcraft.skopeo --insecure-policy copy \
             --dest-creds ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} \
             "oci-archive:${rock_file}" \
             "docker://ghcr.io/canonical/${image_name}:${version}"
