@@ -1,0 +1,122 @@
+name: Test coverage and TiCS Report
+on:
+  schedule:
+    - cron: "30 0 * * 6" # Weekly full analysis
+  push:
+    branches:
+      - "tics-debug-*"
+#  We cannot run the TiCS job on pull requests because TiCS
+#  requires us to use secret tokens, and that cannot be done
+#  on PRs from forked repositories.
+#  pull_request:
+#    types: [ opened, synchronize, reopened ]
+
+jobs:
+  test-coverage-tics:
+    name: Run tests with coverage and generate TiCS report
+    runs-on: [ self-hosted, reactive, linux, amd64, large-tiobe, jammy ]
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important for TICS to analyze history
+
+      - name: Install system dependencies
+        run: |
+          if [ ! -z $http_proxy ]; then
+            echo "Acquire::http::proxy \"$http_proxy\";" | sudo tee /etc/apt/apt.conf.d/launchpad-ci-proxy
+            echo "Acquire::https::proxy \"$http_proxy\";" | sudo tee -a /etc/apt/apt.conf.d/launchpad-ci-proxy
+          fi
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y git make curl python3-coverage python-is-python3 python3-flake8 pylint
+
+      - name: Install project dependencies
+        run: make install-dependencies ci-dep ci-build
+
+      - name: Run backend tests with coverage
+        run: |
+          mkdir -p .cover
+          cd backend
+          make ci-test
+
+      - name: Run frontend tests with coverage
+        run: |
+          cd frontend
+          make unit-test
+
+      - name: Collect coverage reports
+        run: |
+          cp ./backend/coverage.xml ./.cover/coverage_backend.xml
+
+      - name: Upload backend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend
+          path: backend/coverage.xml
+          retention-days: 1
+
+      - name: Upload frontend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend
+          path: .cover/cobertura-coverage-frontend.xml
+          retention-days: 1
+
+      - name: Run TICS Analyzer
+        uses: tiobe/tics-github-action@v3
+        env:
+          PYTHONPATH: "${{ github.workspace }}/backend/.tox/test/lib/python3.12/site-packages/"
+        with:
+          mode: ${{ github.event_name == 'pull_request' && 'client' || 'qserver' }}
+          project: maas-site-manager
+          viewerUrl: https://canonical.tiobe.com/tiobeweb/TICS/api/cfg?name=default
+          ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}
+          installTics: true
+          calc: ALL
+          tmpdir: /tmp/tics
+
+      - name: Upload TICS report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tics-report
+          path: /tmp/tics
+          retention-days: 7
+
+  publish-coverage-report:
+    name: Publish Coverage Report
+    if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+    runs-on: [ self-hosted, reactive, linux, amd64, tiobe, jammy ]
+    needs: test-coverage-tics
+    permissions:
+      id-token: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download backend coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-backend
+          path: coverage/backend
+
+      - name: Download frontend coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-frontend
+          path: coverage/frontend
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: coverage
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
