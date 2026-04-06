@@ -10,12 +10,15 @@ on:
         description: Branch to build
         required: true
         type: string
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   build-rock:
     runs-on: ubuntu-24.04
     env:
-      BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}
+      # BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}
+      BRANCH: main
 
     permissions:
       contents: read
@@ -28,8 +31,8 @@ jobs:
           ref: ${{ env.BRANCH }}
       - name: Install dependencies
         run: |
-          snap install rockcraft --classic
-          snap install yq
+          sudo snap install rockcraft --classic
+          sudo snap install yq
       - name: Build rock(s)
         run: |
           rockcraft pack -v
