@@ -29,17 +29,15 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ env.BRANCH }}
-      - name: Setup LXD
-        uses: canonical/setup-lxd@main
-        with:
-          group: lxd
+      - name: Build rock
+        uses: canonical/craft-actions/rockcraft-pack@main
+        id: rockcraft
       - name: Install dependencies
         run: |
           sudo snap install rockcraft --classic
           sudo snap install yq
-      - name: Build rock(s)
+      - name: Upload rock
         run: |
-          rockcraft pack -v
           rock_file=$(find -name "*.rock" -exec basename {} \;)
           image_name=$(cat ./rockcraft.yaml | yq .name)
           if [ "${BRANCH}" = "main" ]; then
@@ -47,7 +45,7 @@ jobs:
           else
             version=$(cat ./rockcraft.yaml | yq .version)
           fi
-          rockcraft.skopeo --insecure-policy copy \
+          sudo rockcraft.skopeo --insecure-policy copy \
             --dest-creds ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} \
             "oci-archive:${rock_file}" \
             "docker://ghcr.io/canonical/${image_name}:${version}"
