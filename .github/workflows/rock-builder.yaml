@@ -33,12 +33,10 @@ jobs:
         run: |
           sudo snap install rockcraft --classic
           sudo snap install yq
-      - name: Set up user permissions
+      - name: Build rock(s)
         run: |
           sudo usermod -aG lxd $USER
           newgrp lxd
-      - name: Build rock(s)
-        run: |
           rockcraft pack -v
           rock_file=$(find -name "*.rock" -exec basename {} \;)
           image_name=$(cat ./rockcraft.yaml | yq .name)
