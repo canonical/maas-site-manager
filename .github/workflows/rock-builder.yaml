@@ -36,6 +36,12 @@ jobs:
         run: |
           sudo snap install rockcraft --classic
           sudo snap install yq
+      - name: Log in to the Container registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload rock
         run: |
           rock_file=$(find -name "*.rock" -exec basename {} \;)
@@ -46,7 +52,7 @@ jobs:
             version=$(cat ./rockcraft.yaml | yq .version)
           fi
           sudo rockcraft.skopeo --insecure-policy copy \
-            --dest-creds ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} \
             "oci-archive:${rock_file}" \
-            "docker://ghcr.io/canonical/${image_name}:${version}"
+            docker-daemon:"ghcr.io/canonical/${image_name}:${version}"
+          docker push ghcr.io/canonical/${image_name}:${version}
           echo "Published rock ${image_name}:${version}"
