@@ -14,7 +14,7 @@ on:
 jobs:
   test-coverage-tics:
     name: Run tests with coverage and generate TiCS report
-    runs-on: [ self-hosted, reactive, linux, amd64, large-tiobe, jammy ]
+    runs-on: [ self-hosted, reactive, linux, amd64, large-tiobe, noble ]
     timeout-minutes: 720
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +89,7 @@ jobs:
   publish-coverage-report:
     name: Publish Coverage Report
     if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
-    runs-on: [ self-hosted, reactive, linux, amd64, tiobe, jammy ]
+    runs-on: [ self-hosted, reactive, linux, amd64, tiobe, noble ]
     needs: test-coverage-tics
     permissions:
       id-token: write
