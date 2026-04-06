@@ -268,7 +268,12 @@ BootAssetItem = Table(
 SiteProfile = Table(
     "site_profile",
     METADATA,
-    Column("id", Integer, primary_key=True),
+    Column(
+        "id",
+        Integer,
+        Sequence("site_profile_id_sequence", start=2, increment=1),
+        primary_key=True,
+    ),
     Column("name", Text, unique=True, nullable=False),
     Column("selections", ARRAY(Text), nullable=False),
     Column("global_config", JSONB, nullable=True),
