@@ -17,6 +17,7 @@ from msm.apiserver.db.tables import METADATA
 
 MIN_POSTGRES_VERSION = (14, 0)
 CUSTOM_IMAGE_SOURCE_ID = 1
+DEFAULT_SITE_PROFILE_ID = 1
 
 FuncResult = TypeVar("FuncResult")
 
