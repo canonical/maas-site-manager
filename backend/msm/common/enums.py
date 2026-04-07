@@ -89,3 +89,10 @@ class ItemFileType(StrEnum):
 
     # Manifest
     MANIFEST = "manifest"
+
+
+class TaskStatus(StrEnum):
+    STARTED = "started"
+    COMPLETE = "complete"
+    FAILED = "failed"
+    UNKNOWN = "unknown"

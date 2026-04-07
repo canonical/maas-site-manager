@@ -133,7 +133,6 @@ def downgrade() -> None:
     op.drop_table("site_state_status")
     op.drop_table("site_profile")
 
-
     # Drop sequence
     op.execute("DROP SEQUENCE IF EXISTS site_profile_id_sequence")
 

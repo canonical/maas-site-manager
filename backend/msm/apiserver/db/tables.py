@@ -21,8 +21,8 @@ from sqlalchemy.dialects.postgresql import (
 from sqlalchemy.schema import Sequence
 from sqlalchemy.types import DateTime
 
-from msm.apiserver.db.models.site import TaskStatus
 from msm.apiserver.db.types import Point
+from msm.common.enums import TaskStatus
 from msm.common.time import now_utc, utc_from_timestamp
 
 METADATA = MetaData(
