@@ -76,7 +76,6 @@ class SiteProfileService(Service):
     async def _ensure_default_profile(self) -> None:
         stmt = self._select_statement(
             SiteProfile.c.id,
-            SiteProfile.c.url,
         ).where(SiteProfile.c.id == DEFAULT_SITE_PROFILE_ID)
         result = await self.conn.execute(stmt)
         if result.one_or_none() is None:
@@ -86,7 +85,7 @@ class SiteProfileService(Service):
                 "selections": ["ubuntu/resolute/amd64"],
                 "global_config": {},
             }
-        await self.conn.execute(insert(SiteProfile), [data])
+            await self.conn.execute(insert(SiteProfile), [data])
 
     async def ensure(self) -> None:
         await self._ensure_default_profile()

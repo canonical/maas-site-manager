@@ -38,6 +38,7 @@ class TestServiceCollection:
         assert collection.tokens in services
         assert collection.users in services
         assert collection.workflow_service in services
+        assert collection.site_profiles in services
 
     async def test_collect_metrics_calls_all_services(
         self, collection: ServiceCollection, mocker: MockerFixture

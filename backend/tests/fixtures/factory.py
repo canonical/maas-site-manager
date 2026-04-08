@@ -32,6 +32,7 @@ from msm.apiserver.db.models import (
     PendingSite,
     Site,
     SiteData,
+    SiteProfile,
     Token,
     User,
 )
@@ -328,6 +329,24 @@ class Factory:
             + machines_other
         )
         return SiteData(machines_total=machines_total, **row)
+
+    async def make_SiteProfile(
+        self,
+        name: str,
+        selections: list[str],
+        global_config: dict[str, Any] | None = None,
+        id: int | None = None,
+    ) -> SiteProfile:
+        """Create a SiteProfile."""
+        data: dict[str, Any] = {
+            "name": name,
+            "selections": selections,
+            "global_config": global_config or {},
+        }
+        if id is not None:
+            data["id"] = id
+        [row] = await self.create("site_profile", [data])
+        return SiteProfile(**row)
 
     async def make_Config(self, name: str, value: Any = None) -> None:
         """Create an entry in the global configuration."""
