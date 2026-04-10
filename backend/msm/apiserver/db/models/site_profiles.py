@@ -9,7 +9,7 @@ class SiteProfile(BaseModel):
     id: int
     name: str
     selections: list[str]
-    global_config: dict[str, Any]
+    global_config: dict[str, Any] | None = None
 
 
 class SiteProfileCreate(BaseModel):
