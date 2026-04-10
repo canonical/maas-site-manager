@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
-from msm.apiserver.db.models import SiteProfileCreateUpdate
+from msm.apiserver.db.models import SiteProfile, SiteProfileCreateUpdate
 from msm.apiserver.schema import SortParam
 from msm.apiserver.service.site_profiles import SiteProfileService
 from tests.fixtures.factory import Factory
@@ -13,15 +13,23 @@ class TestSiteProfileService:
     async def test_get(
         self, factory: Factory, db_connection: AsyncConnection
     ) -> None:
-        await factory.make_SiteProfile(
+        prof1 = await factory.make_SiteProfile(
             name="zulu",
             selections=["ubuntu/jammy/amd64"],
-            global_config={"region": "us-west"},
+            global_config={
+                "use_peer_proxy": False,
+                "maas_proxy_port": 8000,
+                "theme": "light",
+            },
         )
-        await factory.make_SiteProfile(
+        prof2 = await factory.make_SiteProfile(
             name="alpha",
             selections=["ubuntu/noble/amd64"],
-            global_config={"region": "us-east"},
+            global_config={
+                "use_peer_proxy": True,
+                "maas_proxy_port": 8001,
+                "theme": "dark",
+            },
         )
         service = SiteProfileService(db_connection)
 
@@ -30,7 +38,7 @@ class TestSiteProfileService:
         )
 
         assert count == 2
-        assert [profile.name for profile in profiles] == ["alpha", "zulu"]
+        assert profiles == [prof1, prof2]
 
     async def test_get_with_offset_and_limit(
         self, factory: Factory, db_connection: AsyncConnection
@@ -85,14 +93,25 @@ class TestSiteProfileService:
             SiteProfileCreateUpdate(
                 name="new-profile",
                 selections=["ubuntu/noble/amd64"],
-                global_config={"feature": True},
+                global_config={
+                    "use_peer_proxy": True,
+                    "maas_proxy_port": 8001,
+                    "theme": "dark",
+                },
             )
         )
 
         [row] = await factory.get("site_profile")
-        assert created.id == row["id"]
-        assert created.name == "new-profile"
-        assert row["global_config"] == {"feature": True}
+        assert SiteProfile(
+            id=created.id,
+            name="new-profile",
+            selections=["ubuntu/noble/amd64"],
+            global_config={
+                "use_peer_proxy": True,
+                "maas_proxy_port": 8001,
+                "theme": "dark",
+            },
+        ) == SiteProfile(**row)
 
     async def test_update(
         self, factory: Factory, db_connection: AsyncConnection
@@ -114,10 +133,7 @@ class TestSiteProfileService:
         )
 
         [row] = await factory.get("site_profile")
-        assert updated.id == profile.id
-        assert updated.name == "profile-b"
-        assert row["selections"] == ["ubuntu/noble/amd64"]
-        assert row["global_config"] == {"feature": True}
+        assert updated == SiteProfile(**row)
 
     async def test_delete(
         self, factory: Factory, db_connection: AsyncConnection
