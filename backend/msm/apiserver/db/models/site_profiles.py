@@ -12,7 +12,13 @@ class SiteProfile(BaseModel):
     global_config: dict[str, Any]
 
 
-class SiteProfileCreateUpdate(BaseModel):
+class SiteProfileCreate(BaseModel):
     name: str
     selections: list[str]
-    global_config: dict[str, Any]
+    global_config: dict[str, Any] | None = None
+
+
+class SiteProfileUpdate(BaseModel):
+    name: str | None = None
+    selections: list[str] | None = None
+    global_config: dict[str, Any] | None = None

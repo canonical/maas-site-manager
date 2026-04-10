@@ -2,7 +2,11 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
-from msm.apiserver.db.models import SiteProfile, SiteProfileCreateUpdate
+from msm.apiserver.db.models import (
+    SiteProfile,
+    SiteProfileCreate,
+    SiteProfileUpdate,
+)
 from msm.apiserver.schema import SortParam
 from msm.apiserver.service.site_profiles import SiteProfileService
 from tests.fixtures.factory import Factory
@@ -90,7 +94,7 @@ class TestSiteProfileService:
         service = SiteProfileService(db_connection)
 
         created = await service.create(
-            SiteProfileCreateUpdate(
+            SiteProfileCreate(
                 name="new-profile",
                 selections=["ubuntu/noble/amd64"],
                 global_config={
@@ -125,7 +129,7 @@ class TestSiteProfileService:
 
         updated = await service.update(
             profile.id,
-            SiteProfileCreateUpdate(
+            SiteProfileUpdate(
                 name="profile-b",
                 selections=["ubuntu/noble/amd64"],
                 global_config={"feature": True},

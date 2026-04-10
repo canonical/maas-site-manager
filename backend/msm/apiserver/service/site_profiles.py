@@ -42,7 +42,7 @@ class SiteProfileService(Service):
         return None
 
     async def create(
-        self, details: models.SiteProfileCreateUpdate
+        self, details: models.SiteProfileCreate
     ) -> models.SiteProfile:
         data = details.model_dump()
         stmt = insert(SiteProfile).returning(*SiteProfile.c.values())
@@ -53,7 +53,7 @@ class SiteProfileService(Service):
         return models.SiteProfile(**result.one()._asdict())
 
     async def update(
-        self, site_profile_id: int, details: models.SiteProfileCreateUpdate
+        self, site_profile_id: int, details: models.SiteProfileUpdate
     ) -> models.SiteProfile:
         data = details.model_dump(exclude_none=True)
         stmt = (
