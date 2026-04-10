@@ -4,6 +4,7 @@
 Enums shared by the MSM API and Temporal worker.
 """
 
+from datetime import timedelta
 from enum import IntEnum, StrEnum
 
 
@@ -96,3 +97,112 @@ class TaskStatus(StrEnum):
     COMPLETE = "complete"
     FAILED = "failed"
     UNKNOWN = "unknown"
+
+
+class DNSSEC(StrEnum):
+    AUTO = "auto"
+    YES = "yes"
+    NO = "no"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+def _timedelta_to_whole_seconds(
+    minutes: int = 0, hours: int = 0, days: int = 0
+) -> int:
+    """Convert arbitrary timedelta to whole seconds."""
+    return int(
+        timedelta(minutes=minutes, hours=hours, days=days).total_seconds()
+    )
+
+
+class ActiveDiscoveryInterval(IntEnum):
+    NEVER = 0
+    EVERY_WEEK = _timedelta_to_whole_seconds(days=7)
+    EVERY_DAY = _timedelta_to_whole_seconds(days=1)
+    EVERY_12_HOURS = _timedelta_to_whole_seconds(hours=12)
+    EVERY_6_HOURS = _timedelta_to_whole_seconds(hours=6)
+    EVERY_3_HOURS = _timedelta_to_whole_seconds(hours=3)
+    EVERY_HOUR = _timedelta_to_whole_seconds(hours=1)
+    EVERY_30_MINUTES = _timedelta_to_whole_seconds(minutes=30)
+    EVERY_10_MINUTES = _timedelta_to_whole_seconds(minutes=10)
+
+
+class IPMICipherSuiteID(StrEnum):
+    SUITE_17 = "17"
+    SUITE_3 = "3"
+    DEFAULT = ""
+    SUITE_8 = "8"
+    SUITE_12 = "12"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class IPMIPrivilegeLevel(StrEnum):
+    USER = "USER"
+    OPERATOR = "OPERATOR"
+    ADMIN = "ADMIN"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class IPMIWorkaroundFlags(StrEnum):
+    OPENSESSPRIV = "opensesspriv"
+    AUTHCAP = "authcap"
+    IDZERO = "idzero"
+    UNEXPECTEDAUTH = "unexpectedauth"
+    FORCEPERMSG = "forcepermsg"
+    ENDIANSEQ = "endianseq"
+    INTEL20 = "intel20"
+    SUPERMICRO20 = "supermicro20"
+    SUN20 = "sun20"
+    NOCHECKSUMCHECK = "nochecksumcheck"
+    INTEGRITYCHECKVALUE = "integritycheckvalue"
+    IPMIPING = "ipmiping"
+    NONE = ""
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class StorageLayout(StrEnum):
+    BACACHE = "bcache"
+    BLANK = "blank"
+    CUSTOM = "custom"
+    FLAT = "flat"
+    LVM = "lvm"
+    VMFS6 = "vmfs6"
+    VMFS7 = "vmfs7"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class InterfaceType(StrEnum):
+    """The vocabulary of possible types for `Interface`."""
+
+    PHYSICAL = "physical"
+    BOND = "bond"
+    BRIDGE = "bridge"
+    VLAN = "vlan"
+    ALIAS = "alias"
+    # Interface that is created when it is not linked to a node.
+    UNKNOWN = "unknown"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class InterfaceLinkType(StrEnum):
+    """The vocabulary of possible types to link a `Subnet` to a `Interface`."""
+
+    AUTO = "auto"
+    DHCP = "dhcp"
+    STATIC = "static"
+    LINK_UP = "link_up"
+
+    def __str__(self) -> str:
+        return str(self.value)

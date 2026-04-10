@@ -35,7 +35,7 @@ def upgrade() -> None:
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column(
             "value",
-            postgresql.JSONB(astext_type=sa.Text()),  # type: ignore[no-untyped-call]
+            postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("name"),
@@ -47,7 +47,7 @@ def upgrade() -> None:
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column(
             "value",
-            postgresql.JSONB(astext_type=sa.Text()),  # type: ignore[no-untyped-call]
+            postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("name"),

@@ -31,6 +31,7 @@ dependencies = [
   "fastapi==0.115.9",                                  # manually pinning because of https://github.com/encode/starlette/issues/2893 -- introduced by Starlette version 46.0, which is pinned by FastAPI>=0.115.10
   "httpx",
   "jinja2",
+  "netaddr",
   "passlib[bcrypt]",                                   # manually pinning because of https://foss.heptapod.net/python-libs/passlib/-/issues/190 FIXME: can be removed once passlib is updated to 1.7.5
   "prometheus-fastapi-instrumentator",
   "pydantic[email]",
