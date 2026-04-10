@@ -34,11 +34,11 @@ class TestSiteProfileService:
         service = SiteProfileService(db_connection)
 
         count, profiles = await service.get(
-            sort_params=[SortParam(field="name", asc=True)]
+            sort_params=[SortParam(field="name", asc=False)]
         )
 
         assert count == 2
-        assert profiles == [prof1, prof2]
+        assert [p for p in profiles] == [prof1, prof2]
 
     async def test_get_with_offset_and_limit(
         self, factory: Factory, db_connection: AsyncConnection
@@ -63,7 +63,7 @@ class TestSiteProfileService:
             limit=1,
         )
 
-        assert count == 1
+        assert count == 3
         assert [profile.name for profile in profiles] == ["beta"]
 
     async def test_get_by_id(

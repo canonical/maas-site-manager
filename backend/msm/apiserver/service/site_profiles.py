@@ -26,14 +26,13 @@ class SiteProfileService(Service):
         offset: int = 0,
         limit: int | None = None,
     ) -> tuple[int, Iterable[models.SiteProfile]]:
+        count = await queries.row_count(self.conn, SiteProfile, **{})
         order_by = queries.order_by_from_arguments(sort_params=sort_params)
         stmt = self._select_all(SiteProfile).order_by(*order_by).offset(offset)
         if limit is not None:
             stmt = stmt.limit(limit)
         result = await self.conn.execute(stmt)
-        return result.rowcount, self.objects_from_result(
-            models.SiteProfile, result
-        )
+        return count, self.objects_from_result(models.SiteProfile, result)
 
     async def get_by_id(self, id: int) -> models.SiteProfile | None:
         stmt = self._select_all(SiteProfile).where(SiteProfile.c.id == id)
