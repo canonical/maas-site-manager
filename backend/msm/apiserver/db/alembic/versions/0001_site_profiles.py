@@ -39,7 +39,7 @@ def upgrade() -> None:
         sa.Column("selections", sa.ARRAY(sa.Text()), nullable=False),
         sa.Column(
             "global_config",
-            postgresql.JSONB(astext_type=sa.Text()),
+            postgresql.JSONB(astext_type=sa.Text()),  # type: ignore[no-untyped-call]
             nullable=True,
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_site_profile")),
