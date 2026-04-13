@@ -64,6 +64,8 @@ AUTHENTICATED_ROUTES = (
     ("GET", "/api/v1/users/{id}"),
     ("PATCH", "/api/v1/users/{id}"),
     ("DELETE", "/api/v1/users/{id}"),
+    ("GET", "/api/v1/profiles"),
+    ("GET", "/api/v1/profiles/{id}"),
 )
 
 UNAUTHENTICATED_ROUTES = (("POST", "/api/v1/login"),)
