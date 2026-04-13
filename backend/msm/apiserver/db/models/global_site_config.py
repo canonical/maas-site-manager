@@ -3,7 +3,11 @@ import re
 from typing import Any, ClassVar, Generic, TypeVar
 from urllib.parse import urlparse
 
-from netaddr import AddrFormatError, IPAddress, IPNetwork
+from netaddr import (  # type: ignore[import-untyped]
+    AddrFormatError,
+    IPAddress,
+    IPNetwork,
+)
 from pydantic import (
     BaseModel,
     Field,
@@ -125,7 +129,7 @@ def splithost(host: str) -> tuple[str | None, int | None]:
     return hostname, parsed.port
 
 
-class Config(BaseModel, Generic[T]):
+class SiteConfig(BaseModel, Generic[T]):
     name: ClassVar[str]
     description: ClassVar[str]
     help_text: ClassVar[str | None] = None
@@ -133,14 +137,14 @@ class Config(BaseModel, Generic[T]):
     value: T
 
 
-class ThemeConfig(Config[str | None]):
+class ThemeConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "theme"
     default: ClassVar[str | None] = ""
     description: ClassVar[str] = "MAAS theme"
     value: str | None = Field(default=default, description=description)
 
 
-class KernelOptsConfig(Config[str | None]):
+class KernelOptsConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "kernel_opts"
     default: ClassVar[str | None] = None
     description: ClassVar[str] = (
@@ -149,7 +153,7 @@ class KernelOptsConfig(Config[str | None]):
     value: str | None = Field(default=default, description=description)
 
 
-class MAASProxyPortConfig(Config[int | None]):
+class MAASProxyPortConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "maas_proxy_port"
     default: ClassVar[int | None] = 8000
     description: ClassVar[str] = (
@@ -186,7 +190,7 @@ class MAASProxyPortConfig(Config[int | None]):
         return value
 
 
-class UsePeerProxyConfig(Config[bool | None]):
+class UsePeerProxyConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "use_peer_proxy"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = (
@@ -198,7 +202,7 @@ class UsePeerProxyConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class PreferV4ProxyConfig(Config[bool | None]):
+class PreferV4ProxyConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "prefer_v4_proxy"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = "Sets IPv4 DNS resolution before IPv6"
@@ -208,7 +212,7 @@ class PreferV4ProxyConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class DefaultDnsTtlConfig(Config[int | None]):
+class DefaultDnsTtlConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "default_dns_ttl"
     default: ClassVar[int | None] = 30
     description: ClassVar[str] = "Default Time-To-Live for the DNS"
@@ -218,7 +222,7 @@ class DefaultDnsTtlConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description)
 
 
-class UpstreamDnsConfig(Config[list[IPvAnyAddress] | None]):
+class UpstreamDnsConfig(SiteConfig[list[IPvAnyAddress] | None]):
     name: ClassVar[str] = "upstream_dns"
     default: ClassVar[list[IPvAnyAddress] | None] = None
     description: ClassVar[str] = (
@@ -232,7 +236,7 @@ class UpstreamDnsConfig(Config[list[IPvAnyAddress] | None]):
     )
 
 
-class DNSSECValidationConfig(Config[DNSSEC | None]):
+class DNSSECValidationConfig(SiteConfig[DNSSEC | None]):
     name: ClassVar[str] = "dnssec_validation"
     default: ClassVar[DNSSEC | None] = DNSSEC.AUTO
     description: ClassVar[str] = "Enable DNSSEC validation of upstream zones"
@@ -242,7 +246,7 @@ class DNSSECValidationConfig(Config[DNSSEC | None]):
     value: DNSSEC | None = Field(default=default, description=description)
 
 
-class MAASInternalDomainConfig(Config[str | None]):
+class MAASInternalDomainConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "maas_internal_domain"
     default: ClassVar[str | None] = "maas-internal"
     description: ClassVar[str] = (
@@ -264,7 +268,7 @@ class MAASInternalDomainConfig(Config[str | None]):
         return value
 
 
-class DNSTrustedAclConfig(Config[str | None]):
+class DNSTrustedAclConfig(SiteConfig[str | None]):
     """Accepts a space/comma separated list of hostnames, Subnets or IPs.
 
     This field normalizes the list to a space-separated list.
@@ -328,7 +332,7 @@ class DNSTrustedAclConfig(Config[str | None]):
         return host
 
 
-class AllowOnlyTrustedTransfersConfig(Config[bool | None]):
+class AllowOnlyTrustedTransfersConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "allow_only_trusted_transfers"
     default: ClassVar[bool] = True
     description: ClassVar[str] = "Allow only trusted zone transfers"
@@ -338,7 +342,7 @@ class AllowOnlyTrustedTransfersConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class RemoteSyslogConfig(Config[str | None]):
+class RemoteSyslogConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "remote_syslog"
     default: ClassVar[str | None] = None
     description: ClassVar[str] = "Remote syslog server to forward machine logs"
@@ -358,7 +362,7 @@ class RemoteSyslogConfig(Config[str | None]):
         return f"{host}:{port}"
 
 
-class MAASSyslogPortConfig(Config[int | None]):
+class MAASSyslogPortConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "maas_syslog_port"
     default: ClassVar[int | None] = 5247
     description: ClassVar[str] = (
@@ -398,7 +402,9 @@ class MAASSyslogPortConfig(Config[int | None]):
         return value
 
 
-class ActiveDiscoveryIntervalConfig(Config[ActiveDiscoveryInterval | None]):
+class ActiveDiscoveryIntervalConfig(
+    SiteConfig[ActiveDiscoveryInterval | None]
+):
     name: ClassVar[str] = "active_discovery_interval"
     default: ClassVar[ActiveDiscoveryInterval | None] = (
         ActiveDiscoveryInterval.EVERY_3_HOURS
@@ -412,7 +418,7 @@ class ActiveDiscoveryIntervalConfig(Config[ActiveDiscoveryInterval | None]):
     )
 
 
-class DefaultBootInterfaceLinkTypeConfig(Config[InterfaceLinkType | None]):
+class DefaultBootInterfaceLinkTypeConfig(SiteConfig[InterfaceLinkType | None]):
     name: ClassVar[str] = "default_boot_interface_link_type"
     default: ClassVar[InterfaceLinkType | None] = InterfaceLinkType.AUTO
     description: ClassVar[str] = "Default boot interface IP Mode"
@@ -424,7 +430,7 @@ class DefaultBootInterfaceLinkTypeConfig(Config[InterfaceLinkType | None]):
     )
 
 
-class DefaultOSystemConfig(Config[str | None]):
+class DefaultOSystemConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "default_osystem"
     default: ClassVar[str | None] = DEFAULT_OS
     description: ClassVar[str] = "Default operating system used for deployment"
@@ -434,7 +440,7 @@ class DefaultOSystemConfig(Config[str | None]):
     # TODO ADD VALIDATION
 
 
-class DefaultDistroSeriesConfig(Config[str | None]):
+class DefaultDistroSeriesConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "default_distro_series"
     default: ClassVar[str | None] = DEFAULT_OS_RELEASE
     description: ClassVar[str] = "Default OS release used for deployment"
@@ -444,7 +450,7 @@ class DefaultDistroSeriesConfig(Config[str | None]):
     # TODO ADD VALIDATION
 
 
-class DefaultMinHweKernelConfig(Config[str | None]):
+class DefaultMinHweKernelConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "default_min_hwe_kernel"
     default: ClassVar[str | None] = ""
     description: ClassVar[str] = "Default Minimum Kernel Version"
@@ -456,7 +462,7 @@ class DefaultMinHweKernelConfig(Config[str | None]):
     # TODO ADD VALIDATION
 
 
-class EnableKernelCrashDumpConfig(Config[bool | None]):
+class EnableKernelCrashDumpConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "enable_kernel_crash_dump"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = (
@@ -468,7 +474,7 @@ class EnableKernelCrashDumpConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class DefaultStorageLayoutConfig(Config[StorageLayout | None]):
+class DefaultStorageLayoutConfig(SiteConfig[StorageLayout | None]):
     name: ClassVar[str] = "default_storage_layout"
     default: ClassVar[StorageLayout | None] = StorageLayout.FLAT
     description: ClassVar[str] = "Default storage layout"
@@ -480,7 +486,7 @@ class DefaultStorageLayoutConfig(Config[StorageLayout | None]):
     )
 
 
-class CommissioningDistroSeriesConfig(Config[str | None]):
+class CommissioningDistroSeriesConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "commissioning_distro_series"
     default: ClassVar[str | None] = DEFAULT_OS_RELEASE
     description: ClassVar[str] = (
@@ -492,7 +498,7 @@ class CommissioningDistroSeriesConfig(Config[str | None]):
     # TODO ADD VALIDATION
 
 
-class EnableThirdPartyDriversConfig(Config[bool | None]):
+class EnableThirdPartyDriversConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "enable_third_party_drivers"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -502,7 +508,7 @@ class EnableThirdPartyDriversConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class EnableDiskErasingOnReleaseConfig(Config[bool | None]):
+class EnableDiskErasingOnReleaseConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "enable_disk_erasing_on_release"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = "Erase nodes' disks prior to releasing"
@@ -512,7 +518,7 @@ class EnableDiskErasingOnReleaseConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class DiskEraseWithSecureEraseConfig(Config[bool | None]):
+class DiskEraseWithSecureEraseConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "disk_erase_with_secure_erase"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -524,7 +530,7 @@ class DiskEraseWithSecureEraseConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class DiskEraseWithQuickEraseConfig(Config[bool | None]):
+class DiskEraseWithQuickEraseConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "disk_erase_with_quick_erase"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = (
@@ -536,7 +542,7 @@ class DiskEraseWithQuickEraseConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class BootImagesAutoImportConfig(Config[bool | None]):
+class BootImagesAutoImportConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "boot_images_auto_import"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -546,7 +552,7 @@ class BootImagesAutoImportConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class BootImagesNoProxyConfig(Config[bool | None]):
+class BootImagesNoProxyConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "boot_images_no_proxy"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = (
@@ -558,7 +564,7 @@ class BootImagesNoProxyConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class CurtinVerboseConfig(Config[bool | None]):
+class CurtinVerboseConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "curtin_verbose"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -568,7 +574,7 @@ class CurtinVerboseConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class ForceV1NetworkYamlConfig(Config[bool | None]):
+class ForceV1NetworkYamlConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "force_v1_network_yaml"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = (
@@ -578,7 +584,7 @@ class ForceV1NetworkYamlConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class EnableAnalyticsConfig(Config[bool | None]):
+class EnableAnalyticsConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "enable_analytics"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -588,7 +594,7 @@ class EnableAnalyticsConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class CompletedIntroConfig(Config[bool | None]):
+class CompletedIntroConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "completed_intro"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = (
@@ -598,7 +604,7 @@ class CompletedIntroConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class MaxNodeCommissioningResultsConfig(Config[int | None]):
+class MaxNodeCommissioningResultsConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "max_node_commissioning_results"
     default: ClassVar[int | None] = 10
     description: ClassVar[str] = (
@@ -608,7 +614,7 @@ class MaxNodeCommissioningResultsConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class MaxNodeTestingResultsConfig(Config[int | None]):
+class MaxNodeTestingResultsConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "max_node_testing_results"
     default: ClassVar[int | None] = 10
     description: ClassVar[str] = (
@@ -618,7 +624,7 @@ class MaxNodeTestingResultsConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class MaxNodeInstallationResultsConfig(Config[int | None]):
+class MaxNodeInstallationResultsConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "max_node_installation_results"
     default: ClassVar[int | None] = 3
     description: ClassVar[str] = (
@@ -628,7 +634,7 @@ class MaxNodeInstallationResultsConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class MaxNodeReleaseResultsConfig(Config[int | None]):
+class MaxNodeReleaseResultsConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "max_node_release_results"
     default: ClassVar[int | None] = 3
     description: ClassVar[str] = (
@@ -638,7 +644,7 @@ class MaxNodeReleaseResultsConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class MaxNodeDeploymentResultsConfig(Config[int | None]):
+class MaxNodeDeploymentResultsConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "max_node_deployment_results"
     default: ClassVar[int | None] = 3
     description: ClassVar[str] = (
@@ -648,7 +654,7 @@ class MaxNodeDeploymentResultsConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class SubnetIPExhaustionThresholdCountConfig(Config[int | None]):
+class SubnetIPExhaustionThresholdCountConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "subnet_ip_exhaustion_threshold_count"
     default: ClassVar[int | None] = 16
     description: ClassVar[str] = (
@@ -658,7 +664,7 @@ class SubnetIPExhaustionThresholdCountConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class ReleaseNotificationsConfig(Config[bool | None]):
+class ReleaseNotificationsConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "release_notifications"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -668,7 +674,7 @@ class ReleaseNotificationsConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class UseRackProxyConfig(Config[bool | None]):
+class UseRackProxyConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "use_rack_proxy"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -680,7 +686,7 @@ class UseRackProxyConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class NodeTimeoutConfig(Config[int | None]):
+class NodeTimeoutConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "node_timeout"
     default: ClassVar[int | None] = NODE_TIMEOUT
     description: ClassVar[str] = (
@@ -692,7 +698,7 @@ class NodeTimeoutConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description, ge=1)
 
 
-class PrometheusEnabledConfig(Config[bool | None]):
+class PrometheusEnabledConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "prometheus_enabled"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = "Enable Prometheus exporter"
@@ -702,7 +708,7 @@ class PrometheusEnabledConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class PrometheusPushGatewayConfig(Config[str | None]):
+class PrometheusPushGatewayConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "prometheus_push_gateway"
     default: ClassVar[str | None] = None
     description: ClassVar[str] = (
@@ -714,7 +720,7 @@ class PrometheusPushGatewayConfig(Config[str | None]):
     value: str | None = Field(default=default, description=description)
 
 
-class PrometheusPushIntervalConfig(Config[int | None]):
+class PrometheusPushIntervalConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "prometheus_push_interval"
     default: ClassVar[int | None] = 60
     description: ClassVar[str] = (
@@ -726,7 +732,7 @@ class PrometheusPushIntervalConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description)
 
 
-class PromtailEnabledConfig(Config[bool | None]):
+class PromtailEnabledConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "promtail_enabled"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = "Enable streaming logs to Promtail."
@@ -734,7 +740,7 @@ class PromtailEnabledConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class PromtailPortConfig(Config[int | None]):
+class PromtailPortConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "promtail_port"
     default: ClassVar[int | None] = 5238
     description: ClassVar[str] = "TCP port of the Promtail Push API."
@@ -744,7 +750,7 @@ class PromtailPortConfig(Config[int | None]):
     value: int | None = Field(default=default, description=description)
 
 
-class EnlistCommissioningConfig(Config[bool | None]):
+class EnlistCommissioningConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "enlist_commissioning"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -756,7 +762,7 @@ class EnlistCommissioningConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class MAASAutoIPMIUserConfig(Config[str | None]):
+class MAASAutoIPMIUserConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "maas_auto_ipmi_user"
     default: ClassVar[str | None] = "maas"
     description: ClassVar[str] = "MAAS IPMI user."
@@ -766,7 +772,9 @@ class MAASAutoIPMIUserConfig(Config[str | None]):
     value: str | None = Field(default=default, description=description)
 
 
-class MAASAutoIPMIUserPrivilegeLevelConfig(Config[IPMIPrivilegeLevel | None]):
+class MAASAutoIPMIUserPrivilegeLevelConfig(
+    SiteConfig[IPMIPrivilegeLevel | None]
+):
     name: ClassVar[str] = "maas_auto_ipmi_user_privilege_level"
     default: ClassVar[IPMIPrivilegeLevel | None] = IPMIPrivilegeLevel.ADMIN
     description: ClassVar[str] = "MAAS IPMI privilege level"
@@ -778,7 +786,7 @@ class MAASAutoIPMIUserPrivilegeLevelConfig(Config[IPMIPrivilegeLevel | None]):
     )
 
 
-class MAASAutoIPMICipherSuiteIDConfig(Config[IPMICipherSuiteID | None]):
+class MAASAutoIPMICipherSuiteIDConfig(SiteConfig[IPMICipherSuiteID | None]):
     name: ClassVar[str] = "maas_auto_ipmi_cipher_suite_id"
     default: ClassVar[IPMICipherSuiteID | None] = IPMICipherSuiteID.SUITE_3
     description: ClassVar[str] = "MAAS IPMI Default Cipher Suite ID"
@@ -791,7 +799,7 @@ class MAASAutoIPMICipherSuiteIDConfig(Config[IPMICipherSuiteID | None]):
 
 
 class MAASAutoIPMIWorkaroundFlagsConfig(
-    Config[list[IPMIWorkaroundFlags] | None]
+    SiteConfig[list[IPMIWorkaroundFlags] | None]
 ):
     name: ClassVar[str] = "maas_auto_ipmi_workaround_flags"
     default: ClassVar[list[IPMIWorkaroundFlags] | None] = None
@@ -804,7 +812,7 @@ class MAASAutoIPMIWorkaroundFlagsConfig(
     )
 
 
-class NTPServersConfig(Config[str | None]):
+class NTPServersConfig(SiteConfig[str | None]):
     """Accepts a space/comma separated list of hostnames or IP addresses.
 
     This field normalizes the list to a space-separated list.
@@ -871,7 +879,7 @@ class NTPServersConfig(Config[str | None]):
             return host
 
 
-class NTPExternalOnlyConfig(Config[bool | None]):
+class NTPExternalOnlyConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "ntp_external_only"
     hook_required: ClassVar[bool] = True
     default: ClassVar[bool | None] = False
@@ -882,7 +890,7 @@ class NTPExternalOnlyConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class HardwareSyncIntervalConfig(Config[str | None]):
+class HardwareSyncIntervalConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "hardware_sync_interval"
     default: ClassVar[str | None] = "15m"
     description: ClassVar[str] = "Hardware Sync Interval"
@@ -901,7 +909,7 @@ class HardwareSyncIntervalConfig(Config[str | None]):
         return value
 
 
-class TlsCertExpirationNotificationEnabledConfig(Config[bool | None]):
+class TlsCertExpirationNotificationEnabledConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "tls_cert_expiration_notification_enabled"
     default: ClassVar[bool | None] = False
     description: ClassVar[str] = "Notify when the certificate is due to expire"
@@ -911,7 +919,7 @@ class TlsCertExpirationNotificationEnabledConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class TLSCertExpirationNotificationIntervalConfig(Config[int | None]):
+class TLSCertExpirationNotificationIntervalConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "tls_cert_expiration_notification_interval"
     default: ClassVar[int | None] = 30
     description: ClassVar[str] = "Certificate expiration reminder (days)"
@@ -923,7 +931,7 @@ class TLSCertExpirationNotificationIntervalConfig(Config[int | None]):
     )
 
 
-class SessionLengthConfig(Config[int | None]):
+class SessionLengthConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "session_length"
     hook_required: ClassVar[bool] = True
     default: ClassVar[int | None] = 1209600
@@ -936,7 +944,7 @@ class SessionLengthConfig(Config[int | None]):
     )
 
 
-class RefreshTokenDurationConfig(Config[int | None]):
+class RefreshTokenDurationConfig(SiteConfig[int | None]):
     name: ClassVar[str] = "refresh_token_duration"
     hook_required: ClassVar[bool] = True
     default: ClassVar[int | None] = 2592000  # 30 days
@@ -949,7 +957,7 @@ class RefreshTokenDurationConfig(Config[int | None]):
     )
 
 
-class AutoVlanCreationConfig(Config[bool | None]):
+class AutoVlanCreationConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "auto_vlan_creation"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -961,7 +969,7 @@ class AutoVlanCreationConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class EnableHttpProxyConfig(Config[bool | None]):
+class EnableHttpProxyConfig(SiteConfig[bool | None]):
     name: ClassVar[str] = "enable_http_proxy"
     default: ClassVar[bool | None] = True
     description: ClassVar[str] = (
@@ -973,7 +981,7 @@ class EnableHttpProxyConfig(Config[bool | None]):
     value: bool | None = Field(default=default, description=description)
 
 
-class WindowsKmsHostConfig(Config[str | None]):
+class WindowsKmsHostConfig(SiteConfig[str | None]):
     name: ClassVar[str] = "windows_kms_host"
     hook_required: ClassVar[bool] = True
     default: ClassVar[str | None] = None
@@ -984,10 +992,10 @@ class WindowsKmsHostConfig(Config[str | None]):
     value: str | None = Field(default=default, description=description)
 
 
-class ConfigFactory:
+class SiteConfigFactory:
     # key/value pairs that are commented out exist in MAAS,
     # but cannot be set by Site Manager.
-    ALL_CONFIGS: ClassVar[dict[str, type[Config[Any]]]] = {
+    ALL_CONFIGS: ClassVar[dict[str, type[SiteConfig[Any]]]] = {
         # MAASNameConfig.name: MAASNameConfig,
         ThemeConfig.name: ThemeConfig,
         KernelOptsConfig.name: KernelOptsConfig,
@@ -1068,8 +1076,13 @@ class ConfigFactory:
         WindowsKmsHostConfig.name: WindowsKmsHostConfig,
     }
 
+    DEFAULT_CONFIG: ClassVar[dict[str, Any]] = {
+        cfg_name: cfg_class.default
+        for cfg_name, cfg_class in ALL_CONFIGS.items()
+    }
+
     @classmethod
-    def parse(cls, name: str, value: Any) -> Config[Any]:
+    def parse(cls, name: str, value: Any) -> SiteConfig[Any]:
         """
         Parses and returns a configuration object for the given name.
 
@@ -1081,7 +1094,7 @@ class ConfigFactory:
             value (Any): The value to be assigned to the configuration.
 
         Returns:
-            Config: An instance of the corresponding configuration model.
+            SiteConfig: An instance of the corresponding configuration model.
 
         Raises:
             ValueError: If the configuration name is not recognized.
@@ -1090,7 +1103,7 @@ class ConfigFactory:
         return model(value=value)
 
     @classmethod
-    def get_config_model(cls, name: str) -> type[Config[Any]]:
+    def get_config_model(cls, name: str) -> type[SiteConfig[Any]]:
         """
         Retrieves the configuration model associated with the given name.
 
@@ -1101,7 +1114,7 @@ class ConfigFactory:
             name (str): The name of the configuration key.
 
         Returns:
-            Type[Config]: The corresponding configuration model class.
+            Type[SiteConfig]: The corresponding configuration model class.
 
         Raises:
             ValueError: If the configuration name is not found in either public or private configurations.
