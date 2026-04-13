@@ -13,7 +13,13 @@ class SiteProfile(BaseModel):
     selections: list[str]
     global_config: dict[str, Any] | None = None
 
-    def fill_out_config(self) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._fill_out_config()
+
+    def _fill_out_config(self) -> None:
+        if self.global_config is None:
+            self.global_config = {}
         self.global_config = {
             cfg_name: self.global_config.get(cfg_name, cfg_default)
             for cfg_name, cfg_default in SiteConfigFactory.DEFAULT_CONFIG.items()

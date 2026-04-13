@@ -1,8 +1,11 @@
+from typing import Any
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
 from msm.apiserver.db.models import (
+    SiteConfigFactory,
     SiteProfile,
     SiteProfileCreate,
     SiteProfileUpdate,
@@ -43,6 +46,29 @@ class TestSiteProfileService:
 
         assert count == 2
         assert [p for p in profiles] == [prof1, prof2]
+
+    @pytest.mark.parametrize(
+        "global_config",
+        [(None), ({}), ({"theme": "dark"})],
+    )
+    async def test_get_returns_full_config(
+        self,
+        factory: Factory,
+        db_connection: AsyncConnection,
+        global_config: dict[str, Any],
+    ) -> None:
+        profile = await factory.make_SiteProfile(
+            name="alpha",
+            selections=["ubuntu/jammy/amd64"],
+            global_config=global_config,
+        )
+        service = SiteProfileService(db_connection)
+        _, profiles = await service.get([])
+        profile = next(iter(profiles))
+        expected_config = SiteConfigFactory.DEFAULT_CONFIG
+        if global_config:
+            expected_config.update(global_config)
+        assert profile.global_config == expected_config
 
     async def test_get_with_offset_and_limit(
         self, factory: Factory, db_connection: AsyncConnection
