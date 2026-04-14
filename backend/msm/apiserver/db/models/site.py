@@ -53,6 +53,7 @@ class Site(BaseModel):
     cluster_uuid: str
     name_unique: bool
     connection_status: ConnectionStatus
+    trigger_image_sync: bool = False
     stats: SiteData | None = None
 
 

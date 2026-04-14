@@ -564,6 +564,7 @@ class SiteService(Service):
                 Site.c.timezone,
                 Site.c.url,
                 Site.c.cluster_uuid,
+                Site.c.trigger_image_sync,
                 case(
                     (
                         SiteData.c.site_id == None,
