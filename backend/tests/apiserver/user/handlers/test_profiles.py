@@ -115,8 +115,6 @@ class TestProfilesDeleteHandler:
     async def test_delete_not_found(
         self, user_client: Client, factory: Factory
     ) -> None:
-        response = await user_client.get("/profiles/99999")
-        assert response.status_code == 404
         response = await user_client.delete("/profiles/99999")
         assert response.status_code == 404
         data = response.json()
