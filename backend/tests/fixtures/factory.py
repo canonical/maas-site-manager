@@ -357,9 +357,10 @@ class Factory:
         selections_status: TaskStatus = TaskStatus.UNKNOWN,
         global_config_status: TaskStatus = TaskStatus.UNKNOWN,
         image_sync_status: TaskStatus = TaskStatus.UNKNOWN,
-        errors: list[str] = [],
+        errors: list[str] | None = None,
     ) -> SiteStateStatus:
         """Create SiteStateStatus for a Site."""
+        errors = errors or []
         [row] = await self.create(
             "site_state_status",
             [
