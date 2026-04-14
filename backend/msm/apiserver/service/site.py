@@ -625,6 +625,7 @@ class SiteService(Service):
         ]:
             self.machine_status.labels(status=status).set(machines[status])
 
+
 class SiteStateService(Service):
     async def get(
         self,
@@ -634,28 +635,57 @@ class SiteStateService(Service):
     ) -> tuple[int, Iterable[models.SiteStateStatus]]:
         count = await queries.row_count(self.conn, SiteStateStatus)
         order_by = queries.order_by_from_arguments(sort_params=sort_params)
-        stmt = self._select_all(SiteStateStatus).order_by(*order_by).offset(offset)
+        stmt = (
+            self._select_all(SiteStateStatus)
+            .order_by(*order_by)
+            .offset(offset)
+        )
         if limit is not None:
             stmt = stmt.limit(limit)
-        result = self.conn.execute(stmt)
+        result = await self.conn.execute(stmt)
         return count, self.objects_from_result(models.SiteStateStatus, result)
 
-    async def get_by_id(
-        self,
-        id: int
-    ) -> models.SiteStateStatus | None:
-        stmt = self._select_all(SiteStateStatus).where(SiteStateStatus.c.id == id)
+    async def get_by_id(self, id: int) -> models.SiteStateStatus | None:
+        stmt = self._select_all(SiteStateStatus).where(
+            SiteStateStatus.c.id == id
+        )
         result = await self.conn.execute(stmt)
         if row := result.one_or_none():
-            return models.SiteProfile(**row._asdict())
+            return models.SiteStateStatus(**row._asdict())
         return None
 
     async def get_by_site_id(
-        self,
-        site_id: int
+        self, site_id: int
     ) -> models.SiteStateStatus | None:
-        stmt = self._select_all(SiteStateStatus).where(SiteStateStatus.c.site_id == site_id)
+        stmt = self._select_all(SiteStateStatus).where(
+            SiteStateStatus.c.site_id == site_id
+        )
         result = await self.conn.execute(stmt)
         if row := result.one_or_none():
-            return models.SiteProfile(**row._asdict())
+            return models.SiteStateStatus(**row._asdict())
         return None
+
+    async def create(
+        self, details: models.SiteStateStatusCreate
+    ) -> models.SiteStateStatus:
+        data = details.model_dump()
+        stmt = insert(SiteStateStatus).returning(*SiteStateStatus.c.values())
+        result = await self.conn.execute(stmt, [data])
+        return models.SiteStateStatus(**result.one()._asdict())
+
+    async def update(
+        self, id: int, details: models.SiteStateStatusUpdate
+    ) -> models.SiteStateStatus:
+        data = details.model_dump(exclude_none=True)
+        stmt = (
+            update(SiteStateStatus)
+            .where(SiteStateStatus.c.id == id)
+            .values(data)
+            .returning(*SiteStateStatus.c.values())
+        )
+        result = await self.conn.execute(stmt)
+        return models.SiteStateStatus(**result.one()._asdict())
+
+    async def delete(self, id: int) -> None:
+        stmt = delete(SiteStateStatus).where(SiteStateStatus.c.id == id)
+        await self.conn.execute(stmt)

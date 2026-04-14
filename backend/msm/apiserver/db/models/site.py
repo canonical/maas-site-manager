@@ -138,6 +138,7 @@ class SiteStateStatus(BaseModel):
     image_sync_status: TaskStatus = TaskStatus.UNKNOWN
     errors: list[str] = []
 
+
 class SiteStateStatusCreate(BaseModel):
     site_id: int
     status: TaskStatus = TaskStatus.UNKNOWN
@@ -145,3 +146,11 @@ class SiteStateStatusCreate(BaseModel):
     global_config_status: TaskStatus = TaskStatus.UNKNOWN
     image_sync_status: TaskStatus = TaskStatus.UNKNOWN
     errors: list[str] = []
+
+
+class SiteStateStatusUpdate(BaseModel):
+    status: TaskStatus | None = None
+    selections_status: TaskStatus | None = None
+    global_config_status: TaskStatus | None = None
+    image_sync_status: TaskStatus | None = None
+    errors: list[str] | None = None

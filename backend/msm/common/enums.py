@@ -93,10 +93,10 @@ class ItemFileType(StrEnum):
 
 
 class TaskStatus(StrEnum):
-    STARTED = "started"
-    COMPLETE = "complete"
-    FAILED = "failed"
-    UNKNOWN = "unknown"
+    STARTED = "STARTED"
+    COMPLETE = "COMPLETE"
+    FAILED = "FAILED"
+    UNKNOWN = "UNKNOWN"
 
 
 class DNSSEC(StrEnum):

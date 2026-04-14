@@ -33,6 +33,7 @@ from msm.apiserver.db.models import (
     Site,
     SiteData,
     SiteProfile,
+    SiteStateStatus,
     Token,
     User,
 )
@@ -42,6 +43,7 @@ from msm.common.enums import (
     BootAssetKind,
     BootAssetLabel,
     ItemFileType,
+    TaskStatus,
 )
 from msm.common.jwt import (
     JWT,
@@ -347,6 +349,31 @@ class Factory:
             data["id"] = id
         [row] = await self.create("site_profile", [data])
         return SiteProfile(**row)
+
+    async def make_SiteStateStatus(
+        self,
+        site_id: int,
+        status: TaskStatus = TaskStatus.UNKNOWN,
+        selections_status: TaskStatus = TaskStatus.UNKNOWN,
+        global_config_status: TaskStatus = TaskStatus.UNKNOWN,
+        image_sync_status: TaskStatus = TaskStatus.UNKNOWN,
+        errors: list[str] = [],
+    ) -> SiteStateStatus:
+        """Create SiteStateStatus for a Site."""
+        [row] = await self.create(
+            "site_state_status",
+            [
+                {
+                    "site_id": site_id,
+                    "status": status,
+                    "selections_status": selections_status,
+                    "global_config_status": global_config_status,
+                    "image_sync_status": image_sync_status,
+                    "errors": errors,
+                }
+            ],
+        )
+        return SiteStateStatus(**row)
 
     async def make_Config(self, name: str, value: Any = None) -> None:
         """Create an entry in the global configuration."""
