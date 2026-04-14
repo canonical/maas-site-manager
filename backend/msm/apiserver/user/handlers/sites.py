@@ -336,6 +336,7 @@ async def delete_many(
     "/site-status/{site_id}",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
     },
 )
