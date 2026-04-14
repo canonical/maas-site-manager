@@ -75,8 +75,6 @@ ci-test: unit-test
 
 unit-test:
 	export PATH=$$(pwd)/node-22/bin:$$PATH && \
-	XDG_CACHE_HOME=$$(pwd)/.cache && \
-	VITE_CACHE_DIR=$$(pwd)/.cache/vite && \
 	VITEST_JUNIT_SUITE_NAME='maas-site-manager frontend tests' \
 		yarn run coverage --test-timeout=$(FE_TEST_TIMEOUT) \
 		--retry=$(FE_TEST_RETRY) --silent --reporter=junit \

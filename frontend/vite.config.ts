@@ -1,10 +1,10 @@
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import AutoImport from "unplugin-auto-import/vite";
+import stylelint from "vite-plugin-stylelint";
+import * as path from "path";
 import childProcess from "child_process";
 import fs from "fs";
-import * as path from "path";
-import AutoImport from "unplugin-auto-import/vite";
-import { defineConfig, loadEnv } from "vite";
-import stylelint from "vite-plugin-stylelint";
 
 const commitHash = childProcess.execSync("git rev-parse --short HEAD").toString();
 // https://vitejs.dev/config/
@@ -28,7 +28,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: env.VITE_BASE_URL,
-    cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
     envDir: "./",
     css: {
       preprocessorOptions: {
