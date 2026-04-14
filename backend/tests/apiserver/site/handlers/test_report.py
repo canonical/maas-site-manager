@@ -1,6 +1,7 @@
 import pytest
 
 from msm.apiserver.db.models import Site
+from msm.common.enums import TaskStatus
 from msm.common.settings import Settings
 from msm.common.time import now_utc
 from tests.fixtures.client import Client
@@ -113,3 +114,51 @@ class TestDetailsPostHandler:
             response.headers["MSM-Heartbeat-Interval-Seconds"]
         )
         assert heartbeat == response_heartbeat
+
+
+@pytest.mark.asyncio
+class TestSiteStatusPatchHandler:
+    async def test_patch_all_fields_changed(
+        self, factory: Factory, api_site: Site, site_client: Client
+    ) -> None:
+        await factory.make_SiteStateStatus(site_id=api_site.id)
+
+        payload = {
+            "status": TaskStatus.COMPLETE,
+            "selections_status": TaskStatus.FAILED,
+            "global_config_status": TaskStatus.STARTED,
+            "image_sync_status": TaskStatus.COMPLETE,
+            "errors": ["one", "two"],
+        }
+        response = await site_client.patch("/site-status", json=payload)
+
+        assert response.status_code == 204
+        [status] = await factory.get("site_state_status")
+        assert status["site_id"] == api_site.id
+        assert status["status"] == TaskStatus.COMPLETE
+        assert status["selections_status"] == TaskStatus.FAILED
+        assert status["global_config_status"] == TaskStatus.STARTED
+        assert status["image_sync_status"] == TaskStatus.COMPLETE
+        assert status["errors"] == ["one", "two"]
+
+    async def test_patch_no_fields_changed_error_response(
+        self, site_client: Client
+    ) -> None:
+        response = await site_client.patch("/site-status", json={})
+
+        assert response.status_code == 422
+        detail = response.json()["error"]["details"][0]
+        assert detail["reason"] == "value_error"
+        assert "At least one field must be set." in detail["messages"][0]
+
+    async def test_patch_extra_fields_error_response(
+        self, site_client: Client
+    ) -> None:
+        response = await site_client.patch(
+            "/site-status", json={"status": TaskStatus.STARTED, "extra": 1}
+        )
+
+        assert response.status_code == 422
+        detail = response.json()["error"]["details"][0]
+        assert detail["reason"] == "extra_forbidden"
+        assert "Extra inputs are not permitted" in detail["messages"][0]

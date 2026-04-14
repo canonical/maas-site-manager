@@ -25,6 +25,7 @@ AUTHENTICATED_ROUTES = (
     ),
     ("GET", "/site/v1/images/{track}/{risk}/streams/v1/{index_path:path}"),
     ("GET", "/site/v1/site-config"),
+    ("PATCH", "/site/v1/site-status"),
 )
 
 
