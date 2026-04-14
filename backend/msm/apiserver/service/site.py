@@ -675,9 +675,14 @@ class SiteStateService(Service):
         return models.SiteStateStatus(**result.one()._asdict())
 
     async def update(
-        self, id: int, details: models.SiteStateStatusUpdate
+        self,
+        id: int,
+        details: models.SiteStateStatusUpdate,
+        append_errors: bool = False,
     ) -> models.SiteStateStatus:
         data = details.model_dump(exclude_none=True)
+        if append_errors and details.errors:
+            data["errors"] = SiteStateStatus.c.errors + data["errors"]
         stmt = (
             update(SiteStateStatus)
             .where(SiteStateStatus.c.id == id)

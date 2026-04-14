@@ -5,7 +5,7 @@ from fastapi import (
     Depends,
     Response,
 )
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from msm.apiserver.db import models
 from msm.apiserver.db.models import (
@@ -86,7 +86,12 @@ class SiteStateStatusPatchRequest(BaseModel):
     selections_status: TaskStatus | None = None
     global_config_status: TaskStatus | None = None
     image_sync_status: TaskStatus | None = None
-    errors: list[str] | None = None
+    errors: list[str] | None = Field(
+        default=None,
+        description="When specified as a non-empty list, append to the known errors.\
+When specified as an empty list, clear the errors.\
+When not specified, do not alter the errors",
+    )
 
     model_config = {"extra": "forbid"}
 
@@ -116,4 +121,5 @@ async def update_status(
         models.SiteStateStatusUpdate(
             **post_request.model_dump(exclude_none=True)
         ),
+        append_errors=bool(post_request.errors),
     )

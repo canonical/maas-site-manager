@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from msm.apiserver.db.models import Site
@@ -141,6 +143,57 @@ class TestSiteStatusPatchHandler:
         assert status["image_sync_status"] == TaskStatus.COMPLETE
         assert status["errors"] == ["one", "two"]
 
+    async def test_patch_errors_appended(
+        self, factory: Factory, api_site: Site, site_client: Client
+    ) -> None:
+        """
+        Test that when errors are specified,
+        they are appended to the list in the DB.
+        """
+        await factory.make_SiteStateStatus(
+            site_id=api_site.id, errors=["original error"]
+        )
+
+        payload = {
+            "errors": ["extra error"],
+        }
+        response = await site_client.patch("/site-status", json=payload)
+        assert response.status_code == 204
+        [status] = await factory.get("site_state_status")
+        assert status["errors"] == ["original error", "extra error"]
+
+    async def test_patch_errors_cleared(
+        self, factory: Factory, api_site: Site, site_client: Client
+    ) -> None:
+        """
+        Test that when errors are specified as an empty list,
+        the list is cleared in the DB.
+        """
+        await factory.make_SiteStateStatus(
+            site_id=api_site.id, errors=["original error"]
+        )
+
+        payload: dict[str, Any] = {
+            "errors": [],
+        }
+        response = await site_client.patch("/site-status", json=payload)
+        assert response.status_code == 204
+        [status] = await factory.get("site_state_status")
+        assert status["errors"] == []
+
+    async def test_patch_errors_unaffected(
+        self, factory: Factory, api_site: Site, site_client: Client
+    ) -> None:
+        await factory.make_SiteStateStatus(
+            site_id=api_site.id, errors=["original error"]
+        )
+
+        payload = {"status": TaskStatus.COMPLETE}
+        response = await site_client.patch("/site-status", json=payload)
+        assert response.status_code == 204
+        [status] = await factory.get("site_state_status")
+        assert status["errors"] == ["original error"]
+
     async def test_patch_no_fields_changed_error_response(
         self, site_client: Client
     ) -> None:
@@ -148,7 +201,7 @@ class TestSiteStatusPatchHandler:
 
         assert response.status_code == 422
         detail = response.json()["error"]["details"][0]
-        assert detail["reason"] == "value_error"
+        assert detail["reason"] == "ValueError"
         assert "At least one field must be set." in detail["messages"][0]
 
     async def test_patch_extra_fields_error_response(
@@ -160,5 +213,5 @@ class TestSiteStatusPatchHandler:
 
         assert response.status_code == 422
         detail = response.json()["error"]["details"][0]
-        assert detail["reason"] == "extra_forbidden"
+        assert detail["reason"] == "ExtraForbidden"
         assert "Extra inputs are not permitted" in detail["messages"][0]
