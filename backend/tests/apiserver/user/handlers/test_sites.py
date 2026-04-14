@@ -280,7 +280,7 @@ class TestGetCoordinatesHandler:
         user_client: Client,
         factory: Factory,
     ) -> None:
-        site_filters = {
+        site_filters: dict[str, Any] = {
             "city": "Los Angeles",
             "country": "USA",
             "name": "awesomesite9000",

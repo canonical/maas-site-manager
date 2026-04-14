@@ -14,7 +14,7 @@ from msm.apiserver.db import (
     models,
     queries,
 )
-from msm.apiserver.db.tables import SiteProfile
+from msm.apiserver.db.tables import Site as SiteTable, SiteProfile
 from msm.apiserver.schema import SortParam
 from msm.apiserver.service.base import Service
 
@@ -36,6 +36,23 @@ class SiteProfileService(Service):
 
     async def get_by_id(self, id: int) -> models.SiteProfile | None:
         stmt = self._select_all(SiteProfile).where(SiteProfile.c.id == id)
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.SiteProfile(**row._asdict())
+        return None
+
+    async def get_by_site_id(self, site_id: int) -> models.SiteProfile | None:
+        """Get the site profile linked to a site."""
+        stmt = (
+            select(*SiteProfile.c.values())
+            .select_from(
+                SiteProfile.join(
+                    SiteTable,
+                    SiteTable.c.site_profile_id == SiteProfile.c.id,
+                )
+            )
+            .where(SiteTable.c.id == site_id)
+        )
         result = await self.conn.execute(stmt)
         if row := result.one_or_none():
             return models.SiteProfile(**row._asdict())

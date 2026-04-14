@@ -197,6 +197,29 @@ class TestSiteProfileService:
         assert profile["selections"] == ["ubuntu/resolute/amd64"]
         assert profile["global_config"] == {}
 
+    async def test_get_by_site_id(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        profile = await factory.make_SiteProfile(
+            name="linked-profile",
+            selections=["ubuntu/noble/amd64"],
+            global_config={"theme": "dark"},
+        )
+        site = await factory.make_Site(
+            name="test-site",
+            site_profile_id=profile.id,
+        )
+        unlinked_site = await factory.make_Site(name="unlinked-site")
+        service = SiteProfileService(db_connection)
+
+        found = await service.get_by_site_id(site.id)
+        missing = await service.get_by_site_id(unlinked_site.id)
+
+        assert found is not None
+        assert found.id == profile.id
+        assert found.name == "linked-profile"
+        assert missing is None
+
     async def test_ensure_keeps_existing_default_profile(
         self, factory: Factory, db_connection: AsyncConnection
     ) -> None:

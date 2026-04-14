@@ -209,6 +209,7 @@ class Factory:
         auth_id: UUID | None = None,
         cluster_uuid: str | None = None,
         accepted: bool = True,
+        site_profile_id: int | None = None,
     ) -> Site:
         """Create a Site."""
         id = await self.next_id("site")
@@ -243,6 +244,7 @@ class Factory:
                     "accepted": accepted,
                     "created": self.now,
                     "cluster_uuid": cluster_uuid,
+                    "site_profile_id": site_profile_id,
                 }
             ],
         )
