@@ -10,6 +10,7 @@ runs:
         mkdir -p /home/ubuntu
         mkdir -p /home/ubuntu/.cache/pip
         chown -R ubuntu:ubuntu "$GITHUB_WORKSPACE" /home/ubuntu
+        chown -R ubuntu:ubuntu frontend/node_modules
 
     - name: Python pip cache
       uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
