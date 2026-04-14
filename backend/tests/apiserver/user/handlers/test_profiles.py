@@ -109,8 +109,10 @@ class TestProfilesDeleteHandler:
 
         response = await user_client.delete(f"/profiles/{profile.id}")
         assert response.status_code == 204
-        response = await user_client.get(f"/profiles/{profile.id}")
-        assert response.status_code == 404
+        
+        rows = await factory.get("site_profile")
+        profile_ids = [row["id"] for row in rows]
+        assert profile.id not in profile_ids
 
     async def test_delete_not_found(
         self, user_client: Client, factory: Factory
