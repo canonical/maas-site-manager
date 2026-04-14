@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 
 from msm.apiserver.db.models.global_site_config import SiteConfigFactory
