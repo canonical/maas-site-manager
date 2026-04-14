@@ -1,5 +1,6 @@
 import pytest
 
+from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
 from msm.apiserver.db.models.global_site_config import SiteConfigFactory
 from tests.fixtures.client import Client
 from tests.fixtures.factory import Factory
@@ -109,7 +110,7 @@ class TestProfilesDeleteHandler:
 
         response = await user_client.delete(f"/profiles/{profile.id}")
         assert response.status_code == 204
-        
+
         rows = await factory.get("site_profile")
         profile_ids = [row["id"] for row in rows]
         assert profile.id not in profile_ids
@@ -121,3 +122,24 @@ class TestProfilesDeleteHandler:
         assert response.status_code == 404
         data = response.json()
         assert data["error"]["code"] == "MissingResource"
+
+    async def test_delete_default_profile(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        """Test that deleting the default profile is not allowed."""
+        await factory.make_SiteProfile(
+            id=DEFAULT_SITE_PROFILE_ID,
+            name="Default Profile",
+            selections=["ubuntu/jammy/amd64"],
+        )
+
+        response = await user_client.delete(
+            f"/profiles/{DEFAULT_SITE_PROFILE_ID}"
+        )
+        assert response.status_code == 422
+        data = response.json()
+        assert data["error"]["code"] == "InvalidParameters"
+
+        rows = await factory.get("site_profile")
+        profile_ids = [row["id"] for row in rows]
+        assert DEFAULT_SITE_PROFILE_ID in profile_ids

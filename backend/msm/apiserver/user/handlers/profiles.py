@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import (
     APIRouter,
     Depends,
+    Path,
 )
 
-from msm.apiserver.db import models
+from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID, models
 from msm.apiserver.dependencies import services
 from msm.apiserver.exceptions.catalog import (
     BaseExceptionDetail,
@@ -109,7 +110,13 @@ async def get_id(
 async def delete(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    id: int,
+    id: Annotated[
+        int,
+        Path(
+            title="The ID of the Site Profile to delete",
+            gt=DEFAULT_SITE_PROFILE_ID,
+        ),
+    ],
 ) -> None:
     """Delete a site profile.
 
