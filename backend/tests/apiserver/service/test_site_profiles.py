@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Any
 
 import pytest
@@ -65,7 +66,7 @@ class TestSiteProfileService:
         service = SiteProfileService(db_connection)
         _, profiles = await service.get([])
         profile = next(iter(profiles))
-        expected_config = SiteConfigFactory.DEFAULT_CONFIG
+        expected_config = copy(SiteConfigFactory.DEFAULT_CONFIG)
         if global_config:
             expected_config.update(global_config)
         assert profile.global_config == expected_config
