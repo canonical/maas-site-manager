@@ -32,6 +32,7 @@ logs
 /frontend/public/assets/fonts/Noto Sans*
 *.local
 *.pmtiles
+/frontend/.cache
 
 # dotrun
 .docker-project
