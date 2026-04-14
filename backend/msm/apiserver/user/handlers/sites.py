@@ -290,7 +290,7 @@ async def patch(
 )
 async def delete(
     services: Annotated[ServiceCollection, Depends(services)],
-    authenticated_user: Annotated[models.Site, Depends(authenticated_user)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     id: int,
 ) -> None:
     """Delete a site from the database."""
@@ -308,7 +308,7 @@ async def delete(
 )
 async def delete_many(
     services: Annotated[ServiceCollection, Depends(services)],
-    authenticated_user: Annotated[models.Site, Depends(authenticated_user)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     ids: Annotated[list[int], Query()],
 ) -> None:
     """Delete multiple sites from the database."""
@@ -342,9 +342,10 @@ async def delete_many(
 )
 async def get_status(
     services: Annotated[ServiceCollection, Depends(services)],
-    authenticated_user: Annotated[models.Site, Depends(authenticated_user)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
     site_id: int,
 ) -> models.SiteStateStatus:
+    """Get the status of a site's configuration tasks by the site ID."""
     status = await services.site_state.get_by_site_id(site_id)
     if status is None:
         raise NotFoundException(
