@@ -17,7 +17,11 @@ from msm.apiserver.service.images import (
 )
 from msm.apiserver.service.s3 import S3Service
 from msm.apiserver.service.settings import SettingsService
-from msm.apiserver.service.site import InvalidPendingSites, SiteService
+from msm.apiserver.service.site import (
+    InvalidPendingSites,
+    SiteService,
+    SiteStateService,
+)
 from msm.apiserver.service.site_profiles import SiteProfileService
 from msm.apiserver.service.temporal import (
     BootSourceWorkflowService,
@@ -71,6 +75,7 @@ class ServiceCollection:
             workflows=self.workflow_service,
         )
         self.site_profiles = SiteProfileService(connection)
+        self.site_state = SiteStateService(connection)
 
     @property
     def services(self) -> Iterable[Service]:
@@ -94,6 +99,7 @@ class ServiceCollection:
             self.boot_asset_items,
             self.index_service,
             self.site_profiles,
+            self.site_state,
         ]
 
     @classmethod
@@ -123,6 +129,7 @@ __all__ = [
     "SettingsService",
     "SiteService",
     "SiteProfileService",
+    "SiteStateService",
     "TemporalService",
     "TokenService",
     "UserService",
