@@ -9,6 +9,7 @@ from pydantic import (
 )
 
 from msm.apiserver.schema import TimeZone
+from msm.common.enums import TaskStatus
 
 
 class ConnectionStatus(StrEnum):
@@ -126,3 +127,21 @@ class PendingSiteCreate(BaseModel):
     postal_code: str | None = None
     # XXX: mypy can't grok that this is an str/enum with lots of members
     timezone: TimeZone | None = None  # type: ignore[valid-type]
+
+
+class SiteStateStatus(BaseModel):
+    id: int
+    site_id: int
+    status: TaskStatus = TaskStatus.UNKNOWN
+    selections_status: TaskStatus = TaskStatus.UNKNOWN
+    global_config_status: TaskStatus = TaskStatus.UNKNOWN
+    image_sync_status: TaskStatus = TaskStatus.UNKNOWN
+    errors: list[str] = []
+
+class SiteStateStatusCreate(BaseModel):
+    site_id: int
+    status: TaskStatus = TaskStatus.UNKNOWN
+    selections_status: TaskStatus = TaskStatus.UNKNOWN
+    global_config_status: TaskStatus = TaskStatus.UNKNOWN
+    image_sync_status: TaskStatus = TaskStatus.UNKNOWN
+    errors: list[str] = []

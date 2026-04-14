@@ -35,6 +35,7 @@ from msm.apiserver.db.models.site import (
     SiteData,
     SiteDataUpdate,
     SiteDetailsUpdate,
+    SiteStateStatus,
     SiteUpdate,
 )
 from msm.apiserver.db.models.site_profiles import (
@@ -90,6 +91,7 @@ __all__ = [
     "SiteProfile",
     "SiteProfileCreate",
     "SiteProfileUpdate",
+    "SiteStateStatus",
     "SiteUpdate",
     "Token",
     "User",
