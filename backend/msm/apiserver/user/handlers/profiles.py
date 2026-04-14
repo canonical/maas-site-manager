@@ -103,6 +103,7 @@ async def get_id(
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         404: {"model": NotFoundErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
     },
 )
 async def delete(
