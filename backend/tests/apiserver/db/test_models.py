@@ -1,3 +1,4 @@
+from copy import copy
 from datetime import (
     datetime,
     timedelta,
@@ -57,6 +58,6 @@ class TestSiteProfile:
             selections=["ubuntu/noble/amd64"],
             global_config={"ntp_external_only": True},
         )
-        cfg = SiteConfigFactory.DEFAULT_CONFIG
+        cfg = copy(SiteConfigFactory.DEFAULT_CONFIG)
         cfg.update({"ntp_external_only": True})
         assert profile.global_config == cfg

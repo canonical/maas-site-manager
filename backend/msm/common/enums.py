@@ -169,7 +169,7 @@ class IPMIWorkaroundFlags(StrEnum):
 
 
 class StorageLayout(StrEnum):
-    BACACHE = "bcache"
+    BCACHE = "bcache"
     BLANK = "blank"
     CUSTOM = "custom"
     FLAT = "flat"
