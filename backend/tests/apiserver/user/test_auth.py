@@ -50,6 +50,7 @@ AUTHENTICATED_ROUTES = (
     ("PATCH", "/api/v1/sites/{id}"),
     ("DELETE", "/api/v1/sites/{id}"),
     ("DELETE", "/api/v1/sites"),
+    ("GET", "/api/v1/site-status/{site_id}"),
     ("POST", "/api/v1/bootasset-versions:remove"),
     ("GET", "/api/v1/tokens"),
     ("POST", "/api/v1/tokens"),
