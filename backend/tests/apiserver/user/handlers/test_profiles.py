@@ -2,14 +2,9 @@ from typing import Any
 
 import pytest
 
-from msm.apiserver.db.models import SiteProfile
+from msm.apiserver.db.models.global_site_config import SiteConfigFactory
 from tests.fixtures.client import Client
 from tests.fixtures.factory import Factory
-
-
-def profile_details(profile: SiteProfile) -> dict[str, Any]:
-    """Convert a SiteProfile to API response format."""
-    return profile.model_dump()
 
 
 @pytest.mark.asyncio
@@ -58,11 +53,10 @@ class TestProfilesGetHandler:
     async def test_get_by_id(
         self, user_client: Client, factory: Factory
     ) -> None:
-        """Test GET /profiles/{id} returns a specific profile."""
+        """Test GET /profiles/{id} returns a specific profile with all global config options."""
         profile = await factory.make_SiteProfile(
             name="Test Profile",
             selections=["ubuntu/jammy/amd64"],
-            global_config={"theme": "dark"},
         )
 
         response = await user_client.get(f"/profiles/{profile.id}")
@@ -71,8 +65,20 @@ class TestProfilesGetHandler:
         assert data["id"] == profile.id
         assert data["name"] == "Test Profile"
         assert data["selections"] == ["ubuntu/jammy/amd64"]
-        # Config should be filled out with defaults
-        assert "theme" in data["global_config"]
+
+        expected_config_keys = set(SiteConfigFactory.DEFAULT_CONFIG.keys())
+        actual_config_keys = set(data["global_config"].keys())
+
+        assert actual_config_keys == expected_config_keys, (
+            f"Missing config keys: {expected_config_keys - actual_config_keys}, "
+            f"Extra config keys: {actual_config_keys - expected_config_keys}"
+        )
+
+        for key, expected_value in SiteConfigFactory.DEFAULT_CONFIG.items():
+            assert data["global_config"][key] == expected_value, (
+                f"Config key '{key}' has value {data['global_config'][key]} "
+                f"but expected {expected_value}"
+            )
 
     async def test_get_by_id_not_found(
         self, user_client: Client, factory: Factory
