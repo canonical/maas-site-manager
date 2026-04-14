@@ -116,7 +116,9 @@ jobs:
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
       - uses: ./.github/actions/ci-setup
-
+      - name: Set correct ownership of frontend directory
+        run: |
+          chown -R ubuntu:ubuntu frontend/node_modules
       - name: Test
         run: |
           su ubuntu -c "make -C frontend ci-test"
@@ -126,18 +128,18 @@ jobs:
     if: >-
       ${{ !github.event.pull_request.draft && needs.changes.outputs.docs == 'true' }}
     steps:
-    - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
-      with:
-        fetch-depth: 0
-    - name: Create venv
-      working-directory: "rtd-docs"
-      run: make install
-    - name: Lint markdown
-      working-directory: "rtd-docs"
-      run: make lint-md
-    - name: Test build
-      working-directory: "rtd-docs"
-      run: make html
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          fetch-depth: 0
+      - name: Create venv
+        working-directory: "rtd-docs"
+        run: make install
+      - name: Lint markdown
+        working-directory: "rtd-docs"
+        run: make lint-md
+      - name: Test build
+        working-directory: "rtd-docs"
+        run: make html
 
   ci-check:
     runs-on: ubuntu-slim
