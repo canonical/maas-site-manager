@@ -95,3 +95,38 @@ async def get_id(
             )
         ],
     )
+
+
+@v1_router.delete(
+    "/profiles/{id}",
+    status_code=204,
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
+    },
+)
+async def delete(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    id: int,
+) -> None:
+    """Delete a site profile.
+
+    Raises:
+        NotFoundException: If the profile with the given ID does not exist.
+    """
+    if not await services.site_profiles.get_by_id(id):
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Site profile does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"Site profile ID {id} does not exist"],
+                    field="id",
+                    location="path",
+                )
+            ],
+        )
+    await services.site_profiles.delete(id)
+    return None

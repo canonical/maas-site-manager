@@ -97,3 +97,27 @@ class TestProfilesGetHandler:
         """Test GET /profiles returns 422 for invalid pagination params."""
         response = await user_client.get(f"/profiles?page={page}&size={size}")
         assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+class TestProfilesDeleteHandler:
+    async def test_delete(self, user_client: Client, factory: Factory) -> None:
+        profile = await factory.make_SiteProfile(
+            name="Test Profile to Delete",
+            selections=["ubuntu/jammy/amd64"],
+        )
+
+        response = await user_client.delete(f"/profiles/{profile.id}")
+        assert response.status_code == 204
+        response = await user_client.get(f"/profiles/{profile.id}")
+        assert response.status_code == 404
+
+    async def test_delete_not_found(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        response = await user_client.get("/profiles/99999")
+        assert response.status_code == 404
+        response = await user_client.delete("/profiles/99999")
+        assert response.status_code == 404
+        data = response.json()
+        assert data["error"]["code"] == "MissingResource"
