@@ -1,12 +1,23 @@
-from typing import Annotated
+from typing import (
+    Annotated,
+    Any,
+    Self,
+)
 
 from fastapi import (
     APIRouter,
     Depends,
     Path,
 )
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    model_validator,
+)
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID, models
+from msm.apiserver.db.models.global_site_config import SiteConfigFactory
 from msm.apiserver.dependencies import services
 from msm.apiserver.exceptions.catalog import (
     BaseExceptionDetail,
@@ -95,6 +106,93 @@ async def get_id(
                 location="path",
             )
         ],
+    )
+
+
+class ProfilesPostRequest(BaseModel):
+    """Request to create a Site Profile."""
+
+    name: str = Field(min_length=1, max_length=255)
+    selections: list[str] = Field(min_length=1)
+    global_config: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def validate_selections_not_empty(self) -> Self:
+        """Ensure selections list is not empty and contains valid strings."""
+        if not self.selections:
+            raise ValueError("selections must contain at least one item")
+        if any(
+            not selection or not selection.strip()
+            for selection in self.selections
+        ):
+            raise ValueError("selections must not contain empty strings")
+        return self
+
+    @model_validator(mode="after")
+    def validate_selections_format(self) -> Self:
+        """Ensure selections follow the os/release/arch format."""
+        for selection in self.selections:
+            parts = selection.split("/")
+            if len(parts) != 3:
+                raise ValueError(
+                    f"Selection '{selection}' must be in the format 'os/release/arch'"
+                )
+            os, release, arch = parts
+            if not all([os.strip(), release.strip(), arch.strip()]):
+                raise ValueError(
+                    f"Selection '{selection}' contains empty os, release, or arch"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def validate_global_config(self) -> Self:
+        """Ensure global_config keys and values are valid according to SiteConfigFactory."""
+        if self.global_config is None:
+            return self
+
+        invalid_keys = set(self.global_config.keys()) - set(
+            SiteConfigFactory.ALL_CONFIGS.keys()
+        )
+        if invalid_keys:
+            raise ValueError(
+                f"Invalid global_config keys: {', '.join(sorted(invalid_keys))}. "
+                f"Valid keys are: {', '.join(sorted(SiteConfigFactory.ALL_CONFIGS.keys()))}"
+            )
+
+        for key, value in self.global_config.items():
+            config_class = SiteConfigFactory.ALL_CONFIGS[key]
+            try:
+                config_class(value=value)
+            except ValidationError as e:
+                error_messages = "; ".join(
+                    [
+                        f"{err['loc'][0] if err['loc'] else key}: {err['msg']}"
+                        for err in e.errors()
+                    ]
+                )
+                raise ValueError(
+                    f"Invalid value for '{key}': {error_messages}"
+                ) from e
+
+        return self
+
+
+@v1_router.post(
+    "/profiles",
+    status_code=201,
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def post(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    post_request: ProfilesPostRequest,
+) -> models.SiteProfile:
+    """Create a new site profile."""
+    return await services.site_profiles.create(
+        models.SiteProfileCreate(**post_request.model_dump())
     )
 
 

@@ -1,4 +1,5 @@
 import pytest
+from typing import Any, Callable
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
 from msm.apiserver.db.models.global_site_config import SiteConfigFactory
@@ -98,6 +99,125 @@ class TestProfilesGetHandler:
         """Test GET /profiles returns 422 for invalid pagination params."""
         response = await user_client.get(f"/profiles?page={page}&size={size}")
         assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+class TestProfilesPostHandler:
+    @pytest.mark.parametrize(
+        "name,selections,global_config,expected_config_check",
+        [
+            (
+                "New Profile",
+                ["ubuntu/jammy/amd64"],
+                {"theme": "dark"},
+                lambda cfg: cfg.get("theme") == "dark",
+            ),
+            (
+                "Minimal Profile",
+                ["ubuntu/noble/amd64"],
+                None,
+                lambda cfg: cfg is not None,
+            ),
+            (
+                "Empty Config Profile",
+                ["ubuntu/jammy/amd64"],
+                {},
+                lambda cfg: cfg is not None and len(cfg) > 0,
+            ),
+        ],
+    )
+    async def test_post_success(
+        self,
+        user_client: Client,
+        factory: Factory,
+        name: str,
+        selections: list[str],
+        global_config: dict[str, Any] | None,
+        expected_config_check: Callable[[Any], bool],
+    ) -> None:
+        """Test POST /profiles successfully creates profiles with various configurations."""
+        data: dict[str, Any] = {
+            "name": name,
+            "selections": selections,
+        }
+        if global_config is not None:
+            data["global_config"] = global_config
+
+        response = await user_client.post("/profiles", json=data)
+        assert response.status_code == 201
+
+        result = response.json()
+        assert result["name"] == name
+        assert result["selections"] == selections
+        assert expected_config_check(result["global_config"])
+        assert "id" in result
+
+    @pytest.mark.parametrize(
+        "data,expected_error_text",
+        [
+            (
+                {"selections": ["ubuntu/jammy/amd64"]},
+                None,  # Missing name
+            ),
+            (
+                {"name": "No Selections Profile"},
+                None,  # Missing selections
+            ),
+            (
+                {"name": "Empty Selections", "selections": []},
+                None,  # Empty selections listW
+            ),
+            (
+                {
+                    "name": "Invalid Selections",
+                    "selections": [
+                        "ubuntu/jammy/amd64",
+                        "",
+                        "ubuntu/focal/amd64",
+                    ],
+                },
+                None,  # Empty string in selections
+            ),
+            (
+                {"name": "Invalid Format", "selections": ["ubuntu/jammy"]},
+                "must be in the format 'os/release/arch'",  # Wrong format
+            ),
+            (
+                {"name": "Empty Parts", "selections": ["ubuntu//amd64"]},
+                "empty os, release, or arch",  # Empty parts
+            ),
+            (
+                {
+                    "name": "Invalid Config Key",
+                    "selections": ["ubuntu/jammy/amd64"],
+                    "global_config": {"invalid_key": "value"},
+                },
+                "Invalid global_config keys: invalid_key",  # Invalid key
+            ),
+            (
+                {
+                    "name": "Invalid Config Value",
+                    "selections": ["ubuntu/jammy/amd64"],
+                    "global_config": {"maas_proxy_port": 99999},
+                },
+                "maas_proxy_port",  # Invalid value (port out of range)
+            ),
+        ],
+    )
+    async def test_post_validation_failures(
+        self,
+        user_client: Client,
+        factory: Factory,
+        data: dict[str, Any],
+        expected_error_text: str | None,
+    ) -> None:
+        """Test POST /profiles returns 422 for various validation failures."""
+        response = await user_client.post("/profiles", json=data)
+        assert response.status_code == 422
+
+        if expected_error_text:
+            result = response.json()
+            assert expected_error_text.lower() in str(result).lower()
 
 
 @pytest.mark.asyncio
