@@ -48,6 +48,28 @@ profile_sort_parameters = SortParamParser(
 )
 
 
+async def validate_selections_exist(
+    services: ServiceCollection, selections: list[str]
+) -> list[str]:
+    """
+    Validate that all selections exist in boot source selections.
+
+    Returns a list of missing selections.
+    """
+    missing_selections = []
+    for selection in selections:
+        os, release, arch = selection.split("/")
+        count, _ = await services.boot_source_selections.get(
+            [],
+            os=[os],
+            release=[release],
+            arch=[arch],
+        )
+        if count == 0:
+            missing_selections.append(selection)
+    return missing_selections
+
+
 class ProfilesGetResponse(PaginatedResults[models.SiteProfile]):
     """Response with paginated site profiles."""
 
@@ -182,6 +204,7 @@ class ProfilesPostRequest(BaseModel):
     status_code=201,
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
     },
 )
@@ -191,6 +214,26 @@ async def post(
     post_request: ProfilesPostRequest,
 ) -> models.SiteProfile:
     """Create a new site profile."""
+    # Validate that all selections exist in the database
+    missing_selections = await validate_selections_exist(
+        services, post_request.selections
+    )
+    if missing_selections:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Some selections do not exist in available boot sources.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[
+                        f"The following selections do not exist: {', '.join(missing_selections)}"
+                    ],
+                    field="selections",
+                    location="body",
+                )
+            ],
+        )
+
     return await services.site_profiles.create(
         models.SiteProfileCreate(**post_request.model_dump())
     )

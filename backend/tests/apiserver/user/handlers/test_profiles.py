@@ -1,5 +1,7 @@
+from collections.abc import Callable
+from typing import Any
+
 import pytest
-from typing import Any, Callable
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
 from msm.apiserver.db.models.global_site_config import SiteConfigFactory
@@ -114,15 +116,30 @@ class TestProfilesPostHandler:
             ),
             (
                 "Minimal Profile",
-                ["ubuntu/noble/amd64"],
+                ["ubuntu/focal/amd64"],
                 None,
-                lambda cfg: cfg is not None,
+                lambda cfg: all(
+                    cfg.get(key) == value
+                    for key, value in SiteConfigFactory.DEFAULT_CONFIG.items()
+                ),
             ),
             (
                 "Empty Config Profile",
                 ["ubuntu/jammy/amd64"],
                 {},
-                lambda cfg: cfg is not None and len(cfg) > 0,
+                lambda cfg: all(
+                    cfg.get(key) == value
+                    for key, value in SiteConfigFactory.DEFAULT_CONFIG.items()
+                ),
+            ),
+            (
+                "Multiple Existing Selections",
+                ["ubuntu/jammy/amd64", "ubuntu/focal/amd64"],
+                None,
+                lambda cfg: all(
+                    cfg.get(key) == value
+                    for key, value in SiteConfigFactory.DEFAULT_CONFIG.items()
+                ),
             ),
         ],
     )
@@ -135,7 +152,30 @@ class TestProfilesPostHandler:
         global_config: dict[str, Any] | None,
         expected_config_check: Callable[[Any], bool],
     ) -> None:
-        """Test POST /profiles successfully creates profiles with various configurations."""
+        """Test POST /profiles successfully creates profiles with valid selections."""
+        boot_source = await factory.make_BootSource(
+            name="test-source",
+            url="http://images.maas.io",
+            priority=100,
+        )
+
+        await factory.make_BootSourceSelection(
+            boot_source.id,
+            label="stable",
+            os="ubuntu",
+            release="jammy",
+            arch="amd64",
+            selected=False,
+        )
+        await factory.make_BootSourceSelection(
+            boot_source.id,
+            label="stable",
+            os="ubuntu",
+            release="focal",
+            arch="amd64",
+            selected=False,
+        )
+
         data: dict[str, Any] = {
             "name": name,
             "selections": selections,
@@ -153,6 +193,69 @@ class TestProfilesPostHandler:
         assert "id" in result
 
     @pytest.mark.parametrize(
+        "name,selections,expected_error_text",
+        [
+            (
+                "Nonexistent Selection",
+                ["nonexistent/release/arch"],
+                "do not exist",
+            ),
+            (
+                "Mixed Selections",
+                ["ubuntu/jammy/amd64", "nonexistent/release/arch"],
+                "nonexistent/release/arch",
+            ),
+            (
+                "Multiple Nonexistent Selections",
+                ["nonexistent1/release/arch", "nonexistent2/other/i386"],
+                "do not exist",
+            ),
+        ],
+    )
+    async def test_post_with_nonexistent_selections(
+        self,
+        user_client: Client,
+        factory: Factory,
+        name: str,
+        selections: list[str],
+        expected_error_text: str,
+    ) -> None:
+        """Test POST /profiles returns 404 when selections don't exist in database."""
+        boot_source = await factory.make_BootSource(
+            name="test-source",
+            url="http://images.maas.io",
+            priority=100,
+        )
+
+        await factory.make_BootSourceSelection(
+            boot_source.id,
+            label="stable",
+            os="ubuntu",
+            release="jammy",
+            arch="amd64",
+            selected=False,
+        )
+        await factory.make_BootSourceSelection(
+            boot_source.id,
+            label="stable",
+            os="ubuntu",
+            release="focal",
+            arch="amd64",
+            selected=False,
+        )
+
+        data: dict[str, Any] = {
+            "name": name,
+            "selections": selections,
+        }
+
+        response = await user_client.post("/profiles", json=data)
+        assert response.status_code == 404
+
+        result = response.json()
+        assert expected_error_text.lower() in str(result).lower()
+
+    @pytest.mark.parametrize(
         "data,expected_error_text",
         [
             (
@@ -161,11 +264,11 @@ class TestProfilesPostHandler:
             ),
             (
                 {"name": "No Selections Profile"},
-                None,  # Missing selections
+                None,
             ),
             (
                 {"name": "Empty Selections", "selections": []},
-                None,  # Empty selections listW
+                None,
             ),
             (
                 {
@@ -176,15 +279,15 @@ class TestProfilesPostHandler:
                         "ubuntu/focal/amd64",
                     ],
                 },
-                None,  # Empty string in selections
+                None,
             ),
             (
                 {"name": "Invalid Format", "selections": ["ubuntu/jammy"]},
-                "must be in the format 'os/release/arch'",  # Wrong format
+                "must be in the format 'os/release/arch'",
             ),
             (
                 {"name": "Empty Parts", "selections": ["ubuntu//amd64"]},
-                "empty os, release, or arch",  # Empty parts
+                "empty os, release, or arch",
             ),
             (
                 {
@@ -192,7 +295,7 @@ class TestProfilesPostHandler:
                     "selections": ["ubuntu/jammy/amd64"],
                     "global_config": {"invalid_key": "value"},
                 },
-                "Invalid global_config keys: invalid_key",  # Invalid key
+                "Invalid global_config keys: invalid_key",
             ),
             (
                 {
@@ -204,14 +307,14 @@ class TestProfilesPostHandler:
             ),
         ],
     )
-    async def test_post_validation_failures(
+    async def test_post_format_validation_failures(
         self,
         user_client: Client,
         factory: Factory,
         data: dict[str, Any],
         expected_error_text: str | None,
     ) -> None:
-        """Test POST /profiles returns 422 for various validation failures."""
+        """Test POST /profiles returns errors for format/schema validation failures."""
         response = await user_client.post("/profiles", json=data)
         assert response.status_code == 422
 
