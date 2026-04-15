@@ -14,7 +14,13 @@ from msm.apiserver.db.models import (
     SiteDetailsUpdate,
 )
 from msm.apiserver.dependencies import services
+from msm.apiserver.exceptions.catalog import (
+    BaseExceptionDetail,
+    NotFoundException,
+)
+from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
+    NotFoundErrorResponseModel,
     UnauthorizedErrorResponseModel,
     ValidationErrorResponseModel,
 )
@@ -108,6 +114,7 @@ When not specified, do not alter the errors",
     status_code=204,
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
     },
 )
@@ -116,6 +123,22 @@ async def update_status(
     site: Annotated[Site, Depends(authenticated_site)],
     post_request: SiteStateStatusPatchRequest,
 ) -> None:
+    status = await services.site_state.get_by_site_id(site.id)
+    if status is None:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Site state status does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[
+                        f"Site state status for site ID {site.id} does not exist"
+                    ],
+                    field="id",
+                    location="token",
+                )
+            ],
+        )
     await services.site_state.update_by_site_id(
         site.id,
         models.SiteStateStatusUpdate(

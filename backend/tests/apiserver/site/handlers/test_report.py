@@ -256,3 +256,20 @@ class TestSiteStatusPatchHandler:
         detail = response.json()["error"]["details"][0]
         assert detail["reason"] == "ExtraForbidden"
         assert "Extra inputs are not permitted" in detail["messages"][0]
+
+    async def test_patch_not_found(
+        self,
+        site_client: Client,
+        api_site: models.Site,
+    ) -> None:
+        response = await site_client.patch(
+            "/site-status", json={"status": TaskStatus.STARTED}
+        )
+
+        assert response.status_code == 404
+        detail = response.json()["error"]["details"][0]
+        assert detail["reason"] == "MissingResource"
+        assert (
+            f"Site state status for site ID {api_site.id} does not exist"
+            in detail["messages"][0]
+        )
