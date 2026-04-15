@@ -45,7 +45,7 @@ class TestSiteConfigGetHandler:
         expected_cfg = {**SiteConfigFactory.DEFAULT_CONFIG, "theme": "dark"}
         assert data["global_config"] == expected_cfg
         assert data["selections"] == ["ubuntu/jammy/amd64"]
-        assert data["trigger_image_sync"]
+        assert data["trigger_image_sync"] is True
 
     async def test_get_config_without_profile(
         self, factory: Factory, site_client: Client
