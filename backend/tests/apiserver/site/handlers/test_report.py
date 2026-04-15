@@ -1,9 +1,15 @@
 from typing import Any
+from uuid import uuid4
 
 import pytest
 
-from msm.apiserver.db.models import Site
+from msm.apiserver.db import models
+from msm.apiserver.db.tables import Site
 from msm.common.enums import TaskStatus
+from msm.common.jwt import (
+    TokenAudience,
+    TokenPurpose,
+)
 from msm.common.settings import Settings
 from msm.common.time import now_utc
 from tests.fixtures.client import Client
@@ -55,7 +61,7 @@ class TestDetailsPostHandler:
         assert site_data["last_seen"] < now_utc()
 
     async def test_update_stats(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         machine_counts = {
             "allocated": 10,
@@ -80,7 +86,7 @@ class TestDetailsPostHandler:
         assert site_data["last_seen"] < now_utc()
 
     async def test_update_empty(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         before_post = now_utc()
         response = await site_client.post("/details", json={})
@@ -98,7 +104,7 @@ class TestDetailsPostHandler:
         assert site_data["last_seen"] < now_utc()
 
     async def test_heartbeat_in_response(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         machine_counts = {
             "allocated": 10,
@@ -121,7 +127,7 @@ class TestDetailsPostHandler:
 @pytest.mark.asyncio
 class TestSiteStatusPatchHandler:
     async def test_patch_all_fields_changed(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         await factory.make_SiteStateStatus(site_id=api_site.id)
 
@@ -144,7 +150,7 @@ class TestSiteStatusPatchHandler:
         assert status["errors"] == ["one", "two"]
 
     async def test_patch_errors_appended(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         """
         Test that when errors are specified,
@@ -163,7 +169,7 @@ class TestSiteStatusPatchHandler:
         assert status["errors"] == ["original error", "extra error"]
 
     async def test_patch_errors_cleared(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         """
         Test that when errors are specified as an empty list,
@@ -182,7 +188,7 @@ class TestSiteStatusPatchHandler:
         assert status["errors"] == []
 
     async def test_patch_errors_unaffected(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         await factory.make_SiteStateStatus(
             site_id=api_site.id, errors=["original error"]
@@ -193,6 +199,41 @@ class TestSiteStatusPatchHandler:
         assert response.status_code == 204
         [status] = await factory.get("site_state_status")
         assert status["errors"] == ["original error"]
+
+    @pytest.mark.parametrize(
+        "task_status,expected",
+        [
+            (TaskStatus.STARTED, False),
+            (TaskStatus.COMPLETE, False),
+            (TaskStatus.FAILED, True),
+            (TaskStatus.UNKNOWN, True),
+        ],
+    )
+    async def test_patch_image_sync_status_resets(
+        self,
+        factory: Factory,
+        site_client: Client,
+        task_status: TaskStatus,
+        expected: bool,
+    ) -> None:
+        auth_id = uuid4()
+        new_site = await factory.make_Site(
+            auth_id=auth_id, trigger_image_sync=True
+        )
+        site_client.authenticate(
+            auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+        await factory.make_SiteStateStatus(
+            site_id=new_site.id,
+        )
+
+        payload = {"image_sync_status": task_status}
+        response = await site_client.patch("/site-status", json=payload)
+        assert response.status_code == 204
+        [site] = await factory.get("site", Site.c.id == new_site.id)
+        assert site["trigger_image_sync"] == expected
 
     async def test_patch_no_fields_changed_error_response(
         self, site_client: Client

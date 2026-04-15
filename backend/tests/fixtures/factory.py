@@ -247,6 +247,7 @@ class Factory:
                     "created": self.now,
                     "cluster_uuid": cluster_uuid,
                     "site_profile_id": site_profile_id,
+                    "trigger_image_sync": trigger_image_sync,
                 }
             ],
         )

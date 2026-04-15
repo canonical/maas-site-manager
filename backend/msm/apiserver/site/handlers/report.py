@@ -116,10 +116,17 @@ async def update_status(
     site: Annotated[Site, Depends(authenticated_site)],
     post_request: SiteStateStatusPatchRequest,
 ) -> None:
-    await services.site_state.update(
+    await services.site_state.update_by_site_id(
         site.id,
         models.SiteStateStatusUpdate(
             **post_request.model_dump(exclude_none=True)
         ),
         append_errors=bool(post_request.errors),
     )
+    if post_request.image_sync_status in [
+        TaskStatus.STARTED,
+        TaskStatus.COMPLETE,
+    ]:
+        await services.sites.update(
+            site.id, models.SiteUpdate(trigger_image_sync=False)
+        )

@@ -226,6 +226,31 @@ class TestSiteStateService:
         )
         assert result.errors == original_errors + new_errors
 
+    async def test_update_by_site_id(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        site = await factory.make_Site()
+        site_state = await factory.make_SiteStateStatus(
+            site_id=site.id,
+            status=TaskStatus.UNKNOWN,
+            selections_status=TaskStatus.UNKNOWN,
+            errors=["error to be removed"],
+        )
+        service = SiteStateService(db_connection)
+
+        update_data = SiteStateStatusUpdate(
+            status=TaskStatus.COMPLETE,
+            selections_status=TaskStatus.COMPLETE,
+            errors=["warning1", "warning2"],
+        )
+        result = await service.update_by_site_id(
+            site_state.site_id, update_data
+        )
+
+        assert result.status == TaskStatus.COMPLETE
+        assert result.selections_status == TaskStatus.COMPLETE
+        assert result.errors == ["warning1", "warning2"]
+
     async def test_delete(
         self,
         factory: Factory,

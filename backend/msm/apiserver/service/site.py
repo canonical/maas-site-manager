@@ -9,6 +9,7 @@ from uuid import UUID
 
 from prometheus_client import Gauge, Histogram
 from sqlalchemy import (
+    ColumnElement,
     Integer,
     Select,
     case,
@@ -680,12 +681,34 @@ class SiteStateService(Service):
         details: models.SiteStateStatusUpdate,
         append_errors: bool = False,
     ) -> models.SiteStateStatus:
+        return await self._update(
+            SiteStateStatus.c.id == id, details, append_errors=append_errors
+        )
+
+    async def update_by_site_id(
+        self,
+        site_id: int,
+        details: models.SiteStateStatusUpdate,
+        append_errors: bool = False,
+    ) -> models.SiteStateStatus:
+        return await self._update(
+            SiteStateStatus.c.site_id == site_id,
+            details,
+            append_errors=append_errors,
+        )
+
+    async def _update(
+        self,
+        clause: ColumnElement[bool],
+        details: models.SiteStateStatusUpdate,
+        append_errors: bool = False,
+    ) -> models.SiteStateStatus:
         data = details.model_dump(exclude_none=True)
         if append_errors and details.errors:
             data["errors"] = SiteStateStatus.c.errors + data["errors"]
         stmt = (
             update(SiteStateStatus)
-            .where(SiteStateStatus.c.id == id)
+            .where(clause)
             .values(data)
             .returning(*SiteStateStatus.c.values())
         )
