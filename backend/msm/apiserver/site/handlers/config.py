@@ -26,7 +26,7 @@ v1_router = APIRouter(prefix="/v1")
 
 
 class SiteConfigResponse(BaseModel):
-    """Full desired configuration for a site."""
+    """Full configuration for a site."""
 
     global_config: dict[str, Any]
     selections: list[str]

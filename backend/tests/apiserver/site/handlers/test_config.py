@@ -64,6 +64,31 @@ class TestSiteConfigGetHandler:
         data = response.json()
         assert data["error"]["code"] == "MissingResource"
 
+    async def test_get_config_trigger_image_sync(
+        self, factory: Factory, site_client: Client
+    ) -> None:
+        """Test GET /site-config reflects trigger_image_sync from the site row."""
+        site_auth_id = uuid4()
+        profile = await factory.make_SiteProfile(
+            name="Trigger profile",
+            selections=["ubuntu/resolute/amd64"],
+            global_config={},
+        )
+        await factory.make_Site(
+            auth_id=site_auth_id,
+            trigger_image_sync=True,
+            site_profile_id=profile.id,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+
+        response = await site_client.get("/site-config")
+        assert response.status_code == 200
+        assert response.json()["trigger_image_sync"] is True
+
 
 @pytest.mark.asyncio
 class TestSiteStatusPatchHandler:
