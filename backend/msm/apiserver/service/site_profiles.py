@@ -14,7 +14,7 @@ from msm.apiserver.db import (
     models,
     queries,
 )
-from msm.apiserver.db.tables import Site as SiteTable, SiteProfile
+from msm.apiserver.db.tables import Site, SiteProfile
 from msm.apiserver.schema import SortParam
 from msm.apiserver.service.base import Service
 
@@ -47,11 +47,11 @@ class SiteProfileService(Service):
             select(*SiteProfile.c.values())
             .select_from(
                 SiteProfile.join(
-                    SiteTable,
-                    SiteTable.c.site_profile_id == SiteProfile.c.id,
+                    Site,
+                    Site.c.site_profile_id == SiteProfile.c.id,
                 )
             )
-            .where(SiteTable.c.id == site_id)
+            .where(Site.c.id == site_id)
         )
         result = await self.conn.execute(stmt)
         if row := result.one_or_none():

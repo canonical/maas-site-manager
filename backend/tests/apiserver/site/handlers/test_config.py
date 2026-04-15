@@ -1,9 +1,11 @@
-import pytest
-from sqlalchemy import update
+from uuid import uuid4
 
-from msm.apiserver.db.models import Site
-from msm.apiserver.db.models.global_site_config import SiteConfigFactory
-from msm.apiserver.db.tables import Site as SiteTable
+import pytest
+
+from msm.common.jwt import (
+    TokenAudience,
+    TokenPurpose,
+)
 from tests.fixtures.client import Client
 from tests.fixtures.factory import Factory
 
@@ -11,55 +13,69 @@ from tests.fixtures.factory import Factory
 @pytest.mark.asyncio
 class TestSiteConfigGetHandler:
     async def test_get_config_with_profile(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, site_client: Client
     ) -> None:
         """Test GET /site-config returns config and selections from linked profile."""
+        site_auth_id = uuid4()
         profile = await factory.make_SiteProfile(
             name="Test Profile",
             selections=["ubuntu/jammy/amd64"],
             global_config={"theme": "dark"},
         )
-        await factory.conn.execute(
-            update(SiteTable)
-            .where(SiteTable.c.id == api_site.id)
-            .values(site_profile_id=profile.id)
+        await factory.make_Site(
+            auth_id=site_auth_id,
+            site_profile_id=profile.id,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
         )
 
         response = await site_client.get("/site-config")
         assert response.status_code == 200
         data = response.json()
 
-        assert set(data["global_config"].keys()) == set(
-            SiteConfigFactory.DEFAULT_CONFIG.keys()
-        )
         assert data["global_config"]["theme"] == "dark"
         assert data["selections"] == ["ubuntu/jammy/amd64"]
         assert "trigger_image_sync" in data
 
     async def test_get_config_without_profile(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, site_client: Client
     ) -> None:
-        """Test GET /site-config returns defaults and empty selections when no profile."""
-        response = await site_client.get("/site-config")
-        assert response.status_code == 200
-        data = response.json()
+        """Test GET /site-config returns 404 when no profile is linked."""
+        site_auth_id = uuid4()
+        await factory.make_Site(auth_id=site_auth_id)
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
 
-        for key, value in SiteConfigFactory.DEFAULT_CONFIG.items():
-            assert data["global_config"][key] == value, (
-                f"Config key '{key}' has value {data['global_config'][key]} "
-                f"but expected {value}"
-            )
-        assert data["selections"] == []
-        assert data["trigger_image_sync"] is False
+        response = await site_client.get("/site-config")
+        assert response.status_code == 404
+        data = response.json()
+        assert data["error"]["code"] == "MissingResource"
 
     async def test_get_config_trigger_image_sync(
-        self, factory: Factory, api_site: Site, site_client: Client
+        self, factory: Factory, site_client: Client
     ) -> None:
         """Test GET /site-config reflects trigger_image_sync from the site row."""
-        await factory.conn.execute(
-            update(SiteTable)
-            .where(SiteTable.c.id == api_site.id)
-            .values(trigger_image_sync=True)
+        site_auth_id = uuid4()
+        profile = await factory.make_SiteProfile(
+            name="Trigger profile",
+            selections=["ubuntu/resolute/amd64"],
+            global_config={},
+        )
+        await factory.make_Site(
+            auth_id=site_auth_id,
+            trigger_image_sync=True,
+            site_profile_id=profile.id,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
         )
 
         response = await site_client.get("/site-config")

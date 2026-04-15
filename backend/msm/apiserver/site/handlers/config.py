@@ -6,12 +6,15 @@ from fastapi import (
 )
 from pydantic import BaseModel
 
-from msm.apiserver.db.models import (
-    Site,
-    SiteConfigFactory,
-)
+from msm.apiserver.db.models import Site
 from msm.apiserver.dependencies import services
+from msm.apiserver.exceptions.catalog import (
+    BaseExceptionDetail,
+    NotFoundException,
+)
+from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
+    NotFoundErrorResponseModel,
     UnauthorizedErrorResponseModel,
 )
 from msm.apiserver.service import ServiceCollection
@@ -21,7 +24,7 @@ v1_router = APIRouter(prefix="/v1")
 
 
 class SiteConfigResponse(BaseModel):
-    """Full desired configuration for a site."""
+    """Full configuration for a site."""
 
     global_config: dict[str, Any]
     selections: list[str]
@@ -32,6 +35,7 @@ class SiteConfigResponse(BaseModel):
     "/site-config",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
     },
 )
 async def get(
@@ -40,14 +44,21 @@ async def get(
 ) -> SiteConfigResponse:
     """Get the full desired configuration for a site."""
     profile = await services.site_profiles.get_by_site_id(site.id)
-    if profile:
-        return SiteConfigResponse(
-            global_config=profile.global_config,
-            selections=profile.selections,
-            trigger_image_sync=site.trigger_image_sync,
+    if profile is None:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Site profile does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"Site profile ID {site.id} does not exist"],
+                    field="id",
+                    location="path",
+                )
+            ],
         )
     return SiteConfigResponse(
-        global_config=dict(SiteConfigFactory.DEFAULT_CONFIG),
-        selections=[],
+        global_config=profile.global_config,
+        selections=profile.selections,
         trigger_image_sync=site.trigger_image_sync,
     )

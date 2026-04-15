@@ -209,6 +209,7 @@ class Factory:
         auth_id: UUID | None = None,
         cluster_uuid: str | None = None,
         accepted: bool = True,
+        trigger_image_sync: bool = False,
         site_profile_id: int | None = None,
     ) -> Site:
         """Create a Site."""
@@ -242,6 +243,7 @@ class Factory:
                     "state": state,
                     "coordinates": coords_dict,
                     "accepted": accepted,
+                    "trigger_image_sync": trigger_image_sync,
                     "created": self.now,
                     "cluster_uuid": cluster_uuid,
                     "site_profile_id": site_profile_id,
