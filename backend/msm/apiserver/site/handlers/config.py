@@ -51,7 +51,7 @@ async def get(
             details=[
                 BaseExceptionDetail(
                     reason=ExceptionCode.MISSING_RESOURCE,
-                    messages=[f"Site profile ID {site.id} does not exist"],
+                    messages=[f"Profile for Site ID {site.id} does not exist"],
                     field="id",
                     location="path",
                 )
