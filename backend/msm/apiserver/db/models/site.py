@@ -55,7 +55,6 @@ class Site(BaseModel):
     connection_status: ConnectionStatus
     trigger_image_sync: bool = False
     stats: SiteData | None = None
-    trigger_image_sync: bool = False
 
 
 class PendingSite(BaseModel):
