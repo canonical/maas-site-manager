@@ -12,6 +12,7 @@ from fastapi import (
 from pydantic import (
     BaseModel,
     Field,
+    StringConstraints,
     ValidationError,
     model_validator,
 )
@@ -135,36 +136,10 @@ class ProfilesPostRequest(BaseModel):
     """Request to create a Site Profile."""
 
     name: str = Field(min_length=1, max_length=255)
-    selections: list[str] = Field(min_length=1)
+    selections: list[
+        Annotated[str, StringConstraints(pattern=r"^[^\s/]+/[^\s/]+/[^\s/]+$")]
+    ] = Field(min_length=1)
     global_config: dict[str, Any] | None = None
-
-    @model_validator(mode="after")
-    def validate_selections_not_empty(self) -> Self:
-        """Ensure selections list is not empty and contains valid strings."""
-        if not self.selections:
-            raise ValueError("selections must contain at least one item")
-        if any(
-            not selection or not selection.strip()
-            for selection in self.selections
-        ):
-            raise ValueError("selections must not contain empty strings")
-        return self
-
-    @model_validator(mode="after")
-    def validate_selections_format(self) -> Self:
-        """Ensure selections follow the os/release/arch format."""
-        for selection in self.selections:
-            parts = selection.split("/")
-            if len(parts) != 3:
-                raise ValueError(
-                    f"Selection '{selection}' must be in the format 'os/release/arch'"
-                )
-            os, release, arch = parts
-            if not all([os.strip(), release.strip(), arch.strip()]):
-                raise ValueError(
-                    f"Selection '{selection}' contains empty os, release, or arch"
-                )
-        return self
 
     @model_validator(mode="after")
     def validate_global_config(self) -> Self:

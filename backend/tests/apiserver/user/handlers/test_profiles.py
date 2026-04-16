@@ -283,11 +283,11 @@ class TestProfilesPostHandler:
             ),
             (
                 {"name": "Invalid Format", "selections": ["ubuntu/jammy"]},
-                "must be in the format 'os/release/arch'",
+                "string should match pattern",
             ),
             (
                 {"name": "Empty Parts", "selections": ["ubuntu//amd64"]},
-                "empty os, release, or arch",
+                "string should match pattern",
             ),
             (
                 {
