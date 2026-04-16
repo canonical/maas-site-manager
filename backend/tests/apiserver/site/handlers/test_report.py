@@ -31,8 +31,8 @@ class TestDetailsPostHandler:
         assert before_post < site_data["last_seen"]
         assert site_data["last_seen"] < now_utc()
 
-    async def test_update_version_requests_config_keys(
-        self, factory: Factory, site_client: Client, api_site: Site
+    async def test_update_version_requests_config_options(
+        self, factory: Factory, site_client: Client
     ) -> None:
         details = {
             "version": "new.version",
