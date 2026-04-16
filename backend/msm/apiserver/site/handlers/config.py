@@ -120,7 +120,11 @@ async def update_status(
         )
     await services.site_state.update_by_site_id(
         site.id,
-        SiteStateStatusUpdate(**patch_request.model_dump(exclude_none=True)),
+        SiteStateStatusUpdate(
+            **patch_request.model_dump(
+                exclude_none=True, exclude={"clear_errors"}
+            )
+        ),
         append_errors=not patch_request.clear_errors,
     )
     if patch_request.image_sync_status in [

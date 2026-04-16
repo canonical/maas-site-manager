@@ -1,4 +1,3 @@
-
 import pytest
 
 from msm.apiserver.db import models
