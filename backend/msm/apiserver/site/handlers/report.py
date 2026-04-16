@@ -1,32 +1,24 @@
-from typing import Annotated, Self
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
     Depends,
     Response,
 )
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
-from msm.apiserver.db import models
 from msm.apiserver.db.models import (
     Site,
     SiteDataUpdate,
     SiteDetailsUpdate,
 )
 from msm.apiserver.dependencies import services
-from msm.apiserver.exceptions.catalog import (
-    BaseExceptionDetail,
-    NotFoundException,
-)
-from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
-    NotFoundErrorResponseModel,
     UnauthorizedErrorResponseModel,
     ValidationErrorResponseModel,
 )
 from msm.apiserver.service import ServiceCollection
 from msm.apiserver.site.auth import authenticated_site
-from msm.common.enums import TaskStatus
 from msm.common.time import now_utc
 
 v1_router = APIRouter(prefix="/v1")
@@ -85,71 +77,3 @@ async def details(
     )
     interval = await services.sites.get_heartbeat_interval()
     response.headers["MSM-Heartbeat-Interval-Seconds"] = str(interval)
-
-
-class SiteStateStatusPatchRequest(BaseModel):
-    status: TaskStatus | None = None
-    selections_status: TaskStatus | None = None
-    global_config_status: TaskStatus | None = None
-    image_sync_status: TaskStatus | None = None
-    errors: list[str] | None = Field(
-        default=None,
-        description="When specified as a non-empty list, append to the known errors.\
-When specified as an empty list, clear the errors.\
-When not specified, do not alter the errors",
-    )
-
-    model_config = {"extra": "forbid"}
-
-    @model_validator(mode="after")
-    def check_at_least_one_field_present(self) -> Self:
-        """ "Ensure at least one field is provided for update."""
-        if not self.model_fields_set:
-            raise ValueError("At least one field must be set.")
-        return self
-
-
-@v1_router.patch(
-    "/site-status",
-    status_code=204,
-    responses={
-        401: {"model": UnauthorizedErrorResponseModel},
-        404: {"model": NotFoundErrorResponseModel},
-        422: {"model": ValidationErrorResponseModel},
-    },
-)
-async def update_status(
-    services: Annotated[ServiceCollection, Depends(services)],
-    site: Annotated[Site, Depends(authenticated_site)],
-    post_request: SiteStateStatusPatchRequest,
-) -> None:
-    status = await services.site_state.get_by_site_id(site.id)
-    if status is None:
-        raise NotFoundException(
-            code=ExceptionCode.MISSING_RESOURCE,
-            message="Site state status does not exist.",
-            details=[
-                BaseExceptionDetail(
-                    reason=ExceptionCode.MISSING_RESOURCE,
-                    messages=[
-                        f"Site state status for site ID {site.id} does not exist"
-                    ],
-                    field="id",
-                    location="token",
-                )
-            ],
-        )
-    await services.site_state.update_by_site_id(
-        site.id,
-        models.SiteStateStatusUpdate(
-            **post_request.model_dump(exclude_none=True)
-        ),
-        append_errors=bool(post_request.errors),
-    )
-    if post_request.image_sync_status in [
-        TaskStatus.STARTED,
-        TaskStatus.COMPLETE,
-    ]:
-        await services.sites.update(
-            site.id, models.SiteUpdate(trigger_image_sync=False)
-        )
