@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
+from msm.apiserver.db.models import BootSourceSelection
 from msm.apiserver.db.models.global_site_config import SiteConfigFactory
 from tests.fixtures.client import Client
 from tests.fixtures.factory import Factory
@@ -20,7 +21,7 @@ class TestProfilesGetHandler:
         )
         profile2 = await factory.make_SiteProfile(
             name="Test Profile 2",
-            selections=["ubuntu/focal/amd64"],
+            selections=["ubuntu/noble/amd64"],
             global_config={},
         )
 
@@ -42,7 +43,7 @@ class TestProfilesGetHandler:
             name="Profile A", selections=["ubuntu/jammy/amd64"]
         )
         await factory.make_SiteProfile(
-            name="Profile B", selections=["ubuntu/focal/amd64"]
+            name="Profile B", selections=["ubuntu/noble/amd64"]
         )
 
         response = await user_client.get("/profiles?page=1&size=1")
@@ -116,7 +117,7 @@ class TestProfilesPostHandler:
             ),
             (
                 "Minimal Profile",
-                ["ubuntu/focal/amd64"],
+                ["ubuntu/noble/amd64"],
                 None,
                 lambda cfg: all(
                     cfg.get(key) == value
@@ -134,7 +135,7 @@ class TestProfilesPostHandler:
             ),
             (
                 "Multiple Existing Selections",
-                ["ubuntu/jammy/amd64", "ubuntu/focal/amd64"],
+                ["ubuntu/jammy/amd64", "ubuntu/noble/amd64"],
                 None,
                 lambda cfg: all(
                     cfg.get(key) == value
@@ -147,35 +148,14 @@ class TestProfilesPostHandler:
         self,
         user_client: Client,
         factory: Factory,
+        sel_ubuntu_jammy: list[BootSourceSelection],
+        sel_ubuntu_noble: list[BootSourceSelection],
         name: str,
         selections: list[str],
         global_config: dict[str, Any] | None,
         expected_config_check: Callable[[Any], bool],
     ) -> None:
         """Test POST /profiles successfully creates profiles with valid selections."""
-        boot_source = await factory.make_BootSource(
-            name="test-source",
-            url="http://images.maas.io",
-            priority=100,
-        )
-
-        await factory.make_BootSourceSelection(
-            boot_source.id,
-            label="stable",
-            os="ubuntu",
-            release="jammy",
-            arch="amd64",
-            selected=False,
-        )
-        await factory.make_BootSourceSelection(
-            boot_source.id,
-            label="stable",
-            os="ubuntu",
-            release="focal",
-            arch="amd64",
-            selected=False,
-        )
-
         data: dict[str, Any] = {
             "name": name,
             "selections": selections,
@@ -202,7 +182,7 @@ class TestProfilesPostHandler:
             ),
             (
                 "Mixed Selections",
-                ["ubuntu/jammy/amd64", "nonexistent/release/arch"],
+                ["ubuntu/noble/amd64", "nonexistent/release/arch"],
                 "nonexistent/release/arch",
             ),
             (
@@ -216,34 +196,13 @@ class TestProfilesPostHandler:
         self,
         user_client: Client,
         factory: Factory,
+        sel_ubuntu_jammy: list[BootSourceSelection],
+        sel_ubuntu_noble: list[BootSourceSelection],
         name: str,
         selections: list[str],
         expected_error_text: str,
     ) -> None:
         """Test POST /profiles returns 404 when selections don't exist in database."""
-        boot_source = await factory.make_BootSource(
-            name="test-source",
-            url="http://images.maas.io",
-            priority=100,
-        )
-
-        await factory.make_BootSourceSelection(
-            boot_source.id,
-            label="stable",
-            os="ubuntu",
-            release="jammy",
-            arch="amd64",
-            selected=False,
-        )
-        await factory.make_BootSourceSelection(
-            boot_source.id,
-            label="stable",
-            os="ubuntu",
-            release="focal",
-            arch="amd64",
-            selected=False,
-        )
-
         data: dict[str, Any] = {
             "name": name,
             "selections": selections,
@@ -276,7 +235,7 @@ class TestProfilesPostHandler:
                     "selections": [
                         "ubuntu/jammy/amd64",
                         "",
-                        "ubuntu/focal/amd64",
+                        "ubuntu/noble/amd64",
                     ],
                 },
                 None,
