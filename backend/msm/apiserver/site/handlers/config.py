@@ -6,21 +6,21 @@ from fastapi import (
 )
 from pydantic import BaseModel, Field, model_validator
 
-from msm.apiserver.db.models import Site, SiteStateStatusUpdate, SiteUpdate
+from msm.apiserver.db.models import Site, SiteUpdate, SiteStateStatusUpdate
 from msm.apiserver.dependencies import services
 from msm.apiserver.exceptions.catalog import (
     BaseExceptionDetail,
     NotFoundException,
 )
+from msm.common.enums import TaskStatus
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
     NotFoundErrorResponseModel,
     UnauthorizedErrorResponseModel,
-    ValidationErrorResponseModel,
+    ValidationErrorResponseModel
 )
 from msm.apiserver.service import ServiceCollection
 from msm.apiserver.site.auth import authenticated_site
-from msm.common.enums import TaskStatus
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -102,6 +102,7 @@ async def update_status(
     site: Annotated[Site, Depends(authenticated_site)],
     post_request: SiteStateStatusPatchRequest,
 ) -> None:
+    """Update a site's configuration task status."""
     status = await services.site_state.get_by_site_id(site.id)
     if status is None:
         raise NotFoundException(
@@ -120,7 +121,9 @@ async def update_status(
         )
     await services.site_state.update_by_site_id(
         site.id,
-        SiteStateStatusUpdate(**post_request.model_dump(exclude_none=True)),
+        SiteStateStatusUpdate(
+            **post_request.model_dump(exclude_none=True)
+        ),
         append_errors=bool(post_request.errors),
     )
     if post_request.image_sync_status in [
