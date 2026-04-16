@@ -566,6 +566,8 @@ class SiteService(Service):
                 Site.c.url,
                 Site.c.cluster_uuid,
                 Site.c.trigger_image_sync,
+                Site.c.version,
+                Site.c.known_config_options,
                 case(
                     (
                         SiteData.c.site_id == None,

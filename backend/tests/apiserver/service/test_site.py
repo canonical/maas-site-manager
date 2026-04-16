@@ -279,12 +279,17 @@ class TestSiteService:
         await service.update(
             site.id,
             SiteDetailsUpdate(
-                name="new-name", url="https://new-site.example.com"
+                name="new-name",
+                url="https://new-site.example.com",
+                version="new.version",
+                known_config_options=["new_option"],
             ),
         )
         [db_site] = await factory.get("site")
         assert db_site["name"] == "new-name"
         assert db_site["url"] == "https://new-site.example.com"
+        assert db_site["version"] == "new.version"
+        assert db_site["known_config_options"] == ["new_option"]
 
     async def test_update(
         self,

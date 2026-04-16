@@ -55,6 +55,8 @@ class Site(BaseModel):
     connection_status: ConnectionStatus
     trigger_image_sync: bool = False
     stats: SiteData | None = None
+    version: str = ""
+    known_config_options: list[str] = []
 
 
 class PendingSite(BaseModel):
@@ -101,6 +103,8 @@ class SiteDetailsUpdate(BaseModel):
 
     name: str | None
     url: str | None
+    version: str | None
+    known_config_options: list[str] | None
 
 
 class SiteDataUpdate(BaseModel):

@@ -40,6 +40,23 @@ class DetailsPostRequest(BaseModel):
     name: str | None = None
     url: str | None = None
     machines_by_status: MachineStatsByStatus | None = None
+    version: str | None = None
+    known_config_options: list[str] | None = None
+
+    @property
+    def requires_update(self) -> bool:
+        return (
+            self.name is not None
+            or self.url is not None
+            or self.version is not None
+            or self.known_config_options is not None
+        )
+
+
+class DetailsPostResponse(BaseModel):
+    """Response model for POST request to /details"""
+
+    config_options_requested: bool = False
 
 
 @v1_router.post(
@@ -54,12 +71,17 @@ async def details(
     services: Annotated[ServiceCollection, Depends(services)],
     site: Annotated[Site, Depends(authenticated_site)],
     post_request: DetailsPostRequest,
-) -> None:
+) -> DetailsPostResponse:
     """Update site details."""
-    if post_request.name or post_request.url:
+    if post_request.requires_update:
         await services.sites.update(
             site.id,
-            SiteDetailsUpdate(name=post_request.name, url=post_request.url),
+            SiteDetailsUpdate(
+                name=post_request.name,
+                url=post_request.url,
+                version=post_request.version,
+                known_config_options=post_request.known_config_options,
+            ),
         )
     if post_request.machines_by_status:
         if site_data := post_request.machines_by_status.model_dump():
@@ -77,3 +99,7 @@ async def details(
     )
     interval = await services.sites.get_heartbeat_interval()
     response.headers["MSM-Heartbeat-Interval-Seconds"] = str(interval)
+
+    return DetailsPostResponse(
+        config_options_requested=site.version != post_request.version
+    )

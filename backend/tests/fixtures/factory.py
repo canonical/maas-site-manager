@@ -211,6 +211,8 @@ class Factory:
         accepted: bool = True,
         trigger_image_sync: bool = False,
         site_profile_id: int | None = None,
+        version: str | None = None,
+        known_config_options: list[str] = [],
     ) -> Site:
         """Create a Site."""
         id = await self.next_id("site")
@@ -225,6 +227,8 @@ class Factory:
         coords_dict = None
         if coordinates is not None:
             coords_dict = coordinates.model_dump()
+        if version is None:
+            version = "3.8.0"
         [row] = await self.create(
             "site",
             [
@@ -247,7 +251,8 @@ class Factory:
                     "created": self.now,
                     "cluster_uuid": cluster_uuid,
                     "site_profile_id": site_profile_id,
-                    "trigger_image_sync": trigger_image_sync,
+                    "version": version,
+                    "known_config_options": known_config_options,
                 }
             ],
         )
