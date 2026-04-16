@@ -6,21 +6,21 @@ from fastapi import (
 )
 from pydantic import BaseModel, Field, model_validator
 
-from msm.apiserver.db.models import Site, SiteUpdate, SiteStateStatusUpdate
+from msm.apiserver.db.models import Site, SiteStateStatusUpdate, SiteUpdate
 from msm.apiserver.dependencies import services
 from msm.apiserver.exceptions.catalog import (
     BaseExceptionDetail,
     NotFoundException,
 )
-from msm.common.enums import TaskStatus
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
     NotFoundErrorResponseModel,
     UnauthorizedErrorResponseModel,
-    ValidationErrorResponseModel
+    ValidationErrorResponseModel,
 )
 from msm.apiserver.service import ServiceCollection
 from msm.apiserver.site.auth import authenticated_site
+from msm.common.enums import TaskStatus
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -71,11 +71,10 @@ class SiteStateStatusPatchRequest(BaseModel):
     selections_status: TaskStatus | None = None
     global_config_status: TaskStatus | None = None
     image_sync_status: TaskStatus | None = None
+    clear_errors: bool = False
     errors: list[str] | None = Field(
         default=None,
-        description="When specified as a non-empty list, append to the known errors.\
-When specified as an empty list, clear the errors.\
-When not specified, do not alter the errors",
+        description="Appends to the known errors.",
     )
 
     model_config = {"extra": "forbid"}
@@ -100,7 +99,7 @@ When not specified, do not alter the errors",
 async def update_status(
     services: Annotated[ServiceCollection, Depends(services)],
     site: Annotated[Site, Depends(authenticated_site)],
-    post_request: SiteStateStatusPatchRequest,
+    patch_request: SiteStateStatusPatchRequest,
 ) -> None:
     """Update a site's configuration task status."""
     status = await services.site_state.get_by_site_id(site.id)
@@ -121,12 +120,10 @@ async def update_status(
         )
     await services.site_state.update_by_site_id(
         site.id,
-        SiteStateStatusUpdate(
-            **post_request.model_dump(exclude_none=True)
-        ),
-        append_errors=bool(post_request.errors),
+        SiteStateStatusUpdate(**patch_request.model_dump(exclude_none=True)),
+        append_errors=not patch_request.clear_errors,
     )
-    if post_request.image_sync_status in [
+    if patch_request.image_sync_status in [
         TaskStatus.STARTED,
         TaskStatus.COMPLETE,
     ]:
