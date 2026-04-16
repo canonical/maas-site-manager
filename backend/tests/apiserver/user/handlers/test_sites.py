@@ -377,14 +377,16 @@ class TestSitesPatchHandler:
         [db_site] = await factory.get("site")
         assert db_site["site_profile_id"] == None
 
-    async def test_update_site_unknown_profile(self, user_client: Client, factory: Factory) -> None:
+    async def test_update_site_unknown_profile(
+        self, user_client: Client, factory: Factory
+    ) -> None:
         site = await factory.make_Site()
         update = {"site_profile_id": 999}
         response = await user_client.patch(f"/sites/{site.id}", json=update)
         assert response.status_code == 404
         assert (
             response.json()["error"]["message"]
-            == "Site profile does not exist."
+            == "Site profile does not exist"
         )
 
     async def test_nonexistent(

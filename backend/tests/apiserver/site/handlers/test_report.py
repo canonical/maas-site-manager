@@ -10,7 +10,7 @@ from tests.fixtures.factory import Factory
 @pytest.mark.asyncio
 class TestDetailsPostHandler:
     async def test_update_details(
-        self, factory: Factory, site_client: Client, api_site: Site
+        self, factory: Factory, site_client: Client, api_site: models.Site
     ) -> None:
         details = {
             "name": "new-name",
