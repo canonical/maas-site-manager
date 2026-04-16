@@ -345,6 +345,48 @@ class TestSitesPatchHandler:
         updated = Site(**site.model_dump()).model_dump() | update
         assert response.json() == updated
 
+    async def test_update_site_profile_id(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        profile = await factory.make_SiteProfile("profile", [])
+        config_options = list(
+            profile.model_dump(exclude={"id", "name"}).keys()
+        )
+        site = await factory.make_Site(known_config_options=config_options)
+        update = {"site_profile_id": profile.id}
+        response = await user_client.patch(f"/sites/{site.id}", json=update)
+        assert response.status_code == 200
+        [db_site] = await factory.get("site")
+        assert db_site["site_profile_id"] == profile.id
+
+    async def test_update_site_profile_unknown_cfg(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        profile = await factory.make_SiteProfile("profile", [])
+        config_options = list(
+            profile.model_dump(exclude={"id", "name", "selections"}).keys()
+        )
+        site = await factory.make_Site(known_config_options=config_options)
+        update = {"site_profile_id": profile.id}
+        response = await user_client.patch(f"/sites/{site.id}", json=update)
+        assert response.status_code == 400
+        assert (
+            response.json()["error"]["message"]
+            == "Site profile contains configuration options that are not known by this Site."
+        )
+        [db_site] = await factory.get("site")
+        assert db_site["site_profile_id"] == None
+
+    async def test_update_site_unknown_profile(self, user_client: Client, factory: Factory) -> None:
+        site = await factory.make_Site()
+        update = {"site_profile_id": 999}
+        response = await user_client.patch(f"/sites/{site.id}", json=update)
+        assert response.status_code == 404
+        assert (
+            response.json()["error"]["message"]
+            == "Site profile does not exist."
+        )
+
     async def test_nonexistent(
         self, user_client: Client, factory: Factory
     ) -> None:

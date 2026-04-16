@@ -96,6 +96,7 @@ class SiteUpdate(BaseModel):
     # XXX: mypy can't grok that this is an str/enum with lots of members
     timezone: TimeZone | None = None  # type: ignore[valid-type]
     trigger_image_sync: bool | None = None
+    site_profile_id: int | None = None
 
 
 class SiteDetailsUpdate(BaseModel):

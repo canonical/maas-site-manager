@@ -238,6 +238,7 @@ class SiteUpdateRequest(BaseModel):
     postal_code: str | None = None
     # XXX: mypy can't grok that this is an str/enum with lots of members
     timezone: TimeZone | None = None  # type: ignore[valid-type]
+    site_profile_id: int | None = None
 
     @model_validator(mode="after")
     def check_at_least_one_field_present(self) -> Self:
@@ -249,6 +250,7 @@ class SiteUpdateRequest(BaseModel):
 @v1_router.patch(
     "/sites/{id}",
     responses={
+        400: {"model": BadRequestErrorResponseModel},
         401: {"model": UnauthorizedErrorResponseModel},
         404: {"model": NotFoundErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
@@ -261,7 +263,8 @@ async def patch(
     patch_request: SiteUpdateRequest,
 ) -> models.Site:
     """Modify a site."""
-    if not await services.sites.id_exists(id):
+    site = await services.sites.get_by_id(id)
+    if site is None:
         raise NotFoundException(
             code=ExceptionCode.MISSING_RESOURCE,
             message="Site does not exist.",
@@ -274,6 +277,44 @@ async def patch(
                 )
             ],
         )
+    if patch_request.site_profile_id:
+        profile = await services.site_profiles.get_by_id(
+            patch_request.site_profile_id
+        )
+        if profile is None:
+            raise NotFoundException(
+                message="Site profile does not exist",
+                code=ExceptionCode.MISSING_RESOURCE,
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.MISSING_RESOURCE,
+                        messages=[
+                            f"Site profile with ID {patch_request.site_profile_id} does not exist"
+                        ],
+                        field="site_profile_id",
+                        loc="body",
+                    )
+                ],
+            )
+        profile_options = set(
+            profile.model_dump(exclude={"id", "name"}).keys()
+        )
+        unknown_cfg_opts = profile_options - set(site.known_config_options)
+        if unknown_cfg_opts:
+            raise BadRequestException(
+                message="Site profile contains configuration options that are not known by this Site.",
+                code=ExceptionCode.INVALID_PARAMS,
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.INVALID_PARAMS,
+                        messages=[
+                            f"The following profile items are not known by this Site: {unknown_cfg_opts}"
+                        ],
+                        field="site_profile_id",
+                        location="body",
+                    )
+                ],
+            )
 
     data = patch_request.model_dump(exclude_none=True)
     await services.sites.update(id, models.SiteUpdate(**data))

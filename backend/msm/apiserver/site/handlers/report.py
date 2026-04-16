@@ -43,12 +43,11 @@ class DetailsPostRequest(BaseModel):
     version: str | None = None
     known_config_options: list[str] | None = None
 
-    @property
-    def requires_update(self) -> bool:
+    def requires_update(self, current_version: str) -> bool:
         return (
             self.name is not None
             or self.url is not None
-            or self.version is not None
+            or (self.version is not None and self.version != current_version)
             or self.known_config_options is not None
         )
 
@@ -73,7 +72,7 @@ async def details(
     post_request: DetailsPostRequest,
 ) -> DetailsPostResponse:
     """Update site details."""
-    if post_request.requires_update:
+    if post_request.requires_update(site.version):
         await services.sites.update(
             site.id,
             SiteDetailsUpdate(
