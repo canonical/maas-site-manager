@@ -440,7 +440,7 @@ class TestEnrollRefreshGetHandler:
             token_purpose=TokenPurpose.ACCESS,
         )
         response = await app_client.post(
-            "/site/v1/details", json={"name": "abc"}
+            "/site/v1/details", json={"name": "abc", "version": "3.8.0"}
         )
         assert response.status_code == 200
 
@@ -451,6 +451,6 @@ class TestEnrollRefreshGetHandler:
             token_purpose=TokenPurpose.ACCESS,
         )
         response = await app_client.post(
-            "/site/v1/details", json={"name": "abc"}
+            "/site/v1/details", json={"name": "abc", "version": "3.8.0"}
         )
         assert response.status_code == 401

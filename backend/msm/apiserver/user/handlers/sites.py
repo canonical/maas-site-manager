@@ -292,7 +292,7 @@ async def patch(
                             f"Site profile with ID {patch_request.site_profile_id} does not exist"
                         ],
                         field="site_profile_id",
-                        loc="body",
+                        location="body",
                     )
                 ],
             )

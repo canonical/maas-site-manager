@@ -43,7 +43,7 @@ class DetailsPostRequest(BaseModel):
     machines_by_status: MachineStatsByStatus | None = None
     known_config_options: list[str] | None = None
 
-    def requires_update(self, current_version: str) -> bool:
+    def requires_update(self, current_version: str | None) -> bool:
         return (
             self.name is not None
             or self.url is not None

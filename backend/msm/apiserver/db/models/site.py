@@ -55,7 +55,7 @@ class Site(BaseModel):
     connection_status: ConnectionStatus
     trigger_image_sync: bool = False
     stats: SiteData | None = None
-    version: str = ""
+    version: str | None = None
     known_config_options: list[str] = []
 
 
