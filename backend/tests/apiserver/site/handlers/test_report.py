@@ -44,7 +44,10 @@ class TestDetailsPostHandler:
         assert site["version"] == "new.version"
 
     async def test_creates_stats(
-        self, factory: Factory, site_client: Client
+        self,
+        factory: Factory,
+        site_client: Client,
+        api_site: models.Site,
     ) -> None:
         machine_counts = {
             "allocated": 10,
@@ -56,7 +59,11 @@ class TestDetailsPostHandler:
         assert await factory.get("site_data") == []
         before_post = now_utc()
         response = await site_client.post(
-            "/details", json={"machines_by_status": machine_counts}
+            "/details",
+            json={
+                "machines_by_status": machine_counts,
+                "version": api_site.version,
+            },
         )
         assert response.status_code == 200
         [site_data] = await factory.get("site_data")
@@ -69,7 +76,10 @@ class TestDetailsPostHandler:
         assert site_data["last_seen"] < now_utc()
 
     async def test_update_stats(
-        self, factory: Factory, api_site: models.Site, site_client: Client
+        self,
+        factory: Factory,
+        api_site: models.Site,
+        site_client: Client,
     ) -> None:
         machine_counts = {
             "allocated": 10,
@@ -81,7 +91,11 @@ class TestDetailsPostHandler:
         await factory.make_SiteData(api_site.id)
         before_post = now_utc()
         response = await site_client.post(
-            "/details", json={"machines_by_status": machine_counts}
+            "/details",
+            json={
+                "machines_by_status": machine_counts,
+                "version": api_site.version,
+            },
         )
         assert response.status_code == 200
         [site_data] = await factory.get("site_data")
@@ -97,7 +111,9 @@ class TestDetailsPostHandler:
         self, factory: Factory, api_site: models.Site, site_client: Client
     ) -> None:
         before_post = now_utc()
-        response = await site_client.post("/details", json={})
+        response = await site_client.post(
+            "/details", json={"version": api_site.version}
+        )
         assert response.status_code == 200
         [site] = await factory.get("site")
         assert site["name"] == api_site.name
@@ -123,10 +139,24 @@ class TestDetailsPostHandler:
         }
         await factory.make_SiteData(api_site.id)
         response = await site_client.post(
-            "/details", json={"machines_by_status": machine_counts}
+            "/details",
+            json={
+                "machines_by_status": machine_counts,
+                "version": api_site.version,
+            },
         )
         heartbeat = Settings().heartbeat_interval_seconds
         response_heartbeat = int(
             response.headers["MSM-Heartbeat-Interval-Seconds"]
         )
         assert heartbeat == response_heartbeat
+
+    async def test_no_version_validation_err(
+        self, site_client: Client
+    ) -> None:
+        response = await site_client.post("/details", json={})
+        assert response.status_code == 422
+        detail = response.json()["error"]["details"][0]
+        assert detail["reason"] == "Missing"
+        assert f"Field required" in detail["messages"][0]
+        assert detail["field"] == "version"

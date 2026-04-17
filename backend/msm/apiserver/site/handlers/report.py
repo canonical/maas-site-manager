@@ -37,17 +37,17 @@ class MachineStatsByStatus(BaseModel):
 class DetailsPostRequest(BaseModel):
     """Request to update site details."""
 
+    version: str
     name: str | None = None
     url: str | None = None
     machines_by_status: MachineStatsByStatus | None = None
-    version: str | None = None
     known_config_options: list[str] | None = None
 
     def requires_update(self, current_version: str) -> bool:
         return (
             self.name is not None
             or self.url is not None
-            or (self.version is not None and self.version != current_version)
+            or (self.version != current_version)
             or self.known_config_options is not None
         )
 
