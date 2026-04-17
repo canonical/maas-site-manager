@@ -174,6 +174,59 @@ class ProfilesPostRequest(BaseModel):
         return self
 
 
+class ProfilesPatchRequest(BaseModel):
+    """Request to update a Site Profile."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    selections: (
+        list[
+            Annotated[
+                str, StringConstraints(pattern=r"^[^\s/]+/[^\s/]+/[^\s/]+$")
+            ]
+        ]
+        | None
+    ) = Field(default=None, min_length=1)
+    global_config: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def check_at_least_one_field_present(self) -> Self:
+        if not self.model_fields_set:
+            raise ValueError("At least one field must be set.")
+        return self
+
+    @model_validator(mode="after")
+    def validate_global_config(self) -> Self:
+        """Ensure global_config keys and values are valid according to SiteConfigFactory."""
+        if self.global_config is None:
+            return self
+
+        invalid_keys = set(self.global_config.keys()) - set(
+            SiteConfigFactory.ALL_CONFIGS.keys()
+        )
+        if invalid_keys:
+            raise ValueError(
+                f"Invalid global_config keys: {', '.join(sorted(invalid_keys))}. "
+                f"Valid keys are: {', '.join(sorted(SiteConfigFactory.ALL_CONFIGS.keys()))}"
+            )
+
+        for key, value in self.global_config.items():
+            config_class = SiteConfigFactory.ALL_CONFIGS[key]
+            try:
+                config_class(value=value)
+            except ValidationError as e:
+                error_messages = "; ".join(
+                    [
+                        f"{err['loc'][0] if err['loc'] else key}: {err['msg']}"
+                        for err in e.errors()
+                    ]
+                )
+                raise ValueError(
+                    f"Invalid value for '{key}': {error_messages}"
+                ) from e
+
+        return self
+
+
 @v1_router.post(
     "/profiles",
     status_code=201,
@@ -211,6 +264,76 @@ async def post(
 
     return await services.site_profiles.create(
         models.SiteProfileCreate(**post_request.model_dump())
+    )
+
+
+@v1_router.patch(
+    "/profiles/{id}",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def patch(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_user: Annotated[models.User, Depends(authenticated_user)],
+    id: int,
+    patch_request: ProfilesPatchRequest,
+) -> models.SiteProfile:
+    """Update a site profile.
+
+    Raises:
+        NotFoundException: If the profile with the given ID does not exist,
+            or if any of the selections do not exist in available boot sources.
+    """
+    existing_profile = await services.site_profiles.get_by_id(id)
+    if not existing_profile:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Site profile does not exist.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[f"Site profile ID {id} does not exist"],
+                    field="id",
+                    location="path",
+                )
+            ],
+        )
+
+    if patch_request.selections is not None:
+        missing_selections = await validate_selections_exist(
+            services, patch_request.selections
+        )
+        if missing_selections:
+            raise NotFoundException(
+                code=ExceptionCode.MISSING_RESOURCE,
+                message="Some selections do not exist in available boot sources.",
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.MISSING_RESOURCE,
+                        messages=[
+                            f"The following selections do not exist: {', '.join(missing_selections)}"
+                        ],
+                        field="selections",
+                        location="body",
+                    )
+                ],
+            )
+
+    update_data = patch_request.model_dump(exclude_unset=True)
+
+    if (
+        "global_config" in update_data
+        and update_data["global_config"] is not None
+    ):
+        merged_config = {**(existing_profile.global_config or {})}
+        merged_config.update(update_data["global_config"])
+        update_data["global_config"] = merged_config
+
+    return await services.site_profiles.update(
+        id, models.SiteProfileUpdate(**update_data)
     )
 
 
