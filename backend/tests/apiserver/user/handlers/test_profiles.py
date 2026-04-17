@@ -283,6 +283,272 @@ class TestProfilesPostHandler:
 
 
 @pytest.mark.asyncio
+class TestProfilesPatchHandler:
+    @pytest.mark.parametrize(
+        "update_data,expected_config_check",
+        [
+            (
+                {"name": "Updated Name"},
+                lambda cfg: all(
+                    cfg.get(key) == value
+                    for key, value in SiteConfigFactory.DEFAULT_CONFIG.items()
+                ),
+            ),
+            (
+                {"selections": ["ubuntu/noble/amd64"]},
+                lambda cfg: all(
+                    cfg.get(key) == value
+                    for key, value in SiteConfigFactory.DEFAULT_CONFIG.items()
+                ),
+            ),
+            (
+                {"global_config": {"theme": "light"}},
+                lambda cfg: cfg.get("theme") == "light",
+            ),
+            (
+                {
+                    "name": "Updated Name and Selections",
+                    "selections": ["ubuntu/jammy/amd64", "ubuntu/noble/amd64"],
+                },
+                lambda cfg: all(
+                    cfg.get(key) == value
+                    for key, value in SiteConfigFactory.DEFAULT_CONFIG.items()
+                ),
+            ),
+            (
+                {
+                    "name": "All Fields Updated",
+                    "selections": ["ubuntu/noble/amd64"],
+                    "global_config": {"theme": "dark"},
+                },
+                lambda cfg: cfg.get("theme") == "dark",
+            ),
+        ],
+    )
+    async def test_patch_success(
+        self,
+        user_client: Client,
+        factory: Factory,
+        sel_ubuntu_jammy: list[BootSourceSelection],
+        sel_ubuntu_noble: list[BootSourceSelection],
+        update_data: dict[str, Any],
+        expected_config_check: Callable[[Any], bool],
+    ) -> None:
+        """Test PATCH /profiles/{id} successfully updates profiles."""
+        profile = await factory.make_SiteProfile(
+            name="Original Profile",
+            selections=["ubuntu/jammy/amd64"],
+            global_config={},
+        )
+
+        response = await user_client.patch(
+            f"/profiles/{profile.id}", json=update_data
+        )
+        assert response.status_code == 200
+
+        result = response.json()
+        assert result["id"] == profile.id
+
+        if "name" in update_data:
+            assert result["name"] == update_data["name"]
+        else:
+            assert result["name"] == "Original Profile"
+
+        if "selections" in update_data:
+            assert result["selections"] == update_data["selections"]
+        else:
+            assert result["selections"] == ["ubuntu/jammy/amd64"]
+
+        assert expected_config_check(result["global_config"])
+
+    async def test_patch_not_found(
+        self, user_client: Client, factory: Factory
+    ) -> None:
+        """Test PATCH /profiles/{id} returns 404 for non-existent profile."""
+        response = await user_client.patch(
+            "/profiles/99999", json={"name": "Updated"}
+        )
+        assert response.status_code == 404
+        data = response.json()
+        assert data["error"]["code"] == "MissingResource"
+        assert "does not exist" in data["error"]["message"]
+
+    @pytest.mark.parametrize(
+        "selections,expected_error_text",
+        [
+            (
+                ["nonexistent/release/arch"],
+                "the following selections do not exist: nonexistent/release/arch",
+            ),
+            (
+                ["ubuntu/jammy/amd64", "nonexistent/release/arch"],
+                "the following selections do not exist: nonexistent/release/arch",
+            ),
+            (
+                ["nonexistent1/release/arch", "nonexistent2/other/i386"],
+                "the following selections do not exist: nonexistent1/release/arch, nonexistent2/other/i386",
+            ),
+        ],
+    )
+    async def test_patch_with_nonexistent_selections(
+        self,
+        user_client: Client,
+        factory: Factory,
+        sel_ubuntu_jammy: list[BootSourceSelection],
+        sel_ubuntu_noble: list[BootSourceSelection],
+        selections: list[str],
+        expected_error_text: str,
+    ) -> None:
+        """Test PATCH /profiles/{id} returns 404 when selections don't exist in database."""
+        profile = await factory.make_SiteProfile(
+            name="Test Profile",
+            selections=["ubuntu/jammy/amd64"],
+        )
+
+        data = {"selections": selections}
+
+        response = await user_client.patch(
+            f"/profiles/{profile.id}", json=data
+        )
+        assert response.status_code == 404
+
+        result = response.json()
+        assert expected_error_text.lower() in str(result).lower()
+
+    @pytest.mark.parametrize(
+        "data,expected_error_text",
+        [
+            (
+                {},
+                "at least one field must be set",
+            ),
+            (
+                {"selections": []},
+                "list should have at least 1 item after validation",
+            ),
+            (
+                {"selections": ["", "ubuntu/jammy/amd64"]},
+                "string should match pattern",
+            ),
+            (
+                {"selections": ["ubuntu/jammy"]},
+                "string should match pattern",
+            ),
+            (
+                {"selections": ["ubuntu//amd64"]},
+                "string should match pattern",
+            ),
+            (
+                {"global_config": {"invalid_key": "value"}},
+                "invalid global_config keys: invalid_key",
+            ),
+            (
+                {"global_config": {"maas_proxy_port": 99999}},
+                "invalid value",
+            ),
+            (
+                {"name": ""},
+                "string should have at least 1 character",
+            ),
+        ],
+    )
+    async def test_patch_format_validation_failures(
+        self,
+        user_client: Client,
+        factory: Factory,
+        data: dict[str, Any],
+        expected_error_text: str | None,
+    ) -> None:
+        """Test PATCH /profiles/{id} returns errors for format/schema validation failures."""
+        profile = await factory.make_SiteProfile(
+            name="Test Profile",
+            selections=["ubuntu/jammy/amd64"],
+        )
+
+        response = await user_client.patch(
+            f"/profiles/{profile.id}", json=data
+        )
+        assert response.status_code == 422
+        if expected_error_text:
+            result = response.json()
+            assert (
+                expected_error_text.lower()
+                in str(result["error"]["details"]).lower()
+            )
+
+    @pytest.mark.parametrize(
+        "initial_config,update_config,expected_values",
+        [
+            (
+                {"theme": "dark", "maas_proxy_port": 8000},
+                {"theme": "light"},
+                {"theme": "light", "maas_proxy_port": 8000},
+            ),
+            (
+                {"theme": "dark"},
+                {"maas_proxy_port": 9000, "ntp_external_only": True},
+                {
+                    "theme": "dark",
+                    "maas_proxy_port": 9000,
+                    "ntp_external_only": True,
+                },
+            ),
+            (
+                {
+                    "theme": "dark",
+                    "maas_proxy_port": 8000,
+                    "ntp_external_only": True,
+                },
+                {"theme": "light", "maas_proxy_port": 9000},
+                {
+                    "theme": "light",
+                    "maas_proxy_port": 9000,
+                    "ntp_external_only": True,
+                },
+            ),
+        ],
+    )
+    async def test_patch_partial_config_update(
+        self,
+        user_client: Client,
+        factory: Factory,
+        sel_ubuntu_jammy: list[BootSourceSelection],
+        initial_config: dict[str, Any],
+        update_config: dict[str, Any],
+        expected_values: dict[str, Any],
+    ) -> None:
+        """Test PATCH /profiles/{id} merges global_config with existing values."""
+        profile = await factory.make_SiteProfile(
+            name="Config Test Profile",
+            selections=["ubuntu/jammy/amd64"],
+            global_config=initial_config,
+        )
+
+        response = await user_client.patch(
+            f"/profiles/{profile.id}", json={"global_config": update_config}
+        )
+        assert response.status_code == 200
+
+        result = response.json()
+        assert result["id"] == profile.id
+        assert result["name"] == "Config Test Profile"
+        assert result["selections"] == ["ubuntu/jammy/amd64"]
+
+        for key, expected_value in expected_values.items():
+            assert result["global_config"][key] == expected_value, (
+                f"Config key '{key}' has value {result['global_config'][key]} "
+                f"but expected {expected_value}"
+            )
+
+        for key, default_value in SiteConfigFactory.DEFAULT_CONFIG.items():
+            if key not in expected_values:
+                assert result["global_config"][key] == default_value, (
+                    f"Config key '{key}' should have default value {default_value} "
+                    f"but has {result['global_config'][key]}"
+                )
+
+
+@pytest.mark.asyncio
 class TestProfilesDeleteHandler:
     async def test_delete(self, user_client: Client, factory: Factory) -> None:
         profile = await factory.make_SiteProfile(
