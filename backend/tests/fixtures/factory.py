@@ -37,6 +37,7 @@ from msm.apiserver.db.models import (
     Token,
     User,
 )
+from msm.apiserver.db.models.global_site_config import SiteConfigFactory
 from msm.apiserver.db.tables import METADATA
 from msm.apiserver.schema import TimeZone
 from msm.common.enums import (
@@ -350,10 +351,16 @@ class Factory:
         id: int | None = None,
     ) -> SiteProfile:
         """Create a SiteProfile."""
+        filtered_config = {
+            key: value
+            for key, value in (global_config or {}).items()
+            if key in SiteConfigFactory.DEFAULT_CONFIG
+            and value != SiteConfigFactory.DEFAULT_CONFIG[key]
+        }
         data: dict[str, Any] = {
             "name": name,
             "selections": selections,
-            "global_config": global_config or {},
+            "global_config": filtered_config,
         }
         if id is not None:
             data["id"] = id

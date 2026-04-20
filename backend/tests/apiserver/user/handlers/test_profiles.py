@@ -6,6 +6,7 @@ import pytest
 from msm.apiserver.db import DEFAULT_SITE_PROFILE_ID
 from msm.apiserver.db.models import BootSourceSelection
 from msm.apiserver.db.models.global_site_config import SiteConfigFactory
+from msm.apiserver.db.tables import METADATA
 from tests.fixtures.client import Client
 from tests.fixtures.factory import Factory
 
@@ -171,6 +172,71 @@ class TestProfilesPostHandler:
         assert result["selections"] == selections
         assert expected_config_check(result["global_config"])
         assert "id" in result
+
+    @pytest.mark.parametrize(
+        "global_config,expected_stored",
+        [
+            # No config provided - nothing stored
+            (None, {}),
+            # Empty config - nothing stored
+            ({}, {}),
+            # Only non-default values - all stored
+            (
+                {"theme": "dark", "maas_proxy_port": 9000},
+                {"theme": "dark", "maas_proxy_port": 9000},
+            ),
+            # Only default values - nothing stored
+            (
+                {
+                    "theme": "",
+                    "maas_proxy_port": 8000,
+                    "ntp_external_only": False,
+                },
+                {},
+            ),
+            # Mix of default and non-default - only non-default stored
+            (
+                {
+                    "theme": "light",  # non-default
+                    "maas_proxy_port": 8000,  # default (not stored)
+                    "ntp_external_only": True,  # non-default
+                },
+                {"theme": "light", "ntp_external_only": True},
+            ),
+        ],
+    )
+    async def test_post_stores_only_non_default_config(
+        self,
+        user_client: Client,
+        factory: Factory,
+        sel_ubuntu_jammy: list[BootSourceSelection],
+        global_config: dict[str, Any] | None,
+        expected_stored: dict[str, Any],
+    ) -> None:
+        """Test POST /profiles only stores non-default config values in database."""
+        data: dict[str, Any] = {
+            "name": "Storage Test Profile",
+            "selections": ["ubuntu/jammy/amd64"],
+        }
+        if global_config is not None:
+            data["global_config"] = global_config
+
+        response = await user_client.post("/profiles", json=data)
+        assert response.status_code == 201
+
+        profile_id = response.json()["id"]
+
+        site_profile_table = METADATA.tables["site_profile"]
+        [stored_profile] = await factory.get(
+            "site_profile", site_profile_table.c.id == profile_id
+        )
+        assert stored_profile["id"] == profile_id
+        assert stored_profile["name"] == "Storage Test Profile"
+        assert stored_profile["selections"] == ["ubuntu/jammy/amd64"]
+        assert stored_profile["global_config"] == expected_stored, (
+            f"Expected stored config {expected_stored} "
+            f"but got {stored_profile['global_config']}"
+        )
 
     @pytest.mark.parametrize(
         "name,selections,expected_error_text",
@@ -477,31 +543,37 @@ class TestProfilesPatchHandler:
             )
 
     @pytest.mark.parametrize(
-        "initial_config,update_config,expected_values",
+        "initial_config,update_config,expected_stored",
         [
             (
-                {"theme": "dark", "maas_proxy_port": 8000},
+                {"theme": "dark"},
                 {"theme": "light"},
-                {"theme": "light", "maas_proxy_port": 8000},
+                {"theme": "light"},
             ),
             (
                 {"theme": "dark"},
-                {"maas_proxy_port": 9000, "ntp_external_only": True},
-                {
-                    "theme": "dark",
-                    "maas_proxy_port": 9000,
-                    "ntp_external_only": True,
-                },
+                {"theme": ""},
+                {},
             ),
             (
-                {
-                    "theme": "dark",
-                    "maas_proxy_port": 8000,
-                    "ntp_external_only": True,
-                },
-                {"theme": "light", "maas_proxy_port": 9000},
+                {"theme": "dark"},
+                {"maas_proxy_port": 8000, "ntp_external_only": True},
+                {"theme": "dark", "ntp_external_only": True},
+            ),
+            (
+                {"theme": "dark", "ntp_external_only": True},
                 {
                     "theme": "light",
+                    "maas_proxy_port": 9000,
+                    "ntp_external_only": False,
+                },
+                {"theme": "light", "maas_proxy_port": 9000},
+            ),
+            (
+                {"theme": "dark", "maas_proxy_port": 9000},
+                {"ntp_external_only": True},
+                {
+                    "theme": "dark",
                     "maas_proxy_port": 9000,
                     "ntp_external_only": True,
                 },
@@ -515,9 +587,9 @@ class TestProfilesPatchHandler:
         sel_ubuntu_jammy: list[BootSourceSelection],
         initial_config: dict[str, Any],
         update_config: dict[str, Any],
-        expected_values: dict[str, Any],
+        expected_stored: dict[str, Any],
     ) -> None:
-        """Test PATCH /profiles/{id} merges global_config with existing values."""
+        """Test PATCH /profiles/{id} only stores non-default config values."""
         profile = await factory.make_SiteProfile(
             name="Config Test Profile",
             selections=["ubuntu/jammy/amd64"],
@@ -529,23 +601,17 @@ class TestProfilesPatchHandler:
         )
         assert response.status_code == 200
 
-        result = response.json()
-        assert result["id"] == profile.id
-        assert result["name"] == "Config Test Profile"
-        assert result["selections"] == ["ubuntu/jammy/amd64"]
-
-        for key, expected_value in expected_values.items():
-            assert result["global_config"][key] == expected_value, (
-                f"Config key '{key}' has value {result['global_config'][key]} "
-                f"but expected {expected_value}"
-            )
-
-        for key, default_value in SiteConfigFactory.DEFAULT_CONFIG.items():
-            if key not in expected_values:
-                assert result["global_config"][key] == default_value, (
-                    f"Config key '{key}' should have default value {default_value} "
-                    f"but has {result['global_config'][key]}"
-                )
+        site_profile_table = METADATA.tables["site_profile"]
+        [stored_profile] = await factory.get(
+            "site_profile", site_profile_table.c.id == profile.id
+        )
+        assert stored_profile["id"] == profile.id
+        assert stored_profile["name"] == "Config Test Profile"
+        assert stored_profile["selections"] == ["ubuntu/jammy/amd64"]
+        assert stored_profile["global_config"] == expected_stored, (
+            f"Expected stored config {expected_stored} "
+            f"but got {stored_profile['global_config']}"
+        )
 
 
 @pytest.mark.asyncio
