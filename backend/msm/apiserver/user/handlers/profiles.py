@@ -48,6 +48,8 @@ profile_sort_parameters = SortParamParser(
     ]
 )
 
+SELECTIONS_PATTERN = r"^[^\s/]+/[^\s/]+/[^\s/]+$"
+
 
 async def validate_selections_exist(
     services: ServiceCollection, selections: list[str]
@@ -137,7 +139,7 @@ class ProfilesPostRequest(BaseModel):
 
     name: str = Field(min_length=1, max_length=255)
     selections: list[
-        Annotated[str, StringConstraints(pattern=r"^[^\s/]+/[^\s/]+/[^\s/]+$")]
+        Annotated[str, StringConstraints(pattern=SELECTIONS_PATTERN)]
     ] = Field(min_length=1)
     global_config: dict[str, Any] | None = None
 
@@ -179,11 +181,7 @@ class ProfilesPatchRequest(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
     selections: (
-        list[
-            Annotated[
-                str, StringConstraints(pattern=r"^[^\s/]+/[^\s/]+/[^\s/]+$")
-            ]
-        ]
+        list[Annotated[str, StringConstraints(pattern=SELECTIONS_PATTERN)]]
         | None
     ) = Field(default=None, min_length=1)
     global_config: dict[str, Any] | None = None
