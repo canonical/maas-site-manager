@@ -85,11 +85,12 @@ def _validate_global_config_dict(
 
 async def validate_selections_exist(
     services: ServiceCollection, selections: list[str]
-) -> list[str]:
+) -> None:
     """
     Validate that all selections exist in boot source selections.
 
-    Returns a list of missing selections.
+    Raises:
+        NotFoundException: If any selections do not exist in available boot sources.
     """
     missing_selections = []
     for selection in selections:
@@ -102,7 +103,22 @@ async def validate_selections_exist(
         )
         if count == 0:
             missing_selections.append(selection)
-    return missing_selections
+
+    if missing_selections:
+        raise NotFoundException(
+            code=ExceptionCode.MISSING_RESOURCE,
+            message="Some selections do not exist in available boot sources.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.MISSING_RESOURCE,
+                    messages=[
+                        f"The following selections do not exist: {', '.join(missing_selections)}"
+                    ],
+                    field="selections",
+                    location="body",
+                )
+            ],
+        )
 
 
 class ProfilesGetResponse(PaginatedResults[models.SiteProfile]):
@@ -219,24 +235,7 @@ async def post(
 ) -> models.SiteProfile:
     """Create a new site profile."""
     # Validate that all selections exist in the database
-    missing_selections = await validate_selections_exist(
-        services, post_request.selections
-    )
-    if missing_selections:
-        raise NotFoundException(
-            code=ExceptionCode.MISSING_RESOURCE,
-            message="Some selections do not exist in available boot sources.",
-            details=[
-                BaseExceptionDetail(
-                    reason=ExceptionCode.MISSING_RESOURCE,
-                    messages=[
-                        f"The following selections do not exist: {', '.join(missing_selections)}"
-                    ],
-                    field="selections",
-                    location="body",
-                )
-            ],
-        )
+    await validate_selections_exist(services, post_request.selections)
 
     return await services.site_profiles.create(
         models.SiteProfileCreate(**post_request.model_dump())
@@ -279,24 +278,7 @@ async def patch(
         )
 
     if patch_request.selections is not None:
-        missing_selections = await validate_selections_exist(
-            services, patch_request.selections
-        )
-        if missing_selections:
-            raise NotFoundException(
-                code=ExceptionCode.MISSING_RESOURCE,
-                message="Some selections do not exist in available boot sources.",
-                details=[
-                    BaseExceptionDetail(
-                        reason=ExceptionCode.MISSING_RESOURCE,
-                        messages=[
-                            f"The following selections do not exist: {', '.join(missing_selections)}"
-                        ],
-                        field="selections",
-                        location="body",
-                    )
-                ],
-            )
+        await validate_selections_exist(services, patch_request.selections)
 
     update_data = patch_request.model_dump(exclude_unset=True)
 
