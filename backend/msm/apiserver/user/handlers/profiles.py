@@ -51,6 +51,38 @@ profile_sort_parameters = SortParamParser(
 SELECTIONS_PATTERN = r"^[^\s/]+/[^\s/]+/[^\s/]+$"
 
 
+def _validate_global_config_dict(
+    global_config: dict[str, Any] | None,
+) -> None:
+    """Ensure global_config keys and values are valid according to SiteConfigFactory."""
+    if global_config is None:
+        return
+
+    invalid_keys = set(global_config.keys()) - set(
+        SiteConfigFactory.ALL_CONFIGS.keys()
+    )
+    if invalid_keys:
+        raise ValueError(
+            f"Invalid global_config keys: {', '.join(sorted(invalid_keys))}. "
+            f"Valid keys are: {', '.join(sorted(SiteConfigFactory.ALL_CONFIGS.keys()))}"
+        )
+
+    for key, value in global_config.items():
+        config_class = SiteConfigFactory.ALL_CONFIGS[key]
+        try:
+            config_class(value=value)
+        except ValidationError as e:
+            error_messages = "; ".join(
+                [
+                    f"{err['loc'][0] if err['loc'] else key}: {err['msg']}"
+                    for err in e.errors()
+                ]
+            )
+            raise ValueError(
+                f"Invalid value for '{key}': {error_messages}"
+            ) from e
+
+
 async def validate_selections_exist(
     services: ServiceCollection, selections: list[str]
 ) -> list[str]:
@@ -145,34 +177,7 @@ class ProfilesPostRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_global_config(self) -> Self:
-        """Ensure global_config keys and values are valid according to SiteConfigFactory."""
-        if self.global_config is None:
-            return self
-
-        invalid_keys = set(self.global_config.keys()) - set(
-            SiteConfigFactory.ALL_CONFIGS.keys()
-        )
-        if invalid_keys:
-            raise ValueError(
-                f"Invalid global_config keys: {', '.join(sorted(invalid_keys))}. "
-                f"Valid keys are: {', '.join(sorted(SiteConfigFactory.ALL_CONFIGS.keys()))}"
-            )
-
-        for key, value in self.global_config.items():
-            config_class = SiteConfigFactory.ALL_CONFIGS[key]
-            try:
-                config_class(value=value)
-            except ValidationError as e:
-                error_messages = "; ".join(
-                    [
-                        f"{err['loc'][0] if err['loc'] else key}: {err['msg']}"
-                        for err in e.errors()
-                    ]
-                )
-                raise ValueError(
-                    f"Invalid value for '{key}': {error_messages}"
-                ) from e
-
+        _validate_global_config_dict(self.global_config)
         return self
 
 
@@ -194,34 +199,7 @@ class ProfilesPatchRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_global_config(self) -> Self:
-        """Ensure global_config keys and values are valid according to SiteConfigFactory."""
-        if self.global_config is None:
-            return self
-
-        invalid_keys = set(self.global_config.keys()) - set(
-            SiteConfigFactory.ALL_CONFIGS.keys()
-        )
-        if invalid_keys:
-            raise ValueError(
-                f"Invalid global_config keys: {', '.join(sorted(invalid_keys))}. "
-                f"Valid keys are: {', '.join(sorted(SiteConfigFactory.ALL_CONFIGS.keys()))}"
-            )
-
-        for key, value in self.global_config.items():
-            config_class = SiteConfigFactory.ALL_CONFIGS[key]
-            try:
-                config_class(value=value)
-            except ValidationError as e:
-                error_messages = "; ".join(
-                    [
-                        f"{err['loc'][0] if err['loc'] else key}: {err['msg']}"
-                        for err in e.errors()
-                    ]
-                )
-                raise ValueError(
-                    f"Invalid value for '{key}': {error_messages}"
-                ) from e
-
+        _validate_global_config_dict(self.global_config)
         return self
 
 
