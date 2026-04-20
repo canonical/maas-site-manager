@@ -20,6 +20,7 @@ from msm.apiserver.exceptions.responses import (
 )
 from msm.apiserver.service import ServiceCollection
 from msm.apiserver.site.auth import authenticated_site
+from msm.common.config_hash import merged_config_for_response
 from msm.common.enums import TaskStatus
 
 v1_router = APIRouter(prefix="/v1")
@@ -59,11 +60,8 @@ async def get(
                 )
             ],
         )
-    return SiteConfigResponse(
-        global_config=profile.global_config,
-        selections=profile.selections,
-        trigger_image_sync=site.trigger_image_sync,
-    )
+    state = merged_config_for_response(profile, site.trigger_image_sync)
+    return SiteConfigResponse(**state)
 
 
 class SiteStateStatusPatchRequest(BaseModel):

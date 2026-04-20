@@ -1,6 +1,13 @@
+from uuid import uuid4
+
 import pytest
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db import models
+from msm.apiserver.service.site import SiteService
+from msm.apiserver.service.site_profiles import SiteProfileService
+from msm.common.config_hash import desired_config, hash_desired_config
+from msm.common.jwt import TokenAudience, TokenPurpose
 from msm.common.settings import Settings
 from msm.common.time import now_utc
 from tests.fixtures.client import Client
@@ -160,3 +167,148 @@ class TestDetailsPostHandler:
         assert detail["reason"] == "Missing"
         assert f"Field required" in detail["messages"][0]
         assert detail["field"] == "version"
+
+    async def test_config_hash_empty_without_profile(
+        self, factory: Factory, api_site: models.Site, site_client: Client
+    ) -> None:
+        response = await site_client.post(
+            "/details", json={"version": api_site.version}
+        )
+        assert response.status_code == 200
+        assert response.json()["config_hash"] == ""
+
+    async def test_config_hash_non_empty_with_profile(
+        self, factory: Factory, site_client: Client
+    ) -> None:
+        site_auth_id = uuid4()
+        profile = await factory.make_SiteProfile(
+            name="hash-test",
+            selections=["ubuntu/jammy/amd64"],
+            global_config={"theme": "dark"},
+        )
+        site = await factory.make_Site(
+            auth_id=site_auth_id,
+            site_profile_id=profile.id,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+
+        response = await site_client.post(
+            "/details", json={"version": site.version}
+        )
+        assert response.status_code == 200
+        config_hash = response.json()["config_hash"]
+        assert len(config_hash) == 64
+        assert config_hash != ""
+
+    async def test_config_hash_is_stable(
+        self, factory: Factory, site_client: Client
+    ) -> None:
+        site_auth_id = uuid4()
+        profile = await factory.make_SiteProfile(
+            name="stable-hash",
+            selections=["ubuntu/noble/amd64"],
+            global_config={},
+        )
+        site = await factory.make_Site(
+            auth_id=site_auth_id,
+            site_profile_id=profile.id,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+
+        r1 = await site_client.post("/details", json={"version": site.version})
+        r2 = await site_client.post("/details", json={"version": site.version})
+        assert r1.status_code == 200
+        assert r2.status_code == 200
+        assert r1.json()["config_hash"] == r2.json()["config_hash"]
+        assert r1.json()["config_hash"] != ""
+
+    async def test_config_hash_changes_with_different_trigger_image_sync(
+        self, factory: Factory, site_client: Client
+    ) -> None:
+        profile = await factory.make_SiteProfile(
+            name="sync-hash",
+            selections=["ubuntu/jammy/amd64"],
+            global_config={},
+        )
+
+        site_auth_id_a = uuid4()
+        site_a = await factory.make_Site(
+            auth_id=site_auth_id_a,
+            site_profile_id=profile.id,
+            trigger_image_sync=False,
+        )
+        site_auth_id_b = uuid4()
+        site_b = await factory.make_Site(
+            auth_id=site_auth_id_b,
+            site_profile_id=profile.id,
+            trigger_image_sync=True,
+        )
+
+        site_client.authenticate(
+            site_auth_id_a,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+        r_a = await site_client.post(
+            "/details", json={"version": site_a.version}
+        )
+
+        site_client.authenticate(
+            site_auth_id_b,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+        r_b = await site_client.post(
+            "/details", json={"version": site_b.version}
+        )
+
+        assert r_a.status_code == 200
+        assert r_b.status_code == 200
+        assert r_a.json()["config_hash"] != r_b.json()["config_hash"]
+
+    async def test_config_hash_matches_stored_preimage(
+        self,
+        factory: Factory,
+        site_client: Client,
+        db_connection: AsyncConnection,
+    ) -> None:
+        site_auth_id = uuid4()
+        profile = await factory.make_SiteProfile(
+            name="alignment-test",
+            selections=["ubuntu/jammy/amd64", "ubuntu/noble/amd64"],
+            global_config={"theme": "dark"},
+        )
+        site = await factory.make_Site(
+            auth_id=site_auth_id,
+            site_profile_id=profile.id,
+            trigger_image_sync=True,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+
+        heartbeat_response = await site_client.post(
+            "/details", json={"version": site.version}
+        )
+        assert heartbeat_response.status_code == 200
+
+        profile_service = SiteProfileService(db_connection)
+        site_service = SiteService(db_connection)
+        stored = await profile_service.get_stored_by_site_id(site.id)
+        fresh_site = await site_service.get_by_id(site.id)
+        assert stored is not None
+        assert fresh_site is not None
+        expected_hash = hash_desired_config(
+            desired_config(stored, fresh_site.trigger_image_sync)
+        )
+        assert heartbeat_response.json()["config_hash"] == expected_hash
