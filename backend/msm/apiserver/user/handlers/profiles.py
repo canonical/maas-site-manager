@@ -234,7 +234,6 @@ async def post(
     post_request: ProfilesPostRequest,
 ) -> models.SiteProfile:
     """Create a new site profile."""
-    # Validate that all selections exist in the database
     await validate_selections_exist(services, post_request.selections)
 
     return await services.site_profiles.create(
@@ -253,7 +252,13 @@ async def post(
 async def patch(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_user: Annotated[models.User, Depends(authenticated_user)],
-    id: int,
+    id: Annotated[
+        int,
+        Path(
+            title="The ID of the Site Profile to be updated",
+            gt=DEFAULT_SITE_PROFILE_ID,
+        ),
+    ],
     patch_request: ProfilesPatchRequest,
 ) -> models.SiteProfile:
     """Update a site profile.
