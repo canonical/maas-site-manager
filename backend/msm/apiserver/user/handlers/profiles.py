@@ -280,7 +280,7 @@ async def patch(
     if patch_request.selections is not None:
         await validate_selections_exist(services, patch_request.selections)
 
-    update_data = patch_request.model_dump(exclude_unset=True)
+    update_data = patch_request.model_dump()
 
     if (
         "global_config" in update_data
