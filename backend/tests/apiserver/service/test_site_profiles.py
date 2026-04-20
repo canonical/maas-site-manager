@@ -220,6 +220,29 @@ class TestSiteProfileService:
         assert found.name == "linked-profile"
         assert missing is None
 
+    async def test_get_stored_by_site_id_returns_raw_global_config(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        profile = await factory.make_SiteProfile(
+            name="linked-profile",
+            selections=["ubuntu/noble/amd64"],
+            global_config={"theme": "dark"},
+        )
+        site = await factory.make_Site(
+            name="test-site-stored",
+            site_profile_id=profile.id,
+        )
+        service = SiteProfileService(db_connection)
+
+        stored = await service.get_stored_by_site_id(site.id)
+        merged = await service.get_by_site_id(site.id)
+
+        assert stored is not None
+        assert merged is not None
+        assert stored.global_config == {"theme": "dark"}
+        assert len(stored.global_config) == 1
+        assert len(merged.global_config) > 1
+
     async def test_ensure_keeps_existing_default_profile(
         self, factory: Factory, db_connection: AsyncConnection
     ) -> None:

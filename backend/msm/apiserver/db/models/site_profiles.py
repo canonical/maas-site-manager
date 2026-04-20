@@ -26,6 +26,13 @@ class SiteProfile(BaseModel):
         }
 
 
+class SiteProfileStored(BaseModel):
+    id: int
+    name: str
+    selections: list[str]
+    global_config: dict[str, Any] | None = None
+
+
 class SiteProfileCreate(BaseModel):
     name: str
     selections: list[str]

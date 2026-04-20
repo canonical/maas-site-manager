@@ -58,6 +58,24 @@ class SiteProfileService(Service):
             return models.SiteProfile(**row._asdict())
         return None
 
+    async def get_stored_by_site_id(
+        self, site_id: int
+    ) -> models.SiteProfileStored | None:
+        stmt = (
+            select(*SiteProfile.c.values())
+            .select_from(
+                SiteProfile.join(
+                    Site,
+                    Site.c.site_profile_id == SiteProfile.c.id,
+                )
+            )
+            .where(Site.c.id == site_id)
+        )
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return models.SiteProfileStored(**row._asdict())
+        return None
+
     async def create(
         self, details: models.SiteProfileCreate
     ) -> models.SiteProfile:
