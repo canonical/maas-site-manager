@@ -14,12 +14,28 @@ from msm.apiserver.db import (
     models,
     queries,
 )
+from msm.apiserver.db.models.global_site_config import SiteConfigFactory
 from msm.apiserver.db.tables import Site, SiteProfile
 from msm.apiserver.schema import SortParam
 from msm.apiserver.service.base import Service
 
 
 class SiteProfileService(Service):
+    @staticmethod
+    def _filter_default_config_values(
+        config: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        """Remove config values that match system defaults."""
+        if config is None:
+            return {}
+
+        return {
+            key: value
+            for key, value in config.items()
+            if key in SiteConfigFactory.DEFAULT_CONFIG
+            and value != SiteConfigFactory.DEFAULT_CONFIG[key]
+        }
+
     async def get(
         self,
         sort_params: list[SortParam],
@@ -58,10 +74,24 @@ class SiteProfileService(Service):
             return models.SiteProfile(**row._asdict())
         return None
 
+    async def get_stored_config(self, profile_id: int) -> dict[str, Any]:
+        """Get the raw stored config without default filling."""
+        stmt = select(SiteProfile.c.global_config).where(
+            SiteProfile.c.id == profile_id
+        )
+        result = await self.conn.execute(stmt)
+        if row := result.one_or_none():
+            return row.global_config or {}
+        return {}
+
     async def create(
         self, details: models.SiteProfileCreate
     ) -> models.SiteProfile:
         data = details.model_dump()
+        if "global_config" in data:
+            data["global_config"] = self._filter_default_config_values(
+                data["global_config"]
+            )
         stmt = insert(SiteProfile).returning(*SiteProfile.c.values())
         result = await self.conn.execute(
             stmt,
@@ -73,6 +103,10 @@ class SiteProfileService(Service):
         self, site_profile_id: int, details: models.SiteProfileUpdate
     ) -> models.SiteProfile:
         data = details.model_dump(exclude_none=True)
+        if "global_config" in data:
+            data["global_config"] = self._filter_default_config_values(
+                data["global_config"]
+            )
         stmt = (
             update(SiteProfile)
             .where(SiteProfile.c.id == site_profile_id)

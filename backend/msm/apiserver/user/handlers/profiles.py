@@ -291,7 +291,8 @@ async def patch(
         "global_config" in update_data
         and update_data["global_config"] is not None
     ):
-        merged_config = {**(existing_profile.global_config or {})}
+        stored_config = await services.site_profiles.get_stored_config(id)
+        merged_config = {**stored_config}
         merged_config.update(update_data["global_config"])
         update_data["global_config"] = merged_config
 
