@@ -354,8 +354,7 @@ class Factory:
         filtered_config = {
             key: value
             for key, value in (global_config or {}).items()
-            if key in SiteConfigFactory.DEFAULT_CONFIG
-            and value != SiteConfigFactory.DEFAULT_CONFIG[key]
+            if value != SiteConfigFactory.DEFAULT_CONFIG.get(key)
         }
         data: dict[str, Any] = {
             "name": name,
