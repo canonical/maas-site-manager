@@ -227,7 +227,7 @@ class TestSiteProfileService:
             id=DEFAULT_SITE_PROFILE_ID,
             name="Custom Default",
             selections=["ubuntu/noble/amd64"],
-            global_config={"existing": True},
+            global_config={"theme": "dark"},
         )
         service = SiteProfileService(db_connection)
 
@@ -237,4 +237,4 @@ class TestSiteProfileService:
         assert profile["id"] == DEFAULT_SITE_PROFILE_ID
         assert profile["name"] == "Custom Default"
         assert profile["selections"] == ["ubuntu/noble/amd64"]
-        assert profile["global_config"] == {"existing": True}
+        assert profile["global_config"] == {"theme": "dark"}
