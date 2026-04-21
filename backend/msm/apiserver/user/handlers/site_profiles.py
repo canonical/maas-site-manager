@@ -313,10 +313,7 @@ async def patch(
 
     update_data = patch_request.model_dump(exclude_none=True)
 
-    if (
-        "global_config" in patch_request.model_fields_set
-        and patch_request.global_config is not None
-    ):
+    if patch_request.global_config is not None:
         stored_config = await services.site_profiles.get_stored_config_by_id(
             id
         )
