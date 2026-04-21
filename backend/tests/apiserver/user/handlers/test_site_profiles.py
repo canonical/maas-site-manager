@@ -177,9 +177,9 @@ class TestProfilesPostHandler:
         "global_config,expected_stored",
         [
             # No config provided - nothing stored
-            (None, {}),
+            (None, None),
             # Empty config - nothing stored
-            ({}, {}),
+            ({}, None),
             # Only non-default values - all stored
             (
                 {"theme": "dark", "maas_proxy_port": 9000},
@@ -192,7 +192,7 @@ class TestProfilesPostHandler:
                     "maas_proxy_port": 8000,
                     "ntp_external_only": False,
                 },
-                {},
+                None,
             ),
             # Mix of default and non-default - only non-default stored
             (
@@ -211,7 +211,7 @@ class TestProfilesPostHandler:
         factory: Factory,
         sel_ubuntu_jammy: list[BootSourceSelection],
         global_config: dict[str, Any] | None,
-        expected_stored: dict[str, Any],
+        expected_stored: dict[str, Any] | None,
     ) -> None:
         """Test POST /profiles only stores non-default config values in database."""
         data: dict[str, Any] = {
@@ -553,7 +553,7 @@ class TestProfilesPatchHandler:
             (
                 {"theme": "dark"},
                 {"theme": ""},
-                {},
+                None,
             ),
             (
                 {"theme": "dark"},
@@ -587,7 +587,7 @@ class TestProfilesPatchHandler:
         sel_ubuntu_jammy: list[BootSourceSelection],
         initial_config: dict[str, Any],
         update_config: dict[str, Any],
-        expected_stored: dict[str, Any],
+        expected_stored: dict[str, Any] | None,
     ) -> None:
         """Test PATCH /profiles/{id} only stores non-default config values."""
         profile = await factory.make_SiteProfile(

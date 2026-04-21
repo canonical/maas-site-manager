@@ -14,6 +14,7 @@ from pydantic import (
     Field,
     StringConstraints,
     ValidationError,
+    field_validator,
     model_validator,
 )
 
@@ -51,12 +52,12 @@ profile_sort_parameters = SortParamParser(
 SELECTIONS_PATTERN = r"^[^\s/]+/[^\s/]+/[^\s/]+$"
 
 
-def _validate_global_config_dict(
+def _validate_global_config(
     global_config: dict[str, Any] | None,
-) -> None:
-    """Ensure global_config keys and values are valid according to SiteConfigFactory."""
+) -> dict[str, Any] | None:
+    """Validate global_config keys and values according to SiteConfigFactory."""
     if global_config is None:
-        return
+        return None
 
     invalid_keys = set(global_config.keys()) - set(
         SiteConfigFactory.ALL_CONFIGS.keys()
@@ -81,6 +82,23 @@ def _validate_global_config_dict(
             raise ValueError(
                 f"Invalid value for '{key}': {error_messages}"
             ) from e
+
+    return global_config
+
+
+def _filter_default_values(
+    global_config: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Filter out values that match system defaults for storage optimization."""
+    if global_config is None:
+        return None
+
+    filtered = {
+        key: value
+        for key, value in global_config.items()
+        if value != SiteConfigFactory.DEFAULT_CONFIG.get(key)
+    }
+    return filtered if filtered else None
 
 
 async def validate_selections_exist(
@@ -191,10 +209,12 @@ class ProfilesPostRequest(BaseModel):
     ] = Field(min_length=1)
     global_config: dict[str, Any] | None = None
 
-    @model_validator(mode="after")
-    def validate_global_config(self) -> Self:
-        _validate_global_config_dict(self.global_config)
-        return self
+    @field_validator("global_config")
+    @classmethod
+    def validate_global_config(
+        cls, v: dict[str, Any] | None
+    ) -> dict[str, Any] | None:
+        return _validate_global_config(v)
 
 
 class ProfilesPatchRequest(BaseModel):
@@ -207,15 +227,17 @@ class ProfilesPatchRequest(BaseModel):
     ) = Field(default=None, min_length=1)
     global_config: dict[str, Any] | None = None
 
+    @field_validator("global_config")
+    @classmethod
+    def validate_global_config(
+        cls, v: dict[str, Any] | None
+    ) -> dict[str, Any] | None:
+        return _validate_global_config(v)
+
     @model_validator(mode="after")
     def check_at_least_one_field_present(self) -> Self:
         if not self.model_fields_set:
             raise ValueError("At least one field must be set.")
-        return self
-
-    @model_validator(mode="after")
-    def validate_global_config(self) -> Self:
-        _validate_global_config_dict(self.global_config)
         return self
 
 
@@ -236,8 +258,12 @@ async def post(
     """Create a new site profile."""
     await validate_selections_exist(services, post_request.selections)
 
+    data = post_request.model_dump()
+    if "global_config" in data:
+        data["global_config"] = _filter_default_values(data["global_config"])
+
     return await services.site_profiles.create(
-        models.SiteProfileCreate(**post_request.model_dump())
+        models.SiteProfileCreate(**data)
     )
 
 
@@ -285,16 +311,18 @@ async def patch(
     if patch_request.selections is not None:
         await validate_selections_exist(services, patch_request.selections)
 
-    update_data = patch_request.model_dump()
+    update_data = patch_request.model_dump(exclude_none=True)
 
     if (
-        "global_config" in update_data
-        and update_data["global_config"] is not None
+        "global_config" in patch_request.model_fields_set
+        and patch_request.global_config is not None
     ):
-        stored_config = await services.site_profiles.get_stored_config(id)
-        merged_config = {**stored_config}
-        merged_config.update(update_data["global_config"])
-        update_data["global_config"] = merged_config
+        stored_config = await services.site_profiles.get_stored_config_by_id(
+            id
+        )
+        merged_config = stored_config | patch_request.global_config
+        filtered_config = _filter_default_values(merged_config)
+        update_data["global_config"] = filtered_config
 
     return await services.site_profiles.update(
         id, models.SiteProfileUpdate(**update_data)
