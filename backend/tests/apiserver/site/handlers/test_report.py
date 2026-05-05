@@ -309,3 +309,50 @@ class TestDetailsPostHandler:
         assert preimage is not None
         expected_hash = hash_desired_config(preimage)
         assert heartbeat_response.json()["config_hash"] == expected_hash
+
+    async def test_config_hash_retains_upstream_dns_order(
+        self,
+        factory: Factory,
+        site_client: Client,
+        db_connection: AsyncConnection,
+    ) -> None:
+        site_auth_id = uuid4()
+        profile = await factory.make_SiteProfile(
+            name="alignment-test",
+            selections=["ubuntu/jammy/amd64", "ubuntu/noble/amd64"],
+            global_config={
+                "theme": "dark",
+                "upstream_dns": ["2.2.2.2", "1.1.1.1"],
+                "maas_auto_ipmi_workaround_flags": ["b", "a"],
+            },
+        )
+        site = await factory.make_Site(
+            auth_id=site_auth_id,
+            site_profile_id=profile.id,
+            trigger_image_sync=True,
+        )
+        site_client.authenticate(
+            site_auth_id,
+            token_audience=TokenAudience.SITE,
+            token_purpose=TokenPurpose.ACCESS,
+        )
+
+        heartbeat_response = await site_client.post(
+            "/details", json={"version": site.version}
+        )
+        assert heartbeat_response.status_code == 200
+
+        profile_service = SiteProfileService(db_connection)
+        stored = await profile_service.get_stored_by_site_id(site.id)
+        assert stored is not None
+        preimage = desired_config(stored, site.trigger_image_sync)
+        assert preimage is not None
+        assert preimage["global_config"]["upstream_dns"] == [
+            "2.2.2.2",
+            "1.1.1.1",
+        ]
+        assert preimage["global_config"][
+            "maas_auto_ipmi_workaround_flags"
+        ] == ["a", "b"]
+        expected_hash = hash_desired_config(preimage)
+        assert heartbeat_response.json()["config_hash"] == expected_hash

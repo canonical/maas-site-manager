@@ -13,6 +13,8 @@ from fastapi import (
 from msm import __version__
 from msm.apiserver.db.models.site_profiles import SiteProfileStored
 
+RETAIN_ORDER_CONFIG_OPTIONS = ["upstream_dns"]
+
 
 def create_subapp(
     title: str, name: str, routers: Iterable[APIRouter]
@@ -27,7 +29,14 @@ def create_subapp(
 def _normalize_config_value(obj: Any) -> Any:
     """Recursively sort dict keys and sort all lists."""
     if isinstance(obj, dict):
-        return {k: _normalize_config_value(obj[k]) for k in sorted(obj)}
+        return {
+            k: (
+                _normalize_config_value(obj[k])
+                if k not in RETAIN_ORDER_CONFIG_OPTIONS
+                else obj[k]
+            )
+            for k in sorted(obj)
+        }
     if isinstance(obj, list):
         return sorted(obj)
     return obj
