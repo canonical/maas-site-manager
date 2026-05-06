@@ -13,7 +13,7 @@ from fastapi import (
 from msm import __version__
 from msm.apiserver.db.models.site_profiles import SiteProfileStored
 
-RETAIN_ORDER_CONFIG_OPTIONS = ["upstream_dns"]
+RETAIN_ORDER_CONFIG_OPTIONS = frozenset(["upstream_dns"])
 
 
 def create_subapp(
