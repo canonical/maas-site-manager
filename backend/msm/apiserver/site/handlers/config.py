@@ -97,7 +97,6 @@ class SiteStateStatusPatchRequest(BaseModel):
     status_code=204,
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
-        404: {"model": NotFoundErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
     },
 )
