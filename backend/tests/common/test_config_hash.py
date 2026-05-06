@@ -89,7 +89,7 @@ class TestDesiredConfig:
         assert result is not None
         assert result["global_config"]["tags"] == ["alpha", "zebra"]
 
-    def test_hash_stable_when_strenum_and_ipv_lists_are_permuted(self) -> None:
+    def test_hash_stable_when_strenum_lists_are_permuted(self) -> None:
         ta = TypeAdapter(list[IPvAnyAddress])
         ips = [
             str(x)
@@ -109,20 +109,43 @@ class TestDesiredConfig:
             [],
             global_config={
                 "maas_auto_ipmi_workaround_flags": flags_a,
-                "upstream_dns": list(reversed(ips)),
             },
         )
         p_b = _make_stored(
             [],
             global_config={
                 "maas_auto_ipmi_workaround_flags": flags_b,
-                "upstream_dns": ips,
             },
         )
         ca = desired_config(p_a, trigger_image_sync=False)
         cb = desired_config(p_b, trigger_image_sync=False)
         assert ca is not None and cb is not None
         assert hash_desired_config(ca) == hash_desired_config(cb)
+
+    def test_hash_upstream_dns_order_preserved(self) -> None:
+        ta = TypeAdapter(list[IPvAnyAddress])
+        ips = [
+            str(x)
+            for x in ta.validate_python(
+                ["192.0.2.2", "192.0.2.1", "2001:db8::1"]
+            )
+        ]
+        p_a = _make_stored(
+            [],
+            global_config={
+                "upstream_dns": ips,
+            },
+        )
+        p_b = _make_stored(
+            [],
+            global_config={
+                "upstream_dns": list(reversed(ips)),
+            },
+        )
+        ca = desired_config(p_a, trigger_image_sync=False)
+        cb = desired_config(p_b, trigger_image_sync=False)
+        assert ca is not None and cb is not None
+        assert hash_desired_config(ca) != hash_desired_config(cb)
 
 
 class TestHashDesiredConfig:
