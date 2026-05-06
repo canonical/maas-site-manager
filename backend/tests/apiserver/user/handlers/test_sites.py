@@ -337,6 +337,7 @@ class TestSitesPatchHandler:
         update: dict[str, Any] = {
             "country": "ES",
             "coordinates": {"latitude": 90, "longitude": 180},
+            "trigger_image_sync": True,
         }
 
         # update a site

@@ -239,6 +239,7 @@ class SiteUpdateRequest(BaseModel):
     # XXX: mypy can't grok that this is an str/enum with lots of members
     timezone: TimeZone | None = None  # type: ignore[valid-type]
     site_profile_id: int | None = None
+    trigger_image_sync: bool | None = None
 
     @model_validator(mode="after")
     def check_at_least_one_field_present(self) -> Self:
