@@ -71,7 +71,10 @@ class S3StreamResponse(StreamingResponse):
             chunk = await run_in_threadpool(body.read, self.chunk_size)
             if not chunk:
                 break
-            await send({"type": "http.response.body", "body": chunk,
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": chunk,
                     "more_body": True,
                 }
             )
