@@ -1,0 +1,136 @@
+name: Auto Merge Bot
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  squash_and_merge:
+    name: Process /merge command
+    # Only run if the comment is on a PR (not an issue) and contains exactly "/merge"
+    if: github.event.issue.pull_request && github.event.comment.body == '/merge'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute Custom Merge
+        uses: actions/github-script@v7
+        with:
+          # Using the Personal Access Token to bypass branch protection
+          github-token: ${{ secrets.ADMIN_PAT }}
+          script: |
+            // 1. Verify the commenter has ADMIN access
+            const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.payload.comment.user.login
+            });
+
+            if (permission.permission !== 'admin') {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `❌ @${context.payload.comment.user.login} does not have admin permissions to trigger auto-merge.`
+              });
+              return;
+            }
+
+            // 2. Fetch the Pull Request data
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            // 3. Check for Merge Conflicts
+            if (pr.data.mergeable === false) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `❌ Cannot merge. This pull request has merge conflicts that must be resolved first.`
+              });
+              return;
+            }
+
+            if (pr.data.mergeable === null) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `⏳ GitHub is still calculating the mergeability of this PR. Please wait a few seconds and try /merge again.`
+              });
+              return;
+            }
+
+            // 4. Check for passing status checks on the HEAD branch
+            const { data: status } = await github.rest.repos.getCombinedStatusForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.data.head.sha
+            });
+
+            if (status.state !== 'success') {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ Cannot merge. Current status is **${status.state}**. Please ensure all CI checks are passing first.`
+              });
+              return;
+            }
+
+            // 5. Check for at least one approval
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const isApproved = reviews.some(review => review.state === 'APPROVED');
+            if (!isApproved) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `❌ This PR has not been approved yet. Use /merge only after a reviewer has approved the changes.`
+              });
+              return;
+            }
+
+            // 6. Extract the commit message using Regex
+            const body = pr.data.body || "";
+            const match = body.match(/<\!-- COMMIT_MSG -->([\s\S]*?)<\!-- \/COMMIT_MSG -->/);
+            let commitMessage = match ? match[1].trim() : "";
+
+            // 7. Validate Conventional Commits format
+            // Loose check: type(optional scope): description
+            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\([^)]+\))?:\s.+/i;
+
+            if (!commitMessage || !conventionalCommitRegex.test(commitMessage)) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `❌ Cannot merge. The extracted commit message does not follow the [Conventional Commits standard](https://www.conventionalcommits.org/).\n\n**Extracted message:**\n> ${commitMessage || "*(No message found)*"}\n\n**Expected format:** \`<type>[optional scope]: <description>\``
+              });
+              return;
+            }
+
+            // 8. Perform the Squash and Merge
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                merge_method: 'squash',
+                commit_title: `${pr.data.title} (#${context.issue.number})`,
+                commit_message: commitMessage
+              });
+
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `✅ Successfully squash-merged with a valid conventional commit message!`
+              });
+            } catch (error) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ Failed to merge. Error: ${error.message}`
+              });
+            }
