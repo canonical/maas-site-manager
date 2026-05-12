@@ -106,6 +106,7 @@ class TestUsersGetHandler:
         response = await admin_client.get("/users", params=query_params)
         usernames = [user["username"] for user in response.json()["items"]]
         assert usernames == expected_result
+        assert False, "sup wyatt"
 
     @pytest.mark.parametrize(
         "sort_by,error_msg",
