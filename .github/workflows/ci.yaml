@@ -170,7 +170,7 @@ jobs:
           script: |
             const prNumber = context.payload.pull_request.number;
             const state = process.env.CI_STATE;
-            const emoji = state === 'success' ? '✅' : '❌';
+            const emoji = state === 'success' ? '✅' : ':notlikethis:';
             let statusMessage = `${emoji} CI Checks for PR #${prNumber} ("${context.payload.pull_request.title}") finished: **${state.toUpperCase()}**.`;
 
             const { data: comments } = await github.rest.issues.listComments({
