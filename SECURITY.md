@@ -1,4 +1,4 @@
-# MAAS Site Manager Security Policy 
+# MAAS Site Manager Security Policy
 
 If you discover a security vulnerability, please follow the steps outlined below to report it:
 
@@ -13,5 +13,3 @@ If you discover a security vulnerability, please follow the steps outlined below
 The [Ubuntu Security disclosure and embargo policy](https://ubuntu.com/security/disclosure-policy) contains more imformation about what you can expect when you contact us, and what we expect from you.
 
 The MAAS team will be notified of the issue and review the vulnerability. We may reach out to you for further information or clarification if needed. If the issue is confirmed as a valid security vulnerability, we will assign a CVE and coordinate the release of the fix.
-
-
