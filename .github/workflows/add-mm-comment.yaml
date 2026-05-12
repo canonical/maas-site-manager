@@ -13,6 +13,21 @@ jobs:
         with:
           github-token: ${{ secrets.ADMIN_PAT || github.token }}
           script: |
+            const promptText = 'Check where you would like a Mattermost message to be sent';
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number
+            });
+
+            const existingComment = comments.find(comment =>
+              comment.body && comment.body.includes(promptText)
+            );
+
+            if (existingComment) {
+              console.log('Mattermost preference comment already exists. Skipping.');
+              return;
+            }
+
             await github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.issue.number,
