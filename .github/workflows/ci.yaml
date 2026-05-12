@@ -110,6 +110,7 @@ jobs:
             be-db
             be-images
             docs
+            ci
             structural
             content
             linting
