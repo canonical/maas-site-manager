@@ -12,9 +12,7 @@ jobs:
           github-token: ${{ secrets.ADMIN_PAT }}
           script: |
             await github.rest.issues.createComment({
-                ...context.repo,
-                issue_number: context.issue.number,
-                body: `Check where you would like a Mattermost message to be sent to when CI completes and this PR is merged\n- [ ] Direct message\n- [ ] This repository's channel`
-              });
-              return;
-            }
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: `Check where you would like a Mattermost message to be sent to when CI completes and this PR is merged\n- [ ] Direct message\n- [ ] ~${{ vars.MM_CHANNEL }}`
+            });
