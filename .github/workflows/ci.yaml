@@ -156,7 +156,7 @@ jobs:
             echo "state=success" >> $GITHUB_OUTPUT
           fi
 
-      - name: Parse Preferences & Resolve Identity
+      - name: Parse Preferences & Send Mattermost Notifications
         id: MattermostStep
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -184,22 +184,23 @@ jobs:
 
             if (!MattermostComment) {
               console.log("No permission comment found. Skipping.");
-              core.setOutput('send_message', 'false');
               return;
             }
 
             const wantsDM = /-\s*\[[xX]\]\s*Direct message/i.test(MattermostComment.body);
-            const channelRegex = /-\s*\[[xX]\]\s*~([^\r\n]+)/i;
-            const channelMatch = MattermostComment.body.match(channelRegex);
-            const wantsChannel = channelMatch ? channelMatch[1].trim() : null;
+            const wantsChannel = /-\s*\[[xX]\]\s*~${{ vars.MM_CHANNEL }}/i.test(MattermostComment.body);
 
             if (!wantsDM && !wantsChannel) {
               console.log("No options selected. Skipping.");
-              core.setOutput('send_message', 'false');
               return;
             }
 
-            let targetChannel = wantsChannel || process.env.DEFAULT_CHANNEL || "maas";
+            let targetChannels = [];
+            const defaultChannel = process.env.DEFAULT_CHANNEL;
+
+            if (wantsChannel) {
+              targetChannels.push(defaultChannel);
+            }
 
             if (wantsDM) {
               try {
@@ -217,31 +218,43 @@ jobs:
 
                 if (MattermostResponse.ok) {
                   const MattermostUser = await MattermostResponse.json();
-                  targetChannel = `@${MattermostUser.username}`;
+                  targetChannels.push(`@${MattermostUser.username}`);
                 } else {
-                  statusMessage += `\n*(Note: Could not find Mattermost account for ${email})*`;
+                  statusMessage += `\n*(Note: Could not find Mattermost account for ${email}. Falling back to ~${defaultChannel})*`;
+                  if (!targetChannels.includes(defaultChannel)) {
+                    targetChannels.push(defaultChannel);
+                  }
                 }
               } catch (e) {
                 console.error("Mattermost lookup failed:", e);
-                statusMessage += `\n*(Note: Mattermost user lookup failed)*`;
+                statusMessage += `\n*(Note: Mattermost user lookup failed. Falling back to ~${defaultChannel})*`;
+                if (!targetChannels.includes(defaultChannel)) {
+                  targetChannels.push(defaultChannel);
+                }
               }
             }
 
-            core.setOutput('send_message', 'true');
-            core.setOutput('target_channel', targetChannel);
-            core.setOutput('payload_text', statusMessage);
+            console.log(`Sending notifications to: ${targetChannels.join(', ')}`);
 
-      - name: Send Mattermost Notification
-        if: github.event_name == 'pull_request' && steps.MattermostStep.outputs.send_message == 'true'
-        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e
-        with:
-          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-          PAYLOAD: |-
-            {
-              "text": ${{ toJSON(steps.MattermostStep.outputs.payload_text) }},
-              "channel": "${{ steps.MattermostStep.outputs.target_channel }}",
-              "username": "maasbot",
-              "icon_url": "https://launchpadlibrarian.net/91453111/Phoenix_landing-64x64.jpg"
+            for (const channel of targetChannels) {
+              const payload = {
+                text: statusMessage,
+                channel: channel,
+                username: "maasbot",
+                icon_url: "https://launchpadlibrarian.net/91453111/Phoenix_landing-64x64.jpg"
+              };
+
+              const res = await fetch(process.env.MATTERMOST_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              if (!res.ok) {
+                console.error(`Failed to send to ${channel}: ${res.status} ${res.statusText}`);
+              } else {
+                console.log(`Successfully sent to ${channel}`);
+              }
             }
 
       - name: Fail pipeline if dependencies failed
