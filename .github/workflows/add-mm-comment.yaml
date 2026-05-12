@@ -1,6 +1,6 @@
 name: Ask for permission to send Mattermost message
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
 permissions:
   issues: write
