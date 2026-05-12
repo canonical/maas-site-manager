@@ -134,7 +134,7 @@ jobs:
 
             # Check if the body contains the required text
             if [[ "$PR_BODY" != *"BREAKING CHANGE:"* ]]; then
-              echo "❌ Error: PR title indicates a breaking change, but 'BREAKING CHANGE:' is missing from the PR descriptio"
+              echo "❌ Error: PR title indicates a breaking change, but 'BREAKING CHANGE:' is missing from the PR description."
               exit 1
             fi
 
