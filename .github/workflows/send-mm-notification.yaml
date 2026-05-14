@@ -13,11 +13,12 @@ permissions:
 
 jobs:
   send-mm-notification:
-    if: ${{ github.event.workflow_run.event != 'workflow_dispatch' }}
+    if: ${{ github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'merge_group' }}
     runs-on: ubuntu-latest
     steps:
       - name: Download PR number artifact
         id: pr-artifact
+        if: ${{ github.event.workflow_run.event == 'pull_request' }}
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ADMIN_PAT || github.token }}
@@ -47,6 +48,65 @@ jobs:
             const defaultChannel = process.env.DEFAULT_CHANNEL;
             const promptText = 'Check where you would like a Mattermost message to be sent';
 
+            async function resolveNotificationTargets(pr) {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number
+              });
+
+              const mattermostComment = comments.find(c => c.body && c.body.includes(promptText));
+              if (!mattermostComment) {
+                console.log('No permission comment found. Skipping.');
+                return null;
+              }
+
+              const escapedDefaultChannel = defaultChannel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const wantsDM = /-\s*\[[xX]\]\s*Direct message/i.test(mattermostComment.body);
+              const wantsChannel = new RegExp(`-\\s*\\[[xX]\\]\\s*~${escapedDefaultChannel}`, 'i').test(mattermostComment.body);
+
+              if (!wantsDM && !wantsChannel) {
+                console.log('No options selected. Skipping.');
+                return null;
+              }
+
+              const targetChannels = [];
+              let extraNote = '';
+
+              if (wantsChannel) {
+                targetChannels.push(defaultChannel);
+              }
+
+              if (wantsDM) {
+                try {
+                  const { data: commitData } = await github.rest.repos.getCommit({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: pr.head.sha
+                  });
+                  const email = commitData.commit.author.email;
+                  const mattermostURL = new URL(process.env.MATTERMOST_WEBHOOK_URL).origin;
+                  const mattermostResponse = await fetch(`${mattermostURL}/api/v4/users/email/${email}`, {
+                    headers: { Authorization: `Bearer ${process.env.MATTERMOST_BOT_TOKEN}` }
+                  });
+
+                  if (mattermostResponse.ok) {
+                    const mattermostUser = await mattermostResponse.json();
+                    targetChannels.push(`@${mattermostUser.username}`);
+                  } else {
+                    extraNote = `*(Note: Could not find Mattermost account for ${email}. Falling back to ~${defaultChannel})*`;
+                    if (!targetChannels.includes(defaultChannel)) targetChannels.push(defaultChannel);
+                  }
+                } catch (error) {
+                  console.error('Mattermost lookup failed:', error);
+                  extraNote = `*(Note: Mattermost user lookup failed. Falling back to ~${defaultChannel})*`;
+                  if (!targetChannels.includes(defaultChannel)) targetChannels.push(defaultChannel);
+                }
+              }
+
+              return { targetChannels, extraNote };
+            }
+
             let statusMessage = '';
             let targetChannels = [];
 
@@ -63,76 +123,41 @@ jobs:
                 console.log(`Resolved pull request #${artifactPrNumber} from pr-number artifact.`);
               }
 
-              const prNumber = pullRequest.number;
               const { data: pr } = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: prNumber
+                pull_number: pullRequest.number
               });
-              const prUrl = pr.html_url;
-              const prTitle = pr.title;
-              statusMessage = `${emoji} CI Checks for [PR #${prNumber} ${prTitle}](${prUrl}) finished: **${state}**.`;
 
-              const { data: comments } = await github.rest.issues.listComments({
+              const result = await resolveNotificationTargets(pr);
+              if (!result) return;
+
+              ({ targetChannels } = result);
+              statusMessage = `${emoji} CI Checks for [PR #${pr.number} ${pr.title}](${pr.html_url}) finished: **${state}**.`;
+              if (result.extraNote) statusMessage += `\n${result.extraNote}`;
+
+            } else if (workflowRun.event === 'merge_group') {
+              // Merge queue branch format: gh-readonly-queue/{base}/pr-{number}-{sha}
+              const match = workflowRun.head_branch.match(/pr-(\d+)-/);
+              if (!match) {
+                console.log(`Could not extract PR number from merge queue branch: ${workflowRun.head_branch}. Skipping.`);
+                return;
+              }
+
+              const { data: pr } = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: prNumber
+                pull_number: parseInt(match[1])
               });
 
-              const mattermostComment = comments.find(comment => comment.body && comment.body.includes(promptText));
+              const result = await resolveNotificationTargets(pr);
+              if (!result) return;
 
-              if (!mattermostComment) {
-                console.log('No permission comment found. Skipping.');
-                return;
-              }
+              ({ targetChannels } = result);
+              const mergeOutcome = state === 'success' ? `merged to \`${pr.base.ref}\`` : 'removed from merge queue';
+              statusMessage = `${emoji} [PR #${pr.number} ${pr.title}](${pr.html_url}) ${mergeOutcome}.`;
+              if (result.extraNote) statusMessage += `\n${result.extraNote}`;
 
-              const escapedDefaultChannel = defaultChannel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const wantsDM = /-\s*\[[xX]\]\s*Direct message/i.test(mattermostComment.body);
-              const wantsChannel = new RegExp(`-\\s*\\[[xX]\\]\\s*~${escapedDefaultChannel}`, 'i').test(mattermostComment.body);
-
-              if (!wantsDM && !wantsChannel) {
-                console.log('No options selected. Skipping.');
-                return;
-              }
-
-              if (wantsChannel) {
-                targetChannels.push(defaultChannel);
-              }
-
-              if (wantsDM) {
-                try {
-                  const { data: commitData } = await github.rest.repos.getCommit({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    ref: pr.head.sha
-                  });
-                  const email = commitData.commit.author.email;
-
-                  const mattermostURL = new URL(process.env.MATTERMOST_WEBHOOK_URL).origin;
-                  const mattermostResponse = await fetch(`${mattermostURL}/api/v4/users/email/${email}`, {
-                    headers: { Authorization: `Bearer ${process.env.MATTERMOST_BOT_TOKEN}` }
-                  });
-
-                  if (mattermostResponse.ok) {
-                    const mattermostUser = await mattermostResponse.json();
-                    targetChannels.push(`@${mattermostUser.username}`);
-                  } else {
-                    statusMessage += `\n*(Note: Could not find Mattermost account for ${email}. Falling back to ~${defaultChannel})*`;
-                    if (!targetChannels.includes(defaultChannel)) {
-                      targetChannels.push(defaultChannel);
-                    }
-                  }
-                } catch (error) {
-                  console.error('Mattermost lookup failed:', error);
-                  statusMessage += `\n*(Note: Mattermost user lookup failed. Falling back to ~${defaultChannel})*`;
-                  if (!targetChannels.includes(defaultChannel)) {
-                    targetChannels.push(defaultChannel);
-                  }
-                }
-              }
-            } else if (workflowRun.event === 'merge_group') {
-              statusMessage = `${emoji} [CI Checks on Merge](${workflowRun.html_url}) finished: **${state}**.`;
-              targetChannels.push(defaultChannel);
             } else {
               console.log(`Unsupported workflow_run event: ${workflowRun.event}. Skipping.`);
               return;
