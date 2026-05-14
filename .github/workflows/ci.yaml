@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
-      - uses: dorny/paths-filter@61f87a10cd2c304679af17bb73ef192addf33c1c
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -93,6 +93,7 @@ jobs:
           su ubuntu -c "make ci-lint"
 
   validate-conventional-commit:
+    if: ${{ github.event_name == 'pull_request' }}
     name: Validate Conventional Commit standard
     runs-on: ubuntu-slim
     steps:
@@ -223,7 +224,7 @@ jobs:
   ci-check:
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint, test-backend, test-frontend, test-docs]
+    needs: [changes, validate-conventional-commit, lint, test-backend, test-frontend, test-docs]
     steps:
       - name: Determine overall CI status
         id: status
