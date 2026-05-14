@@ -81,7 +81,6 @@ tox -e test-unit -- -v -k test_specific_function
 
 *Frontend-specific guidelines will be populated as the frontend development standards are established.*
 
-
 ## Security Requirements
 
 Across all parts of the codebase:
