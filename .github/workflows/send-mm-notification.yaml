@@ -46,7 +46,6 @@ jobs:
             const emoji = state === 'success' ? '✅' : ':notlikethis:';
             const defaultChannel = process.env.DEFAULT_CHANNEL;
             const promptText = 'Check where you would like a Mattermost message to be sent';
-            const escapedDefaultChannel = defaultChannel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
             let statusMessage = '';
             let targetChannels = [];
@@ -55,25 +54,13 @@ jobs:
               let pullRequest = workflowRun.pull_requests[0];
 
               if (!pullRequest) {
-                const { data: associatedPullRequests } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  commit_sha: workflowRun.head_sha
-                });
-
-                pullRequest = associatedPullRequests[0];
-
-                if (!pullRequest) {
-                  const artifactPrNumber = parseInt(process.env.PR_NUMBER_FROM_ARTIFACT || '');
-                  if (!artifactPrNumber) {
-                    console.log('No pull request found for workflow run head SHA. Skipping.');
-                    return;
-                  }
-                  pullRequest = { number: artifactPrNumber };
-                  console.log(`Resolved pull request #${artifactPrNumber} from pr-number artifact.`);
-                } else {
-                  console.log(`Resolved pull request #${pullRequest.number} from head SHA.`);
+                const artifactPrNumber = parseInt(process.env.PR_NUMBER_FROM_ARTIFACT || '');
+                if (!artifactPrNumber) {
+                  console.log('No pull request found. Skipping.');
+                  return;
                 }
+                pullRequest = { number: artifactPrNumber };
+                console.log(`Resolved pull request #${artifactPrNumber} from pr-number artifact.`);
               }
 
               const prNumber = pullRequest.number;
@@ -99,6 +86,7 @@ jobs:
                 return;
               }
 
+              const escapedDefaultChannel = defaultChannel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
               const wantsDM = /-\s*\[[xX]\]\s*Direct message/i.test(mattermostComment.body);
               const wantsChannel = new RegExp(`-\\s*\\[[xX]\\]\\s*~${escapedDefaultChannel}`, 'i').test(mattermostComment.body);
 
