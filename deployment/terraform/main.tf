@@ -15,21 +15,11 @@ resource "juju_application" "msm" {
     revision = var.maas_site_manager_revision
   }
 
-  # temporal-server-address will be configured later
-  config = {
-    temporal-namespace = var.temporal_namespace
-    temporal-task-queue = var.temporal_task_queue
-  }
   resources = {
-    site-manager-image = "ghcr.io/canonical/maas-site-manager:0.1"
+    site-manager-image = "ghcr.io/canonical/maas-site-manager:1.1.0"
   }
 
   units = 1
-  lifecycle {
-    ignore_changes = [
-      config["temporal-server-address"],
-    ]
-  }
 }
 
 resource "juju_application" "postgresql" {

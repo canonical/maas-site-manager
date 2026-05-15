@@ -29,7 +29,7 @@ variable s3_path {
 variable "maas_site_manager_channel" {
   description = "Channel to deploy the MAAS Site Manager charm from"
   type        = string
-  default     = "1.0/beta"
+  default     = "1.1/beta"
 }
 
 variable "maas_site_manager_revision" {
@@ -78,49 +78,10 @@ variable "traefik_revision" {
   default     = null
 }
 
-variable "temporal_server_channel" {
-  description = "Channel to deploy the temporal-k8s charm from"
-  type        = string
-  default     = "latest/stable"
-}
-
-variable "temporal_server_revision" {
-  description = "Revision to use for the temporal-k8s charm"
-  type        = number
-  nullable    = true
-  default     = null
-}
-
-variable "temporal_admin_channel" {
-  description = "Channel to deploy the temporal-admin-k8s charm from"
-  type        = string
-  default     = "latest/stable"
-}
-
-variable "temporal_admin_revision" {
-  description = "Revision to use for the temporal-admin-k8s charm"
-  type        = number
-  nullable    = true
-  default     = null
-}
-
-variable "temporal_worker_channel" {
-  description = "Channel to deploy the temporal-worker-k8s charm from"
-  type        = string
-  default     = "latest/stable"
-}
-
-variable "temporal_worker_revision" {
-  description = "Revision to use for the temporal-worker-k8s charm"
-  type        = number
-  nullable    = true
-  default     = null
-}
-
 variable temporal_worker_resources {
   description = "OCI Image resource for temporal worker"
   type        = map
-  default     = {temporal-worker-image:"ghcr.io/canonical/maas-site-manager:0.1"}
+  default     = {temporal-worker-image:"ghcr.io/canonical/maas-site-manager:1.1.0"}
 }
 
 variable "juju_cloud_name" {
@@ -171,13 +132,6 @@ variable "grafana_dashboard_offer_url" {
 
 variable "temporal_server_offer_url" {
   description = "Offer url for temporal server host_info relation interface"
-  type        = string
-  nullable    = true
-  default     = null
-}
-
-variable "temporal_worker_offer_url" {
-  description = "Offer url for temporal worker relation interface"
   type        = string
   nullable    = true
   default     = null

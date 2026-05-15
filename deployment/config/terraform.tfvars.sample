@@ -1,4 +1,4 @@
-s3_endpoint = "10.207.11.185:8080"
+s3_endpoint = "http://10.207.11.185:8080"
 s3_access_key = "my_access_key"
 s3_secret_key = "my_secret_key"
 s3_bucket = "my_s3_bucket"
