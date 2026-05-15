@@ -151,7 +151,7 @@ resource juju_application "temporal_worker" {
 resource "juju_offer" "temporal" {
   count = var.temporal_server_offer_url == null ? 1 : 0
   model            = juju_model.temporal[0].name
-  application_name = juju_application.temporal[0].name
+  application_name = juju_application.temporal_server[0].name
   endpoints         = ["temporal-host-info"]
 
 }
