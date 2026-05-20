@@ -43,6 +43,7 @@ logs
 /frontend/playwright-report/
 /frontend/playwright/.cache/
 /frontend/tests/.auth/*
+/frontend/cypress/downloads/
 
 # Python
 *.py[cod]
