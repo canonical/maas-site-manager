@@ -192,9 +192,9 @@ class TemporalService(Service):
         return self.temporal_client.get_schedule_handle(schedule_id)
 
     async def rotate_worker_jwt(self) -> tuple[str, str]:
-        """Create a fresh worker JWT, replacing any existing ones.
+        """Renew the worker's JWT.
 
-        Deletes all current worker JWTs and issues a new one. Returns the
+        Deletes all expired JWTs and issues a new one. Returns the
         service URL and the encoded value of the new token so callers can
         update any embedded references (e.g., Temporal schedule arguments).
 

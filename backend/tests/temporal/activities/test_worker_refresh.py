@@ -51,7 +51,7 @@ class TestWorkerRefreshActivities:
         mocker: MockerFixture,
         worker_refresh_act: WorkerRefreshActivities,
     ) -> None:
-        """Test that a 401 response raises ApplicationError."""
+        """Test that a 401 response raises a non-retryable ApplicationError."""
         mock_response = mocker.create_autospec(Response)
         type(mock_response).status_code = PropertyMock(return_value=401)
         mock_response.text = "Unauthorized"
@@ -72,10 +72,10 @@ class TestWorkerRefreshActivities:
         mocker: MockerFixture,
         worker_refresh_act: WorkerRefreshActivities,
     ) -> None:
-        """Test that a 500 response raises ApplicationError."""
+        """Test that a 404 response raises a retryable ApplicationError."""
         mock_response = mocker.create_autospec(Response)
         type(mock_response).status_code = PropertyMock(return_value=404)
-        mock_response.text = "Internal Server Error"
+        mock_response.text = "Not Found"
         worker_refresh_act.client.post.return_value = mock_response  # type: ignore[attr-defined]
 
         params = WorkerJwtRefreshParams(

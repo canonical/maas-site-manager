@@ -35,13 +35,10 @@ class WorkerRefreshActivities(BaseActivity):
         """Request a refreshed worker JWT from the MSM API.
 
         Calls the /api/v1/worker-refresh endpoint authenticated with the current
-        worker JWT and returns the newly issued token.
+        worker JWT.
 
         Args:
             params: Parameters including the MSM base URL and current JWT.
-
-        Returns:
-            WorkerJwtRefreshResult containing the new JWT.
 
         Raises:
             ApplicationError: If the API request fails or returns a non-200 status.
