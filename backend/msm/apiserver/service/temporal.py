@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from functools import cached_property
 from typing import Any
 
@@ -32,9 +32,27 @@ import msm.common.workflows.sync as msm_wf
 
 WORKER_TOKEN_DURATION = timedelta(days=2)
 BOOT_SELECTION_REFRESH_INTVAL = 5
+SYNC_SOURCE_SCHED_ID_PREFIX = "sched-boot-source-"
+REFRESH_UPSTREAM_SCHED_ID_PREFIX = "sched-boot-select-"
 WORKER_JWT_REFRESH_SCHED_ID = "sched-worker-refresh"
 WORKER_JWT_REFRESH_WF_ID = "wf-worker-jwt-refresh"
 WORKER_JWT_REFRESH_INTERVAL = timedelta(days=1)
+
+
+def _sync_source_sched_id(source_id: int) -> str:
+    return f"{SYNC_SOURCE_SCHED_ID_PREFIX}{source_id}"
+
+
+def _bs_id_from_sync_sched_id(sched_id: str) -> int:
+    return int(sched_id.removeprefix(SYNC_SOURCE_SCHED_ID_PREFIX))
+
+
+def _refresh_upstream_sched_id(source_id: int) -> str:
+    return f"{REFRESH_UPSTREAM_SCHED_ID_PREFIX}{source_id}"
+
+
+def _bs_id_from_refresh_sched_id(sched_id: str) -> int:
+    return int(sched_id.removeprefix(REFRESH_UPSTREAM_SCHED_ID_PREFIX))
 
 
 class S3ParametersError(Exception):
@@ -86,13 +104,12 @@ class TemporalService(Service):
         )
         # it's possible for multiple tokens to exist,
         # get the one with the longest expiration
-        exp = datetime.fromtimestamp(0, tz=UTC)
-        val = ""
-        for token in tokens:
-            if token.expired > exp:
-                exp = token.expired
-                val = token.value
-        return service_url, val
+        longest_expiration_token = max(
+            tokens, key=lambda token: token.expired, default=None
+        )
+        if longest_expiration_token is None:
+            return service_url, ""
+        return service_url, longest_expiration_token.value
 
     async def schedule_create(
         self,
@@ -353,10 +370,8 @@ class BootSourceWorkflowService(Service):
             sched_id: str = sched_desc.id
             hdl = self.temporal.temporal_client.get_schedule_handle(sched_id)
 
-            if sched_id.startswith("sched-boot-source-"):
-                boot_source_id = int(
-                    sched_id.removeprefix("sched-boot-source-")
-                )
+            if sched_id.startswith(SYNC_SOURCE_SCHED_ID_PREFIX):
+                boot_source_id = _bs_id_from_sync_sched_id(sched_id)
                 try:
                     s3_params = self.s3_params
                 except S3ParametersError:
@@ -381,10 +396,8 @@ class BootSourceWorkflowService(Service):
 
                 await hdl.update(update_schedule)
 
-            elif sched_id.startswith("sched-boot-select-"):
-                boot_source_id = int(
-                    sched_id.removeprefix("sched-boot-select-")
-                )
+            elif sched_id.startswith(REFRESH_UPSTREAM_SCHED_ID_PREFIX):
+                boot_source_id = _bs_id_from_refresh_sched_id(sched_id)
 
                 def update_schedule(
                     inp: ScheduleUpdateInput,
@@ -446,10 +459,10 @@ class BootSourceWorkflowService(Service):
         try:
             hdls = [
                 self.temporal.get_schedule_handle(
-                    f"sched-boot-select-{boot_source_id}"
+                    _refresh_upstream_sched_id(boot_source_id)
                 ),
                 self.temporal.get_schedule_handle(
-                    f"sched-boot-source-{boot_source_id}"
+                    _sync_source_sched_id(boot_source_id)
                 ),
             ]
             s3_params = self.s3_params
@@ -508,7 +521,7 @@ class BootSourceWorkflowService(Service):
         except RPCError:
             # sync selections
             _ = await self.temporal.schedule_create(
-                scheduler_id=f"sched-boot-select-{boot_source_id}",
+                scheduler_id=_refresh_upstream_sched_id(boot_source_id),
                 workflow=msm_wf.REFRESH_UPSTREAM_SOURCE_WF_NAME,
                 workflow_id=f"wf-refresh-bootsel-{boot_source_id}",
                 param=msm_wf.RefreshUpstreamSourceParams(
@@ -523,7 +536,7 @@ class BootSourceWorkflowService(Service):
 
             # sync images
             _ = await self.temporal.schedule_create(
-                scheduler_id=f"sched-boot-source-{boot_source_id}",
+                scheduler_id=_sync_source_sched_id(boot_source_id),
                 workflow=msm_wf.SYNC_UPSTREAM_SOURCE_WF_NAME,
                 workflow_id=f"wf-sync-upstream-{boot_source_id}",
                 param=msm_wf.SyncUpstreamSourceParams(
@@ -538,17 +551,17 @@ class BootSourceWorkflowService(Service):
     async def disable_sync(self, boot_source_id: int) -> None:
         """Disable upstream synchronization for a boot source."""
         await self.temporal.schedule_cancel(
-            f"sched-boot-select-{boot_source_id}"
+            _refresh_upstream_sched_id(boot_source_id)
         )
         await self.temporal.schedule_cancel(
-            f"sched-boot-source-{boot_source_id}"
+            _sync_source_sched_id(boot_source_id)
         )
 
     async def trigger_sync(self, boot_source_id: int) -> None:
         """Trigger synchronization for a boot source."""
         await self.temporal.schedule_fire(
-            f"sched-boot-source-{boot_source_id}"
+            _sync_source_sched_id(boot_source_id)
         )
         await self.temporal.schedule_fire(
-            f"sched-boot-select-{boot_source_id}"
+            _refresh_upstream_sched_id(boot_source_id)
         )
