@@ -16,7 +16,7 @@ from temporalio.client import (
     ScheduleUpdateInput,
 )
 from temporalio.common import RetryPolicy
-from temporalio.service import RPCError
+from temporalio.service import RPCError, RPCStatusCode
 from temporallib.client import Options  # type: ignore
 from temporallib.encryption import EncryptionOptions  # type: ignore
 
@@ -271,7 +271,9 @@ class TemporalService(Service):
                 return ScheduleUpdate(schedule=inp.description.schedule)
 
             await hdl.update(update_schedule)
-        except RPCError:
+        except RPCError as exc:
+            if exc.status != RPCStatusCode.NOT_FOUND:
+                raise
             await self.temporal_client.create_schedule(
                 WORKER_JWT_REFRESH_SCHED_ID,
                 Schedule(
