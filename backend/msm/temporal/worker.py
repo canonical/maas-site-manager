@@ -31,6 +31,7 @@ async def run_worker() -> None:
     ba_act = msm_act.BootAssetActivities()
     img_act = msm_act.ImageManagementActivities()
     ss_act = msm_act.SimpleStreamActivities()
+    wr_act = msm_act.WorkerRefreshActivities()
     worker = Worker(
         client=client,
         workflows=[
@@ -39,6 +40,7 @@ async def run_worker() -> None:
             msm_wf.RefreshUpstreamSourceWorkflow,
             msm_wf.RemoveStaleImagesWorkflow,
             msm_wf.SyncUpstreamSourceWorkflow,
+            msm_wf.WorkerJwtRefreshWorkflow,
         ],
         activities=[
             ba_act.get_boot_asset_item,
@@ -53,6 +55,7 @@ async def run_worker() -> None:
             ss_act.fetch_ss_asset_list,
             ss_act.load_product_map,
             ss_act.parse_ss_index,
+            wr_act.worker_jwt_refresh,
         ],
         worker_opt=WorkerOptions(
             sentry=SentryOptions(dsn=None, release=None, environment=None)

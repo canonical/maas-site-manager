@@ -154,6 +154,24 @@ class TokenService(Service):
         result = await self.conn.execute(stmt)
         return set([x[0] for x in result.all()])
 
+    async def delete_expired(
+        self,
+        audience: TokenAudience | None = None,
+        purpose: TokenPurpose | None = None,
+    ) -> int:
+        """Delete expired tokens, optionally filtering for audience and purpose.
+
+        Return the number of tokens deleted.
+        """
+        filters = [Token.c.expired < now_utc()]
+        if audience is not None:
+            filters.append(Token.c.audience == audience)
+        if purpose is not None:
+            filters.append(Token.c.purpose == purpose)
+        stmt = delete(Token).where(*filters).returning(Token.c.id)
+        result = await self.conn.execute(stmt)
+        return len(result.all())
+
     def _select_statement(self) -> Select[Any]:
         return select(
             Token.c.id,

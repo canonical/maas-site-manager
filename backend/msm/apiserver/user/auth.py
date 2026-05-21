@@ -4,7 +4,11 @@ from uuid import UUID
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from msm.apiserver.auth import auth_id_from_token, auth_id_from_token_multi_aud
+from msm.apiserver.auth import (
+    auth_id_from_token,
+    auth_id_from_token_multi_aud,
+    bearer_token,
+)
 from msm.apiserver.db.models import User, Worker
 from msm.apiserver.dependencies import services
 from msm.apiserver.exceptions.catalog import (
@@ -78,7 +82,16 @@ def authenticated_admin(
 
 async def authenticated_worker(
     services: Annotated[ServiceCollection, Depends(services)],
-    auth_id: Annotated[UUID, Depends()],
+    auth_id: Annotated[
+        UUID,
+        Depends(
+            auth_id_from_token(
+                bearer_token,
+                TokenAudience.WORKER,
+                token_purpose=TokenPurpose.ACCESS,
+            )
+        ),
+    ],
 ) -> Worker:
     db_token = await services.tokens.get_by_auth_id(
         auth_id,

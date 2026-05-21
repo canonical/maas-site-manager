@@ -1,41 +1,98 @@
+from datetime import MAXYEAR, UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import call
 
 import pytest
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from temporalio.service import RPCError, RPCStatusCode
 
 from msm.apiserver.db.models import BootSource
 from msm.apiserver.service.temporal import (
+    WORKER_JWT_REFRESH_INTERVAL,
+    WORKER_JWT_REFRESH_SCHED_ID,
     WORKER_TOKEN_DURATION,
     BootSourceWorkflowService,
     TemporalService,
 )
 from msm.common.jwt import TokenAudience, TokenPurpose
+from msm.common.time import now_utc
 
 
 class TestTemporalService:
     """Test class for TemporalService."""
 
+    def _mock_ensure_tokens(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+        tokens: list[Any],
+        deleted: int,
+    ) -> tuple[MockType, MockType]:
+        mock_get = mocker.patch.object(
+            temporal_service.tokens, "get", return_value=(len(tokens), tokens)
+        )
+        mock_delete_expired = mocker.patch.object(
+            temporal_service.tokens, "delete_expired", return_value=deleted
+        )
+        return mock_get, mock_delete_expired
+
+    def _mock_config(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+        service_identifier: str = "test-service",
+        token_secret_key: str = "secret-key",
+    ) -> MockType:
+        mock_config = mocker.MagicMock()
+        mock_config.service_identifier = service_identifier
+        mock_config.token_secret_key = token_secret_key
+        mock_config_get = mocker.patch.object(
+            temporal_service.config, "get", return_value=mock_config
+        )
+        return mock_config_get
+
+    def _mock_settings(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+        service_url: str = "https://test-service.com",
+    ) -> MockType:
+        mock_settings = mocker.patch.object(
+            temporal_service.settings,
+            "get_service_url",
+            return_value=service_url,
+        )
+        return mock_settings
+
     @pytest.mark.asyncio
-    async def test_get_worker_credentials_success(
+    async def test_get_worker_credentials_gets_longest_token(
         self,
         mocker: MockerFixture,
         temporal_service: TemporalService,
     ) -> None:
         """Test successful retrieval of worker credentials."""
         mock_service_url = "https://example.com"
-        mock_token_value = "mock-token-123"
-        mock_token = mocker.MagicMock()
-        mock_token.value = mock_token_value
+        mock_token1 = mocker.MagicMock()
+        mock_token1.expired = datetime(MAXYEAR, 1, 1, tzinfo=UTC)
+        mock_token1.value = "mock-token-1"
 
-        mock_settings_get_service_url = mocker.patch.object(
-            temporal_service.settings,
-            "get_service_url",
-            return_value=mock_service_url,
+        mock_token2 = mocker.MagicMock()
+        mock_token2.expired = datetime(MAXYEAR, 2, 1, tzinfo=UTC)
+        mock_token2.value = "mock-token-2"
+
+        mock_token3 = mocker.MagicMock()
+        mock_token3.expired = datetime(MAXYEAR, 3, 1, tzinfo=UTC)
+        mock_token3.value = "mock-token-3"
+
+        mock_settings_get_service_url = self._mock_settings(
+            mocker,
+            temporal_service,
+            service_url=mock_service_url,
         )
         mock_tokens_get = mocker.patch.object(
-            temporal_service.tokens, "get", return_value=(1, [mock_token])
+            temporal_service.tokens,
+            "get",
+            return_value=(3, [mock_token1, mock_token2, mock_token3]),
         )
 
         (
@@ -44,7 +101,7 @@ class TestTemporalService:
         ) = await temporal_service.get_worker_credentials()
 
         assert service_url == mock_service_url
-        assert token_value == mock_token_value
+        assert token_value == "mock-token-3"
         mock_settings_get_service_url.assert_called_once()
         mock_tokens_get.assert_called_once_with(
             audience=[TokenAudience.WORKER], purpose=[TokenPurpose.ACCESS]
@@ -226,156 +283,198 @@ class TestTemporalService:
         )
 
     @pytest.mark.asyncio
-    async def test_ensure_tokens_expired(
-        self,
-        mocker: MockerFixture,
-        temporal_service: TemporalService,
-    ) -> None:
-        """Test successful ensure operation."""
-        # Mock tokens service
-        mock_existing_token = mocker.MagicMock()
-        mock_existing_token.id = "existing-token-123"
-        mock_existing_token.is_expired.return_value = True
-        mock_tokens_get = mocker.patch.object(
-            temporal_service.tokens,
-            "get",
-            return_value=(1, [mock_existing_token]),
-        )
-        mock_tokens_delete_many = mocker.patch.object(
-            temporal_service.tokens, "delete_many", return_value=None
-        )
-        mock_tokens_create = mocker.patch.object(
-            temporal_service.tokens, "create", return_value=mocker.MagicMock()
-        )
-
-        # Mock config service
-        mock_config = mocker.MagicMock()
-        mock_config.service_identifier = "test-service"
-        mock_config.token_secret_key = "secret-key-123"
-        mock_config_get = mocker.patch.object(
-            temporal_service.config, "get", return_value=mock_config
-        )
-
-        # Mock settings service
-        mock_service_url = "https://test-service.com"
-        mock_settings_get_service_url = mocker.patch.object(
-            temporal_service.settings,
-            "get_service_url",
-            return_value=mock_service_url,
-        )
-
-        await temporal_service.ensure()
-
-        # Verify tokens were renewed
-        mock_tokens_get.assert_called_once_with(
-            audience=[TokenAudience.WORKER],
-            purpose=[TokenPurpose.ACCESS],
-        )
-        mock_tokens_delete_many.assert_called_once_with(
-            [mock_existing_token.id]
-        )
-
-        # Verify config and settings were retrieved
-        mock_config_get.assert_called_once()
-        mock_settings_get_service_url.assert_called_once()
-
-        # Verify new token was created
-        mock_tokens_create.assert_called_once_with(
-            issuer=mock_config.service_identifier,
-            secret_key=mock_config.token_secret_key,
-            service_url=mock_service_url,
-            audience=TokenAudience.WORKER,
-            purpose=TokenPurpose.ACCESS,
-            duration=WORKER_TOKEN_DURATION,
-        )
-
-    async def test_ensure_tokens_not_expired(
-        self,
-        mocker: MockerFixture,
-        temporal_service: TemporalService,
-    ) -> None:
-        """Test successful ensure operation."""
-        # Mock tokens service
-        mock_existing_token = mocker.MagicMock()
-        mock_existing_token.id = "existing-token-123"
-        mock_existing_token.is_expired.return_value = False
-        mock_tokens_get = mocker.patch.object(
-            temporal_service.tokens,
-            "get",
-            return_value=(1, [mock_existing_token]),
-        )
-        mock_tokens_delete_many = mocker.patch.object(
-            temporal_service.tokens, "delete_many", return_value=None
-        )
-        mock_tokens_create = mocker.patch.object(
-            temporal_service.tokens, "create", return_value=mocker.MagicMock()
-        )
-
-        await temporal_service.ensure()
-
-        mock_tokens_get.assert_called_once_with(
-            audience=[TokenAudience.WORKER],
-            purpose=[TokenPurpose.ACCESS],
-        )
-        mock_tokens_delete_many.assert_not_called()
-
-        # Verify new token was not created
-        mock_tokens_create.assert_not_called()
-
     async def test_ensure_no_tokens(
         self,
         mocker: MockerFixture,
         temporal_service: TemporalService,
     ) -> None:
-        mock_tokens_get = mocker.patch.object(
-            temporal_service.tokens,
-            "get",
-            return_value=(0, []),
-        )
-        mock_tokens_delete_many = mocker.patch.object(
-            temporal_service.tokens, "delete_many", return_value=None
-        )
-        mock_tokens_create = mocker.patch.object(
-            temporal_service.tokens, "create", return_value=mocker.MagicMock()
-        )
+        """A token expiring within WORKER_JWT_REFRESH_INTERVAL triggers creation."""
 
-        # Mock config service
-        mock_config = mocker.MagicMock()
-        mock_config.service_identifier = "test-service"
-        mock_config.token_secret_key = "secret-key-123"
-        mock_config_get = mocker.patch.object(
-            temporal_service.config, "get", return_value=mock_config
+        self._mock_ensure_tokens(mocker, temporal_service, [], deleted=0)
+        service_identifier = "test-service"
+        secret_key = "secret-key"
+        self._mock_config(
+            mocker,
+            temporal_service,
+            service_identifier=service_identifier,
+            token_secret_key=secret_key,
         )
-
-        # Mock settings service
-        mock_service_url = "https://test-service.com"
-        mock_settings_get_service_url = mocker.patch.object(
-            temporal_service.settings,
-            "get_service_url",
-            return_value=mock_service_url,
+        service_url = "https://test.com"
+        self._mock_settings(mocker, temporal_service, service_url=service_url)
+        new_token = mocker.MagicMock(value="new-jwt")
+        mock_create = mocker.patch.object(
+            temporal_service.tokens, "create", return_value=iter([new_token])
+        )
+        mocker.patch.object(
+            temporal_service,
+            "get_worker_credentials",
+            return_value=("https://test.com", "new-jwt"),
         )
 
         await temporal_service.ensure()
 
-        mock_tokens_get.assert_called_once_with(
-            audience=[TokenAudience.WORKER],
-            purpose=[TokenPurpose.ACCESS],
-        )
-        mock_tokens_delete_many.assert_not_called()
-
-        # Verify config and settings were retrieved
-        mock_config_get.assert_called_once()
-        mock_settings_get_service_url.assert_called_once()
-
         # Verify new token was created
-        mock_tokens_create.assert_called_once_with(
-            issuer=mock_config.service_identifier,
-            secret_key=mock_config.token_secret_key,
-            service_url=mock_service_url,
+        mock_create.assert_called_once_with(
+            issuer=service_identifier,
+            secret_key=secret_key,
+            service_url=service_url,
             audience=TokenAudience.WORKER,
             purpose=TokenPurpose.ACCESS,
             duration=WORKER_TOKEN_DURATION,
         )
+
+    @pytest.mark.asyncio
+    async def test_ensure_creates_token_when_expiring_soon(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+    ) -> None:
+        """A token expiring within WORKER_JWT_REFRESH_INTERVAL triggers creation."""
+        expiring_token = mocker.MagicMock()
+        expiring_token.expired = now_utc() + timedelta(hours=12)
+
+        self._mock_ensure_tokens(
+            mocker, temporal_service, [expiring_token], deleted=0
+        )
+        self._mock_config(mocker, temporal_service)
+        self._mock_settings(
+            mocker, temporal_service, service_url="https://test.com"
+        )
+        new_token = mocker.MagicMock(value="new-jwt")
+        mock_create = mocker.patch.object(
+            temporal_service.tokens, "create", return_value=iter([new_token])
+        )
+        mocker.patch.object(
+            temporal_service,
+            "get_worker_credentials",
+            return_value=("https://test.com", "new-jwt"),
+        )
+
+        await temporal_service.ensure()
+
+        mock_create.assert_called_once_with(
+            issuer=mocker.ANY,
+            secret_key=mocker.ANY,
+            service_url=mocker.ANY,
+            audience=TokenAudience.WORKER,
+            purpose=TokenPurpose.ACCESS,
+            duration=WORKER_TOKEN_DURATION,
+        )
+
+    @pytest.mark.asyncio
+    async def test_ensure_no_create_when_token_not_expiring_soon(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+    ) -> None:
+        """A token with ample lifetime remaining does not trigger creation."""
+        healthy_token = mocker.MagicMock()
+        healthy_token.expired = (
+            now_utc() + WORKER_JWT_REFRESH_INTERVAL + timedelta(days=1)
+        )
+
+        self._mock_ensure_tokens(
+            mocker, temporal_service, [healthy_token], deleted=0
+        )
+        mock_create = mocker.patch.object(temporal_service.tokens, "create")
+        mocker.patch.object(
+            temporal_service,
+            "get_worker_credentials",
+            return_value=("https://test.com", "existing-jwt"),
+        )
+
+        await temporal_service.ensure()
+
+        mock_create.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_ensure_creates_token_when_deleted(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+    ) -> None:
+        """Expired tokens being deleted triggers creation of a new token."""
+        self._mock_ensure_tokens(mocker, temporal_service, [], deleted=1)
+        mock_create = mocker.patch.object(
+            temporal_service.tokens, "create", return_value=iter([])
+        )
+        mocker.patch.object(
+            temporal_service,
+            "get_worker_credentials",
+            return_value=("https://test.com", "new-jwt"),
+        )
+
+        await temporal_service.ensure()
+
+        mock_create.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_ensure_updates_existing_schedule(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+        temporal_client: Any,
+    ) -> None:
+        """When the refresh schedule exists, ensure updates it."""
+        healthy_token = mocker.MagicMock()
+        healthy_token.expired = (
+            now_utc() + WORKER_JWT_REFRESH_INTERVAL + timedelta(days=1)
+        )
+
+        self._mock_ensure_tokens(
+            mocker, temporal_service, [healthy_token], deleted=0
+        )
+        mocker.patch.object(temporal_service.tokens, "create")
+        mocker.patch.object(
+            temporal_service,
+            "get_worker_credentials",
+            return_value=("https://test.com", "existing-jwt"),
+        )
+        mock_handle = mocker.AsyncMock()
+        mocker.patch.object(
+            temporal_service,
+            "get_schedule_handle",
+            return_value=mock_handle,
+        )
+
+        await temporal_service.ensure()
+
+        mock_handle.update.assert_called_once()
+        temporal_client.create_schedule.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_ensure_creates_schedule_when_not_found(
+        self,
+        mocker: MockerFixture,
+        temporal_service: TemporalService,
+        temporal_client: Any,
+    ) -> None:
+        """When the refresh schedule does not exist, ensure creates it."""
+        healthy_token = mocker.MagicMock()
+        healthy_token.expired = (
+            now_utc() + WORKER_JWT_REFRESH_INTERVAL + timedelta(days=1)
+        )
+
+        self._mock_ensure_tokens(
+            mocker, temporal_service, [healthy_token], deleted=0
+        )
+        mocker.patch.object(temporal_service.tokens, "create")
+        mocker.patch.object(
+            temporal_service,
+            "get_worker_credentials",
+            return_value=("https://test.com", "existing-jwt"),
+        )
+        mocker.patch.object(
+            temporal_service,
+            "get_schedule_handle",
+            side_effect=RPCError("not found", RPCStatusCode.NOT_FOUND, b""),
+        )
+
+        await temporal_service.ensure()
+
+        temporal_client.create_schedule.assert_called_once()
+        call_args = temporal_client.create_schedule.call_args
+        assert call_args[0][0] == WORKER_JWT_REFRESH_SCHED_ID
 
 
 @pytest.mark.asyncio

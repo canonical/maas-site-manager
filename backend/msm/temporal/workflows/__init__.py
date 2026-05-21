@@ -10,6 +10,7 @@ from .sync import (
     RefreshUpstreamSourceWorkflow,
     SyncUpstreamSourceWorkflow,
 )
+from .worker_refresh import WorkerJwtRefreshWorkflow
 
 __all__ = [
     "DeleteItemsWorkflow",
@@ -17,4 +18,5 @@ __all__ = [
     "RefreshUpstreamSourceWorkflow",
     "RemoveStaleImagesWorkflow",
     "SyncUpstreamSourceWorkflow",
+    "WorkerJwtRefreshWorkflow",
 ]

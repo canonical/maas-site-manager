@@ -46,6 +46,11 @@ from .simplestream import (
     SimpleStreamActivities,
     extract_base_url,
 )
+from .worker_refresh import (
+    WORKER_JWT_REFRESH_ACTIVITY,
+    WorkerJwtRefreshParams,
+    WorkerRefreshActivities,
+)
 
 __all__ = [
     "AvailableAsset",
@@ -83,5 +88,8 @@ __all__ = [
     "REMOVE_STALE_VERSIONS_ACTIVITY",
     "RemoveStaleVersionsParams",
     "SimpleStreamActivities",
+    "WORKER_JWT_REFRESH_ACTIVITY",
+    "WorkerJwtRefreshParams",
+    "WorkerRefreshActivities",
     "extract_base_url",
 ]

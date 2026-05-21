@@ -8,6 +8,7 @@ from msm.apiserver.user.handlers import (
     sites,
     tokens,
     users,
+    worker_refresh,
 )
 
 ROUTERS = (
@@ -20,4 +21,5 @@ ROUTERS = (
     sites.v1_router,
     tokens.v1_router,
     users.v1_router,
+    worker_refresh.v1_router,
 )

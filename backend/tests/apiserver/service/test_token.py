@@ -167,3 +167,64 @@ class TestTokenService:
             issuer="issuer",
             audience=TokenAudience.WORKER,
         ).subject == str(uid)
+
+    async def test_delete_expired(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        uuid1, uuid2, uuid3 = (uuid.uuid4() for _ in range(3))
+        await factory.make_Token(auth_id=uuid1, lifetime=timedelta(hours=-2))
+        await factory.make_Token(auth_id=uuid2, lifetime=timedelta(hours=-1))
+        await factory.make_Token(auth_id=uuid3, lifetime=timedelta(hours=1))
+
+        service = TokenService(db_connection)
+        deleted = await service.delete_expired()
+        assert deleted == 2
+        db_tokens = await factory.get("token")
+        assert len(db_tokens) == 1
+
+    async def test_delete_expired_filters_by_audience(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        uuid1, uuid2 = (uuid.uuid4() for _ in range(2))
+        await factory.make_Token(
+            auth_id=uuid1,
+            lifetime=timedelta(hours=-1),
+            audience=TokenAudience.WORKER,
+            purpose=TokenPurpose.ACCESS,
+        )
+        await factory.make_Token(
+            auth_id=uuid2,
+            lifetime=timedelta(hours=-1),
+            audience=TokenAudience.SITE,
+        )
+
+        service = TokenService(db_connection)
+        deleted = await service.delete_expired(audience=TokenAudience.WORKER)
+        assert deleted == 1
+        # SITE token should still be in the database
+        db_tokens = await factory.get("token")
+        assert len(db_tokens) == 1
+
+    async def test_delete_expired_filters_by_purpose(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        uuid1, uuid2 = (uuid.uuid4() for _ in range(2))
+        await factory.make_Token(
+            auth_id=uuid1,
+            lifetime=timedelta(hours=-1),
+            audience=TokenAudience.WORKER,
+            purpose=TokenPurpose.ACCESS,
+        )
+        await factory.make_Token(
+            auth_id=uuid2,
+            lifetime=timedelta(hours=-1),
+            audience=TokenAudience.SITE,
+            purpose=TokenPurpose.ENROLMENT,
+        )
+
+        service = TokenService(db_connection)
+        deleted = await service.delete_expired(purpose=TokenPurpose.ENROLMENT)
+        assert deleted == 1
+        # SITE token should still be in the database
+        db_tokens = await factory.get("token")
+        assert len(db_tokens) == 1

@@ -1,6 +1,6 @@
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from functools import cached_property
-from typing import Any, override
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncConnection
 from temporalio.client import (
@@ -27,10 +27,14 @@ from msm.apiserver.service.settings import SettingsService
 from msm.apiserver.service.token import TokenService
 from msm.common.jwt import TokenAudience, TokenPurpose
 from msm.common.settings import Settings
+from msm.common.time import now_utc
 import msm.common.workflows.sync as msm_wf
 
-WORKER_TOKEN_DURATION = timedelta(days=365 * 5)
+WORKER_TOKEN_DURATION = timedelta(days=2)
 BOOT_SELECTION_REFRESH_INTVAL = 5
+WORKER_JWT_REFRESH_SCHED_ID = "sched-worker-refresh"
+WORKER_JWT_REFRESH_WF_ID = "wf-worker-jwt-refresh"
+WORKER_JWT_REFRESH_INTERVAL = timedelta(days=1)
 
 
 class S3ParametersError(Exception):
@@ -80,8 +84,15 @@ class TemporalService(Service):
         _, tokens = await self.tokens.get(
             audience=[TokenAudience.WORKER], purpose=[TokenPurpose.ACCESS]
         )
-        token = next(iter(tokens))
-        return service_url, token.value
+        # it's possible for multiple tokens to exist,
+        # get the one with the longest expiration
+        exp = datetime.fromtimestamp(0, tz=UTC)
+        val = ""
+        for token in tokens:
+            if token.expired > exp:
+                exp = token.expired
+                val = token.value
+        return service_url, val
 
     async def schedule_create(
         self,
@@ -180,19 +191,55 @@ class TemporalService(Service):
     def get_schedule_handle(self, schedule_id: str) -> ScheduleHandle:
         return self.temporal_client.get_schedule_handle(schedule_id)
 
-    @override
-    async def ensure(self) -> None:
-        """Prepare Site Manager to schedule Temporal workflows."""
-        await super().ensure()
+    async def rotate_worker_jwt(self) -> tuple[str, str]:
+        """Create a fresh worker JWT, replacing any existing ones.
 
-        # renew JWT credentials for the workers
+        Deletes all current worker JWTs and issues a new one. Returns the
+        service URL and the encoded value of the new token so callers can
+        update any embedded references (e.g., Temporal schedule arguments).
+
+        Returns:
+            tuple[str, str]: (service_url, new_jwt)
+        """
+        config = await self.config.get()
+        service_url = await self.settings.get_service_url()
+
+        new_tokens = list(
+            await self.tokens.create(
+                issuer=config.service_identifier,
+                secret_key=config.token_secret_key,
+                service_url=service_url,
+                audience=TokenAudience.WORKER,
+                purpose=TokenPurpose.ACCESS,
+                duration=WORKER_TOKEN_DURATION,
+            )
+        )
+        new_jwt = new_tokens[0].value
+
+        await self.tokens.delete_expired(
+            audience=TokenAudience.WORKER, purpose=TokenPurpose.ACCESS
+        )
+
+        return service_url, new_jwt
+
+    async def ensure(self) -> None:
+        """Prepare Site Manager to schedule Temporal workflows.
+
+        Refreshes worker tokens. These tokens are already refreshed by a scheduled
+        workflow, but this is a fallback in case the refresh workflow's token is invalid.
+        """
         count, tokens = await self.tokens.get(
             audience=[TokenAudience.WORKER], purpose=[TokenPurpose.ACCESS]
         )
-        expired = [t.id for t in tokens if t.is_expired()]
-        if expired:
-            _ = await self.tokens.delete_many(expired)
-        if expired or count == 0:
+        deleted = await self.tokens.delete_expired(
+            audience=TokenAudience.WORKER, purpose=TokenPurpose.ACCESS
+        )
+        expiring_soon = any(
+            token.expired
+            < now_utc() + WORKER_JWT_REFRESH_INTERVAL + timedelta(minutes=5)
+            for token in tokens
+        )
+        if deleted or count == 0 or expiring_soon:
             config = await self.config.get()
             service_url = await self.settings.get_service_url()
             _ = await self.tokens.create(
@@ -202,6 +249,57 @@ class TemporalService(Service):
                 audience=TokenAudience.WORKER,
                 purpose=TokenPurpose.ACCESS,
                 duration=WORKER_TOKEN_DURATION,
+            )
+
+        msm_url, msm_jwt = await self.get_worker_credentials()
+        try:
+            hdl = self.get_schedule_handle(WORKER_JWT_REFRESH_SCHED_ID)
+
+            def update_schedule(
+                inp: ScheduleUpdateInput,
+            ) -> ScheduleUpdate:
+                if isinstance(
+                    inp.description.schedule.action,
+                    ScheduleActionStartWorkflow,
+                ):
+                    inp.description.schedule.action.args = [
+                        msm_wf.WorkerJwtRefreshParams(
+                            msm_url=msm_url,
+                            msm_jwt=msm_jwt,
+                        )
+                    ]
+                return ScheduleUpdate(schedule=inp.description.schedule)
+
+            await hdl.update(update_schedule)
+        except RPCError:
+            await self.temporal_client.create_schedule(
+                WORKER_JWT_REFRESH_SCHED_ID,
+                Schedule(
+                    action=ScheduleActionStartWorkflow(
+                        msm_wf.WORKER_JWT_REFRESH_WF_NAME,
+                        msm_wf.WorkerJwtRefreshParams(
+                            msm_url=msm_url,
+                            msm_jwt=msm_jwt,
+                        ),
+                        id=WORKER_JWT_REFRESH_WF_ID,
+                        task_queue=self.options.queue or "not-set",
+                        retry_policy=RetryPolicy(
+                            initial_interval=timedelta(minutes=1),
+                            maximum_interval=timedelta(minutes=1),
+                        ),
+                        execution_timeout=timedelta(minutes=5),
+                    ),
+                    spec=ScheduleSpec(
+                        intervals=[
+                            ScheduleIntervalSpec(
+                                every=WORKER_JWT_REFRESH_INTERVAL
+                            )
+                        ]
+                    ),
+                    policy=SchedulePolicy(
+                        overlap=ScheduleOverlapPolicy.BUFFER_ONE,
+                    ),
+                ),
             )
 
 
@@ -236,6 +334,94 @@ class BootSourceWorkflowService(Service):
             secret_key=self.s3.s3_secret_key,
             path=self.s3.s3_path,
         )
+
+    async def refresh_worker_jwt(self) -> str:
+        """Rotate the worker JWT and update all active Temporal schedules.
+
+        Creates a fresh worker JWT, replaces the old one in the database, and
+        updates every boot-source and worker-refresh schedule so subsequent
+        workflow runs use the new token.
+
+        Returns:
+            str: The encoded value of the newly issued worker JWT.
+        """
+        msm_url, new_jwt = await self.temporal.rotate_worker_jwt()
+        schedules = await self.temporal.temporal_client.list_schedules()
+        async for sched_desc in schedules:
+            sched_id: str = sched_desc.id
+            hdl = self.temporal.temporal_client.get_schedule_handle(sched_id)
+
+            if sched_id.startswith("sched-boot-source-"):
+                boot_source_id = int(
+                    sched_id.removeprefix("sched-boot-source-")
+                )
+                try:
+                    s3_params = self.s3_params
+                except S3ParametersError:
+                    continue
+
+                def update_schedule(
+                    inp: ScheduleUpdateInput,
+                ) -> ScheduleUpdate:
+                    if isinstance(
+                        inp.description.schedule.action,
+                        ScheduleActionStartWorkflow,
+                    ):
+                        inp.description.schedule.action.args = [
+                            msm_wf.SyncUpstreamSourceParams(
+                                msm_url=msm_url,
+                                msm_jwt=new_jwt,
+                                boot_source_id=boot_source_id,
+                                s3_params=s3_params,
+                            )
+                        ]
+                    return ScheduleUpdate(schedule=inp.description.schedule)
+
+                await hdl.update(update_schedule)
+
+            elif sched_id.startswith("sched-boot-select-"):
+                boot_source_id = int(
+                    sched_id.removeprefix("sched-boot-select-")
+                )
+
+                def update_schedule(
+                    inp: ScheduleUpdateInput,
+                ) -> ScheduleUpdate:
+                    if isinstance(
+                        inp.description.schedule.action,
+                        ScheduleActionStartWorkflow,
+                    ):
+                        inp.description.schedule.action.args = [
+                            msm_wf.RefreshUpstreamSourceParams(
+                                msm_url=msm_url,
+                                msm_jwt=new_jwt,
+                                boot_source_id=boot_source_id,
+                            )
+                        ]
+                    return ScheduleUpdate(schedule=inp.description.schedule)
+
+                await hdl.update(update_schedule)
+
+            elif sched_id == WORKER_JWT_REFRESH_SCHED_ID:
+
+                def update_schedule(
+                    inp: ScheduleUpdateInput,
+                ) -> ScheduleUpdate:
+                    if isinstance(
+                        inp.description.schedule.action,
+                        ScheduleActionStartWorkflow,
+                    ):
+                        inp.description.schedule.action.args = [
+                            msm_wf.WorkerJwtRefreshParams(
+                                msm_url=msm_url,
+                                msm_jwt=new_jwt,
+                            )
+                        ]
+                    return ScheduleUpdate(schedule=inp.description.schedule)
+
+                await hdl.update(update_schedule)
+
+        return new_jwt
 
     async def enable_sync(
         self,

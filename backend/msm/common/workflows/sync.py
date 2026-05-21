@@ -18,6 +18,8 @@ DOWNLOAD_UPSTREAM_IMAGE_WF_NAME = "DownloadUpstreamImage"
 DELETE_ITEMS_WF_NAME = "DeleteItems"
 REMOVE_STALE_IMAGES_WF_NAME = "RemoveStaleImages"
 
+WORKER_JWT_REFRESH_WF_NAME = "WorkerJwtRefresh"
+
 
 @dataclass
 class S3Params:
@@ -77,3 +79,11 @@ class RemoveStaleImagesParams:
     msm_jwt: str
     boot_source_id: int
     versions_to_keep: int = 2
+
+
+@dataclass
+class WorkerJwtRefreshParams:
+    """Parameters for the worker JWT refresh workflow."""
+
+    msm_url: str
+    msm_jwt: str
