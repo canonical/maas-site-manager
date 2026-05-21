@@ -372,10 +372,7 @@ class BootSourceWorkflowService(Service):
 
             if sched_id.startswith(SYNC_SOURCE_SCHED_ID_PREFIX):
                 boot_source_id = _bs_id_from_sync_sched_id(sched_id)
-                try:
-                    s3_params = self.s3_params
-                except S3ParametersError:
-                    continue
+                s3_params = self.s3_params
 
                 def update_schedule(
                     inp: ScheduleUpdateInput,
