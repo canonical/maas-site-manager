@@ -24,6 +24,7 @@ dynamic = [
 ]
 dependencies = [
   "alembic[tz]",
+  "authlib",
   "baize",
   "bcrypt==4.0.1",
   "beautifulsoup4",

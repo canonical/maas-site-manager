@@ -22,7 +22,7 @@ from sqlalchemy.schema import Sequence
 from sqlalchemy.types import DateTime
 
 from msm.apiserver.db.types import Point
-from msm.common.enums import TaskStatus
+from msm.common.enums import OIDCProviderAccessTokenType, TaskStatus
 from msm.common.time import now_utc, utc_from_timestamp
 
 METADATA = MetaData(
@@ -312,4 +312,30 @@ SiteStateStatus = Table(
         default=TaskStatus.UNKNOWN,
     ),
     Column("errors", ARRAY(Text), nullable=False, default=[]),
+)
+
+OIDCProvider = Table(
+    "oidc_provider",
+    METADATA,
+    Column("id", Integer, primary_key=True),
+    Column(
+        "created", DateTime(timezone=True), nullable=False, default=now_utc
+    ),
+    Column(
+        "updated", DateTime(timezone=True), nullable=False, default=now_utc
+    ),
+    Column("name", Text, nullable=False, unique=True, default=""),
+    Column("client_id", Text, nullable=False, default=""),
+    Column("client_secret", Text, nullable=False, default=""),
+    Column("issuer_url", Text, nullable=False, default=""),
+    Column("redirect_uri", Text, nullable=False, default=""),
+    Column("scopes", Text, nullable=False, default=""),
+    Column(
+        "token_type",
+        Enum(OIDCProviderAccessTokenType),
+        nullable=False,
+        default=OIDCProviderAccessTokenType.OPAQUE,
+    ),
+    Column("enabled", Boolean, nullable=False, default=False),
+    Column("metadata", JSONB, nullable=False),
 )

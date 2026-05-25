@@ -206,3 +206,13 @@ class InterfaceLinkType(StrEnum):
 
     def __str__(self) -> str:
         return str(self.value)
+
+
+class OIDCProviderAccessTokenType(StrEnum):
+    """The vocabulary of possible types for OIDC provider access tokens."""
+
+    JWT = "jwt"
+    OPAQUE = "opaque"
+
+    def __str__(self) -> str:
+        return str(self.value)
