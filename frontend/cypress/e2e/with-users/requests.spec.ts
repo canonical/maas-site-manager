@@ -1,0 +1,19 @@
+import { LONG_TIMEOUT } from "../../constants";
+
+context("Requests", () => {
+  beforeEach(() => {
+    cy.login();
+    cy.visit("/settings/requests");
+  });
+
+  it("goes to the sites page if the user clicks on the sites link", () => {
+    cy.findByRole("heading", { name: /sites/i }).should("not.exist");
+    cy.findByRole("checkbox", { name: "select all" }).click({ force: true });
+    cy.findByRole("button", { name: /Accept/i }).click();
+    cy.findByRole("alert", { timeout: LONG_TIMEOUT })
+      .invoke("text")
+      .should("match", /Accepted enrollment request for [0-9]+ MAAS sites/i);
+    cy.findByRole("button", { name: /Go to Sites/i }).click();
+    cy.url().should("include", "/sites/list");
+  });
+});
