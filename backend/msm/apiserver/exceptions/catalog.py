@@ -56,3 +56,7 @@ class FileTooLargeException(MsmBaseException):
 
 class InternalServerErrorException(MsmBaseException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+class BadGatewayException(MsmBaseException):
+    status_code = status.HTTP_502_BAD_GATEWAY
