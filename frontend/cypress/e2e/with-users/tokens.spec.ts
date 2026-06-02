@@ -52,7 +52,7 @@ context("Tokens", () => {
       });
   });
 
-  it.only("saves tokens to a file on export", () => {
+  it("saves tokens to a file on export", () => {
     const downloadsFolder = Cypress.config("downloadsFolder");
     cy.findByRole("button", { name: /Export/i }).should(($btn) => {
       expect($btn).not.to.have.attr("aria-disabled", "true");
