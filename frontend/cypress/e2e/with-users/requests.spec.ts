@@ -7,7 +7,8 @@ context("Requests", () => {
   });
 
   it("goes to the sites page if the user clicks on the sites link", () => {
-    cy.findByRole("heading", { name: /sites/i }).should("not.exist");
+    cy.findByRole("heading", { name: /enrollment requests/i }).should("exist");
+    cy.findByText("Showing 0 out of 0 open enrollment requests").should("not.exist");
     cy.findByRole("checkbox", { name: "select all" }).click({ force: true });
     cy.findByRole("button", { name: /Accept/i }).click();
     cy.findByRole("alert", { timeout: LONG_TIMEOUT })

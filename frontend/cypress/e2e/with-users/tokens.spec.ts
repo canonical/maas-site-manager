@@ -57,7 +57,7 @@ context("Tokens", () => {
     cy.findByRole("button", { name: /Export/i }).should(($btn) => {
       expect($btn).not.to.have.attr("aria-disabled", "true");
     });
-    cy.get(".controls-bar__description").findByText("Showinng 0 out of 0 tokens").should("not.exist");
+    cy.findByText("Showing 0 out of 0 tokens").should("not.exist");
     cy.findByRole("button", { name: /Export/i }).click();
     cy.readFile(path.join(downloadsFolder, "site-manager-tokens.csv")).should("match", /id,value,expired,created/);
   });
