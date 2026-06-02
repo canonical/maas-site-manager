@@ -1,5 +1,5 @@
-import { LONG_TIMEOUT } from "../../constants";
 import * as path from "path";
+import { LONG_TIMEOUT } from "../../constants";
 
 context("Tokens", () => {
   beforeEach(() => {
@@ -52,11 +52,12 @@ context("Tokens", () => {
       });
   });
 
-  it("saves tokens to a file on export", () => {
+  it.only("saves tokens to a file on export", () => {
     const downloadsFolder = Cypress.config("downloadsFolder");
     cy.findByRole("button", { name: /Export/i }).should(($btn) => {
       expect($btn).not.to.have.attr("aria-disabled", "true");
     });
+    cy.get(".controls-bar__description").findByText("Showinng 0 out of 0 tokens").should("not.exist");
     cy.findByRole("button", { name: /Export/i }).click();
     cy.readFile(path.join(downloadsFolder, "site-manager-tokens.csv")).should("match", /id,value,expired,created/);
   });

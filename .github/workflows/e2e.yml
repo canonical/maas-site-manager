@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - cypress-debug-*
 jobs:
   playwright:
     name: Playwright
