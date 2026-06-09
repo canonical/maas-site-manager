@@ -12,7 +12,7 @@ def encryptor() -> Encryptor:
 
 
 class TestEncryptor:
-    def test_encrypt_str_valid_return(self, encryptor: Encryptor):
+    def test_encrypt_str_valid_return(self, encryptor: Encryptor) -> None:
         plain_text = "test"
         encrypted = encryptor.encrypt(plain_text)
 

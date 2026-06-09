@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Any
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -32,13 +33,13 @@ class EncryptedCookieManager:
         request: Request,
         encryptor: Encryptor,
         response: Response | None = None,
-        ttl_seconds=3600,
-    ):
+        ttl_seconds: int = 3600,
+    ) -> None:
         self.ttl_seconds = ttl_seconds
         self.request = request
         self.response = response
         self.encryptor = encryptor
-        self._pending: list[tuple[str, str, dict]] = []
+        self._pending: list[tuple[str, str, dict[str, Any]]] = []
 
     def set_auth_cookie(self, key: MSMOAuth2Cookie, value: str) -> None:
         self.set_cookie(
@@ -49,11 +50,11 @@ class EncryptedCookieManager:
             secure=True,
         )
 
-    def set_cookie(self, key: str, value: str, **opts) -> None:
+    def set_cookie(self, key: str, value: str, **opts: Any) -> None:
         encrypted_value = self.encryptor.encrypt(value)
         self._apply_cookie(key, encrypted_value, **opts)
 
-    def set_unsafe_cookie(self, key: str, value: str, **opts) -> None:
+    def set_unsafe_cookie(self, key: str, value: str, **opts: Any) -> None:
         """Sets a cookie without encryption. Use with caution."""
         self._apply_cookie(key, value, **opts)
 
@@ -77,7 +78,7 @@ class EncryptedCookieManager:
             self.response.set_cookie(key=key, value=value, **opts)
         self._pending.clear()
 
-    def _apply_cookie(self, key: str, value: str, **opts) -> None:
+    def _apply_cookie(self, key: str, value: str, **opts: Any) -> None:
         """Helper to either set the cookie immediately or queue it."""
         if self.response:
             self.response.set_cookie(key=key, value=value, **opts)

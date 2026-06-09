@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from msm.common.cookie_manager import (
     MSM_NONCE_COOKIE_NAME,
@@ -15,23 +15,21 @@ class TestCookieManager:
         request = Mock()
         response = Mock()
         encryptor = Mock()
-        set_cookie = Mock()
         manager = EncryptedCookieManager(
             request, encryptor=encryptor, response=response, ttl_seconds=1200
         )
-        manager.set_cookie = set_cookie
+        with patch.object(manager, "set_cookie") as set_cookie:
+            manager.set_auth_cookie(
+                value="state_value", key=MSMOAuth2Cookie.AUTH_STATE
+            )
 
-        manager.set_auth_cookie(
-            value="state_value", key=MSMOAuth2Cookie.AUTH_STATE
-        )
-
-        set_cookie.assert_called_once_with(
-            key=MSM_STATE_COOKIE_NAME,
-            value="state_value",
-            max_age=1200,
-            httponly=True,
-            secure=True,
-        )
+            set_cookie.assert_called_once_with(
+                key=MSM_STATE_COOKIE_NAME,
+                value="state_value",
+                max_age=1200,
+                httponly=True,
+                secure=True,
+            )
 
     def test_set_nonce_cookie(
         self,
@@ -39,23 +37,21 @@ class TestCookieManager:
         request = Mock()
         response = Mock()
         encryptor = Mock()
-        set_cookie = Mock()
         manager = EncryptedCookieManager(
             request, encryptor=encryptor, response=response, ttl_seconds=1200
         )
-        manager.set_cookie = set_cookie
+        with patch.object(manager, "set_cookie") as set_cookie:
+            manager.set_auth_cookie(
+                value="nonce_value", key=MSMOAuth2Cookie.AUTH_NONCE
+            )
 
-        manager.set_auth_cookie(
-            value="nonce_value", key=MSMOAuth2Cookie.AUTH_NONCE
-        )
-
-        set_cookie.assert_called_once_with(
-            key=MSM_NONCE_COOKIE_NAME,
-            value="nonce_value",
-            max_age=1200,
-            httponly=True,
-            secure=True,
-        )
+            set_cookie.assert_called_once_with(
+                key=MSM_NONCE_COOKIE_NAME,
+                value="nonce_value",
+                max_age=1200,
+                httponly=True,
+                secure=True,
+            )
 
     def test_get_cookie_returns_value(
         self,
@@ -98,12 +94,11 @@ class TestCookieManager:
             request, encryptor=Mock(), response=response, ttl_seconds=1200
         )
 
-        result = manager.clear_cookie("some_key")
+        manager.clear_cookie("some_key")
 
         response.set_cookie.assert_called_once_with(
             key="some_key", value="", max_age=0, expires=0
         )
-        assert result is None
 
     def test_set_unsafe_cookie(self) -> None:
         request = Mock()
