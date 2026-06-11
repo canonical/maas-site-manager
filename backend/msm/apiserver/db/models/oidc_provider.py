@@ -35,3 +35,16 @@ class OIDCProvider(BaseModel):
     token_type: OIDCProviderAccessTokenType
     enabled: bool
     metadata: OIDCProviderMetadata
+
+
+class OIDCProviderCreate(BaseModel):
+    """Creating a new OIDC provider."""
+
+    name: str
+    client_id: str
+    client_secret: str
+    issuer_url: AnyHttpUrl
+    redirect_uri: AnyHttpUrl
+    scopes: str
+    token_type: OIDCProviderAccessTokenType
+    enabled: bool

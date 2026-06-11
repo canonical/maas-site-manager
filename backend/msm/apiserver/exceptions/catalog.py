@@ -60,3 +60,7 @@ class InternalServerErrorException(MsmBaseException):
 
 class BadGatewayException(MsmBaseException):
     status_code = status.HTTP_502_BAD_GATEWAY
+
+
+class ConflictException(MsmBaseException):
+    status_code = status.HTTP_409_CONFLICT
