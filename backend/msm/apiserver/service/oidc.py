@@ -42,11 +42,11 @@ class OIDCService(Service):
         existing_enabled = await self.get_by_enabled()
         if details.enabled and existing_enabled:
             raise ConflictException(
-                code=ExceptionCode.INVALID_PARAMS,
+                code=ExceptionCode.ALREADY_EXISTS,
                 message="Only one OIDC provider can be enabled at a time.",
                 details=[
                     BaseExceptionDetail(
-                        reason=ExceptionCode.INVALID_PARAMS,
+                        reason=ExceptionCode.ALREADY_EXISTS,
                         messages=["An enabled OIDC provider already exists."],
                     )
                 ],

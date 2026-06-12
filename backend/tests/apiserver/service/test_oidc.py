@@ -172,7 +172,7 @@ class TestOIDCService:
         with pytest.raises(ConflictException) as excinfo:
             await service.create(details)
 
-        assert excinfo.value.code == ExceptionCode.INVALID_PARAMS
+        assert excinfo.value.code == ExceptionCode.ALREADY_EXISTS
         client.get.assert_not_awaited()
 
     async def test_fetch_metadata_success(
