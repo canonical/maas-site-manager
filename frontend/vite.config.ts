@@ -54,6 +54,9 @@ export default defineConfig(({ mode }) => {
       }),
       stylelint(),
     ],
+    optimizeDeps: {
+      include: ["maplibre-gl", "pmtiles"],
+    },
     server: { port: Number(env.VITE_UI_PORT), host: Boolean(env.VITE_HOST_MODE) },
     resolve: {
       alias: { "@": path.resolve(__dirname, "src") },
