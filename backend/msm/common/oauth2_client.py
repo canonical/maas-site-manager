@@ -271,6 +271,9 @@ class OAuth2Client:
             refresh_token=new_refresh_token,
         )
 
+    async def close(self) -> None:
+        await self.client.aclose()
+
     def _generate_state(self, redirect_target: str) -> str:
         encoded = base64.urlsafe_b64encode(redirect_target.encode()).decode()
         random_str = generate_token()

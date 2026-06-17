@@ -4,12 +4,14 @@ from typing import (
 )
 
 from httpx import AsyncClient
-from sqlalchemy import Select, insert, select
+from sqlalchemy import Select, insert, select, update
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db.models.oidc_provider import (
     OIDCProvider,
     OIDCProviderCreate,
     OIDCProviderMetadata,
+    OIDCProviderUpdate,
 )
 from msm.apiserver.db.tables import OIDCProvider as OIDCProviderTable
 from msm.apiserver.exceptions.catalog import (
@@ -19,9 +21,14 @@ from msm.apiserver.exceptions.catalog import (
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.base import Service
+from msm.common.oauth2_client import OAuth2Client
 
 
 class OIDCService(Service):
+    def __init__(self, connection: AsyncConnection):
+        super().__init__(connection)
+        self._oauth2_client: OAuth2Client | None = None
+
     @cached_property
     def httpx_client(self) -> "AsyncClient":
         """Create an AsyncClient for making HTTP requests to OIDC providers."""
@@ -64,6 +71,55 @@ class OIDCService(Service):
         result = await self.conn.execute(stmt, [data])
         return OIDCProvider(**result.one()._asdict())
 
+    async def update(
+        self, provider_id: int, details: OIDCProviderUpdate
+    ) -> OIDCProvider:
+        """Update an existing OIDC provider."""
+        data = details.model_dump(exclude_none=True)
+        enable_requested = details.enabled is True
+        existing_enabled = await self.get_by_enabled()
+        if details.issuer_url:
+            data["issuer_url"] = str(details.issuer_url)
+        if details.redirect_uri:
+            data["redirect_uri"] = str(details.redirect_uri)
+
+        # Only allow enabling if no other providers are enabled
+        if (
+            not enable_requested
+            or not existing_enabled
+            or existing_enabled.id == provider_id
+        ):
+            metadata = (
+                await self._fetch_metadata(str(details.issuer_url))
+                if details.issuer_url
+                else None
+            )
+            if metadata:
+                data["metadata"] = metadata.model_dump()
+            stmt = (
+                update(OIDCProviderTable)
+                .where(OIDCProviderTable.c.id == provider_id)
+                .values(**data)
+                .returning(*OIDCProviderTable.c.values())
+            )
+            result = await self.conn.execute(stmt)
+            if enable_requested and self._oauth2_client is not None:
+                # Close the stale client since a new provider is now enabled
+                await self._oauth2_client.close()
+                self._oauth2_client = None
+            return OIDCProvider(**result.one()._asdict())
+
+        raise ConflictException(
+            code=ExceptionCode.ALREADY_EXISTS,
+            message="Only one OIDC provider can be enabled at a time.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.ALREADY_EXISTS,
+                    messages=["An enabled OIDC provider already exists."],
+                )
+            ],
+        )
+
     async def _fetch_metadata(self, issuer_url: str) -> OIDCProviderMetadata:
         """Fetch OIDC provider metadata from the well-known endpoint."""
         httpx_client = self.httpx_client
@@ -100,6 +156,26 @@ class OIDCService(Service):
 
         metadata = response.json()
         return OIDCProviderMetadata(**metadata)
+
+    async def _get_oauth_client(self) -> "OAuth2Client":
+        """Get (and cache) the OAuth2Client for the enabled OIDC provider."""
+        if self._oauth2_client is None:
+            provider = await self.get_by_enabled()
+            if not provider:
+                raise ConflictException(
+                    code=ExceptionCode.MISSING_PROVIDER_CONFIG,
+                    message="No enabled OIDC provider found.",
+                    details=[
+                        BaseExceptionDetail(
+                            reason=ExceptionCode.MISSING_PROVIDER_CONFIG,
+                            messages=[
+                                "Please configure or enable an OIDC provider first."
+                            ],
+                        )
+                    ],
+                )
+            self._oauth2_client = OAuth2Client(provider=provider)
+        return self._oauth2_client
 
     def _select_statement(self, include_metadata: bool = True) -> Select[Any]:
         fields = [

@@ -11,6 +11,7 @@ from msm.apiserver.db.models.oidc_provider import (
     OIDCProvider,
     OIDCProviderCreate,
     OIDCProviderMetadata,
+    OIDCProviderUpdate,
 )
 from msm.apiserver.db.tables import OIDCProvider as OIDCProviderTable
 from msm.apiserver.exceptions.catalog import (
@@ -221,3 +222,83 @@ class TestOIDCService:
         assert (
             excinfo.value.code == ExceptionCode.PROVIDER_COMMUNICATION_FAILED
         )
+
+    async def test_update_success(
+        self,
+        mocker: MockerFixture,
+        factory: Factory,
+        service: OIDCService,
+    ) -> None:
+        provider = await insert_provider(
+            factory, name="provider", enabled=False
+        )
+        get_mock = AsyncMock(return_value=mock_metadata_response())
+        client = patch_httpx_client(mocker, service, get_mock)
+
+        updated = await service.update(
+            provider.id, OIDCProviderUpdate(name="renamed")
+        )
+
+        assert updated.id == provider.id
+        assert updated.name == "renamed"
+        # No issuer change, so metadata is not refetched.
+        client.get.assert_not_awaited()
+
+    async def test_update_refetches_metadata_on_issuer_change(
+        self,
+        mocker: MockerFixture,
+        factory: Factory,
+        service: OIDCService,
+    ) -> None:
+        provider = await insert_provider(
+            factory, name="provider", enabled=False
+        )
+        new_metadata = {**METADATA, "jwks_uri": "https://new.com/jwks"}
+        get_mock = AsyncMock(
+            return_value=mock_metadata_response(json_data=new_metadata)
+        )
+        client = patch_httpx_client(mocker, service, get_mock)
+
+        updated = await service.update(
+            provider.id,
+            OIDCProviderUpdate(issuer_url="https://new.com/"),
+        )
+
+        assert str(updated.issuer_url) == "https://new.com/"
+        assert updated.metadata == OIDCProviderMetadata(**new_metadata)
+        client.get.assert_awaited_once_with(
+            "https://new.com/.well-known/openid-configuration"
+        )
+
+    async def test_update_enable_success_when_none_enabled(
+        self,
+        factory: Factory,
+        service: OIDCService,
+    ) -> None:
+        provider = await insert_provider(
+            factory, name="provider", enabled=False
+        )
+
+        updated = await service.update(
+            provider.id, OIDCProviderUpdate(enabled=True)
+        )
+
+        assert updated.enabled is True
+
+    async def test_update_conflict_when_enabling_different_provider(
+        self,
+        factory: Factory,
+        service: OIDCService,
+    ) -> None:
+        await insert_provider(factory, name="existing", enabled=True)
+        other = await insert_provider(
+            factory,
+            name="other",
+            enabled=False,
+            issuer_url="https://other.com/",
+        )
+
+        with pytest.raises(ConflictException) as excinfo:
+            await service.update(other.id, OIDCProviderUpdate(enabled=True))
+
+        assert excinfo.value.code == ExceptionCode.ALREADY_EXISTS

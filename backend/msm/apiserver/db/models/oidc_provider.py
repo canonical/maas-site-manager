@@ -48,3 +48,16 @@ class OIDCProviderCreate(BaseModel):
     scopes: str
     token_type: OIDCProviderAccessTokenType
     enabled: bool
+
+
+class OIDCProviderUpdate(BaseModel):
+    """Updating an existing OIDC provider."""
+
+    name: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
+    issuer_url: AnyHttpUrl | None = None
+    redirect_uri: AnyHttpUrl | None = None
+    scopes: str | None = None
+    token_type: OIDCProviderAccessTokenType | None = None
+    enabled: bool | None = None
