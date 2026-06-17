@@ -52,6 +52,14 @@ jobs:
           node-version-file: frontend/.nvmrc
       - name: Install dependencies
         run: yarn install
+      - name: Download map assets
+        # The Natural Earth pmtiles basemap is gitignored and fetched by
+        # scripts/download-map-assets.sh, which intentionally skips the download
+        # when CI=true. The map e2e tests need it: without the basemap the
+        # MapLibre style never finishes loading, the markers layer is never
+        # added, and queryRenderedFeatures returns no site markers. Run the
+        # script with CI unset so the basemap is downloaded for these tests.
+        run: CI= yarn run download-map-assets
       - name: Run Cypress tests
         uses: cypress-io/github-action@v7
         with:
