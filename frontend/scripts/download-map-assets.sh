@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if [ "$CI" == "true" ]; then
-    exit 0
-fi
-
 TILES_URL="https://github.com/canonical/natural-earth-pmtiles/raw/main/natural_earth.vector_v2.pmtiles"
 TILES_PATH="public/natural_earth.vector_v2.pmtiles"
 

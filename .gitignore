@@ -44,6 +44,7 @@ logs
 /frontend/playwright/.cache/
 /frontend/tests/.auth/*
 /frontend/cypress/downloads/
+/frontend/cypress/screenshots/
 
 # Python
 *.py[cod]

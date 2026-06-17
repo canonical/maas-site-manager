@@ -54,10 +54,13 @@ context("Tokens", () => {
 
   it("saves tokens to a file on export", () => {
     const downloadsFolder = Cypress.config("downloadsFolder");
-    cy.findByRole("button", { name: /Export/i }).should(($btn) => {
-      expect($btn).not.to.have.attr("aria-disabled", "true");
-    });
     cy.findByText("Showing 0 out of 0 tokens").should("not.exist");
+    // The export hook fetches a token count first, then fires paged requests.
+    // isLoadingExportTokens is false until the page queries start (aria-disabled absent),
+    // true while they load (aria-disabled="true"), then false when data is ready.
+    // Waiting for the full cycle ensures exportTokensData is non-null before clicking.
+    cy.findByRole("button", { name: /Export/i }).should("have.attr", "aria-disabled", "true");
+    cy.findByRole("button", { name: /Export/i }).should("not.have.attr", "aria-disabled");
     cy.findByRole("button", { name: /Export/i }).click();
     cy.readFile(path.join(downloadsFolder, "site-manager-tokens.csv")).should("match", /id,value,expired,created/);
   });

@@ -52,6 +52,8 @@ jobs:
           node-version-file: frontend/.nvmrc
       - name: Install dependencies
         run: yarn install
+      - name: Download map assets
+        run: CI= yarn predev
       - name: Run Cypress tests
         uses: cypress-io/github-action@v7
         with:
