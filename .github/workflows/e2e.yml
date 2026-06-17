@@ -57,6 +57,13 @@ jobs:
         with:
           config: baseUrl=${{env.MSM_UI_URL}},pageLoadTimeout=100000
           install: false
+          # Run in Chrome rather than the default Electron browser. The sites
+          # map renders via MapLibre GL (WebGL) and CI runners have no GPU, so
+          # the browser must fall back to software WebGL (SwiftShader). The
+          # SwiftShader flags set in cypress.config.ts are only honoured by
+          # Chromium-family browsers launched from the command line; Electron
+          # ignores them ("not supported by electron"), leaving the map blank.
+          browser: chrome
           start: yarn dev
           spec: cypress/e2e/${{ matrix.groups }}/**/*.spec.ts
           wait-on: ${{env.MSM_UI_URL}}/login
