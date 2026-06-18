@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import (
     Any,
 )
@@ -27,12 +26,9 @@ from msm.common.oauth2_client import OAuth2Client
 class OIDCService(Service):
     def __init__(self, connection: AsyncConnection):
         super().__init__(connection)
-        self._oauth2_client: OAuth2Client | None = None
+        #TODO: Cache httpx_client and oauth2_client when we have a service cache
+        self.httpx_client = AsyncClient()
 
-    @cached_property
-    def httpx_client(self) -> "AsyncClient":
-        """Create an AsyncClient for making HTTP requests to OIDC providers."""
-        return AsyncClient()
 
     async def get_by_enabled(self) -> OIDCProvider | None:
         """Get the enabled OIDC provider, if any."""
@@ -103,10 +99,6 @@ class OIDCService(Service):
                 .returning(*OIDCProviderTable.c.values())
             )
             result = await self.conn.execute(stmt)
-            if enable_requested and self._oauth2_client is not None:
-                # Close the stale client since a new provider is now enabled
-                await self._oauth2_client.close()
-                self._oauth2_client = None
             return OIDCProvider(**result.one()._asdict())
 
         raise ConflictException(
@@ -157,25 +149,23 @@ class OIDCService(Service):
         metadata = response.json()
         return OIDCProviderMetadata(**metadata)
 
-    async def _get_oauth_client(self) -> "OAuth2Client":
-        """Get (and cache) the OAuth2Client for the enabled OIDC provider."""
-        if self._oauth2_client is None:
-            provider = await self.get_by_enabled()
-            if not provider:
-                raise ConflictException(
-                    code=ExceptionCode.MISSING_PROVIDER_CONFIG,
-                    message="No enabled OIDC provider found.",
-                    details=[
-                        BaseExceptionDetail(
-                            reason=ExceptionCode.MISSING_PROVIDER_CONFIG,
-                            messages=[
-                                "Please configure or enable an OIDC provider first."
-                            ],
-                        )
-                    ],
-                )
-            self._oauth2_client = OAuth2Client(provider=provider)
-        return self._oauth2_client
+    async def _get_oauth_client(self) -> OAuth2Client:
+        """Get the OAuth2Client for the enabled OIDC provider."""
+        provider = await self.get_by_enabled()
+        if not provider:
+            raise ConflictException(
+                code=ExceptionCode.MISSING_PROVIDER_CONFIG,
+                message="No enabled OIDC provider found.",
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.MISSING_PROVIDER_CONFIG,
+                        messages=[
+                            "Please configure or enable an OIDC provider first."
+                        ],
+                    )
+                ],
+            )
+        return OAuth2Client(provider=provider)
 
     def _select_statement(self, include_metadata: bool = True) -> Select[Any]:
         fields = [
