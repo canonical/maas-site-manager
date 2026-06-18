@@ -1,11 +1,11 @@
-import { LONG_TIMEOUT } from "../../constants";
+import { EXTRA_LONG_TIMEOUT } from "../../constants";
 
 context("Map", () => {
   beforeEach(() => {
     cy.login();
     cy.visit("/sites/map");
-    cy.findByRole("region", { name: /sites map/i, timeout: LONG_TIMEOUT * 2 }).should("be.visible");
-    cy.findAllByRole("button", { name: /site location marker/i, timeout: LONG_TIMEOUT * 2 }).should(
+    cy.findByRole("region", { name: /sites map/i, timeout: EXTRA_LONG_TIMEOUT }).should("be.visible");
+    cy.findAllByRole("button", { name: /site location marker/i, timeout: EXTRA_LONG_TIMEOUT }).should(
       "have.length.greaterThan",
       0,
     );

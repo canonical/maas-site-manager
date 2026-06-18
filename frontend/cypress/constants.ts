@@ -1,1 +1,2 @@
 export const LONG_TIMEOUT = 30000;
+export const EXTRA_LONG_TIMEOUT = LONG_TIMEOUT * 2;
