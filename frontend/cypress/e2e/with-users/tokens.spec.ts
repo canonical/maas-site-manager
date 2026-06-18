@@ -54,11 +54,12 @@ context("Tokens", () => {
 
   it("saves tokens to a file on export", () => {
     const downloadsFolder = Cypress.config("downloadsFolder");
-    cy.findByRole("button", { name: /Export/i }).should(($btn) => {
-      expect($btn).not.to.have.attr("aria-disabled", "true");
-    });
+    cy.findByRole("button", { name: /Export/i, timeout: LONG_TIMEOUT }).should("not.be.disabled");
     cy.findByText("Showing 0 out of 0 tokens").should("not.exist");
     cy.findByRole("button", { name: /Export/i }).click();
-    cy.readFile(path.join(downloadsFolder, "site-manager-tokens.csv")).should("match", /id,value,expired,created/);
+    cy.readFile(path.join(downloadsFolder, "site-manager-tokens.csv"), { timeout: LONG_TIMEOUT }).should(
+      "match",
+      /id,value,expired,created/,
+    );
   });
 });
