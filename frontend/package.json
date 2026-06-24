@@ -23,7 +23,7 @@
     "upgrade-all": "yarn-upgrade-all -E"
   },
   "dependencies": {
-    "@canonical/maas-react-components": "2.0.0",
+    "@canonical/maas-react-components": "2.3.0",
     "@canonical/react-components": "3.6.0",
     "@hey-api/client-axios": "0.9.1",
     "@sentry/browser": "10.23.0",
