@@ -1,7 +1,7 @@
+import { Placeholder } from "@canonical/maas-react-components";
 import { Icon } from "@canonical/react-components";
 
 import type { SelectedImage } from "@/app/apiclient";
-import Placeholder from "@/app/base/components/Placeholder";
 
 const SyncedStatus = () => {
   return (

@@ -5,7 +5,7 @@ import classNames from "classnames";
 import pick from "lodash/fp/pick";
 
 import type { Site } from "@/app/apiclient";
-import type { SitesColumnDef } from "@/app/sites/views/SitesList/SitesTable/SitesTable";
+import type { SiteColumnDef } from "@/app/sites/components/SitesTable/useSitesTableColumns/useSitesTableColumns";
 
 type Props = {
   selectedSites: Site[];
@@ -16,7 +16,7 @@ const createAccessor =
     pick(keys, row);
 
 const SiteSelectionTable = ({ selectedSites }: Props) => {
-  const columns = useMemo<SitesColumnDef[]>(
+  const columns = useMemo<SiteColumnDef[]>(
     () => [
       {
         id: "name",

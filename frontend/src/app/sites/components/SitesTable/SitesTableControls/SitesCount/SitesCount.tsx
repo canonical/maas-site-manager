@@ -1,7 +1,7 @@
+import { Placeholder } from "@canonical/maas-react-components";
 import pluralize from "pluralize";
 
 import type { UseSitesResult } from "@/app/api/query/sites";
-import Placeholder from "@/app/base/components/Placeholder";
 
 const SitesCount = ({
   totalSites,

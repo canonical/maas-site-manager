@@ -1,11 +1,11 @@
 import type { AriaAttributes, PropsWithChildren } from "react";
 import { useState, useEffect, useLayoutEffect } from "react";
 
+import { Placeholder } from "@canonical/maas-react-components";
 import type { RowData, Table } from "@tanstack/react-table";
 import classNames from "classnames";
 
 import BREAKPOINTS from "@/app/base/breakpoints";
-import Placeholder from "@/app/base/components/Placeholder";
 
 const DynamicTable = ({ className, children, ...props }: PropsWithChildren<{ className?: string }>) => {
   return (
