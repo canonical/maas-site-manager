@@ -83,10 +83,9 @@
 @import "@/app/base/components/SecondaryNavigation/SecondaryNavigation";
 @import "@/app/base/components/Popover/Popover";
 @import "@/app/settings/views/TokensList/components/TokensCreate/TokensCreate";
-@import "@/app/sites/views/SitesList/SitesTable/SitesTableControls/SitesTableControls";
-@import "@/app/sites/views/SitesList/SitesTable/SitesTableControls/ColumnsVisibilityControl/ColumnsVisibilityControl";
-@import "@/app/sites/views/SitesList/SitesTable/SitesTable";
-@import "@/app/base/components/Placeholder/Placeholder";
+@import "@/app/sites/components/SitesTable/SitesTableControls/SitesTableControls";
+@import "@/app/sites/components/SitesTable/SitesTableControls/ColumnsVisibilityControl/ColumnsVisibilityControl";
+@import "@/app/sites/components/SitesTable/SitesTable";
 @import "@/app/settings/views/TokensList/TokensList";
 @import "@/app/settings/views/TokensList/components/TokensTable/TokensTable";
 @import "@/app/settings/views/UserList/UserList";
