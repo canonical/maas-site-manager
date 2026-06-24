@@ -1,0 +1,52 @@
+.p-generic-table.sites-table {
+  tr:has(td.connection .is-unknown) {
+    td:not(.name) {
+      &,
+      .tooltip-button {
+        @extend %muted-text;
+      }
+    }
+  }
+
+  thead {
+    padding-top: $sp-medium;
+  }
+
+  .connection {
+    .connection__text {
+      padding-left: $connection-status-icon-width;
+    }
+  }
+
+  th.actions {
+    .p-icon--settings {
+      margin: 0;
+    }
+  }
+
+  .sites-table-row--muted {
+    td:not(.name) {
+      &,
+      .tooltip-button {
+        @extend %muted-text;
+      }
+    }
+  }
+
+  .status-icon::before {
+    top: -5px;
+  }
+
+  td.p-generic-table__skeleton-cell {
+    & > div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+    }
+
+    .p-placeholder {
+      height: $sp-large;
+    }
+  }
+}

@@ -60,7 +60,7 @@ it("displays an empty sites table", () => {
     />,
   );
 
-  expect(screen.getByRole("table", { name: /sites/i })).toBeInTheDocument();
+  expect(screen.getByRole("treegrid", { name: /sites/i })).toBeInTheDocument();
 });
 
 it("displays rows with details for each site", () => {
@@ -75,7 +75,7 @@ it("displays rows with details for each site", () => {
     />,
   );
 
-  expect(screen.getByRole("table", { name: /sites/i })).toBeInTheDocument();
+  expect(screen.getByRole("treegrid", { name: /sites/i })).toBeInTheDocument();
 
   const tableBody = screen.getAllByRole("rowgroup")[1];
   expect(within(tableBody).getAllByRole("row")).toHaveLength(items.length);
@@ -126,7 +126,7 @@ it("displays correct local time", () => {
     />,
   );
 
-  expect(screen.getByRole("table", { name: /sites/i })).toBeInTheDocument();
+  expect(screen.getByRole("treegrid", { name: /sites/i })).toBeInTheDocument();
   expect(screen.getByText(/13:00 UTC\+1/i)).toBeInTheDocument();
 });
 
@@ -267,7 +267,7 @@ it("displays action buttons on each row", () => {
     />,
   );
 
-  expect(screen.getByRole("table", { name: /sites/i })).toBeInTheDocument();
+  expect(screen.getByRole("treegrid", { name: /sites/i })).toBeInTheDocument();
 
   const tableBody = screen.getAllByRole("rowgroup")[1];
   within(tableBody)
