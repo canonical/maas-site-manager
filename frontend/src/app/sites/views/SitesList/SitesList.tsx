@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 
 import type { SortingState } from "@tanstack/react-table";
 
-import SitesTable from "./SitesTable";
-
 import type { SitesSortKey, SortBy } from "@/app/api/handlers";
 import { useSites } from "@/app/api/query/sites";
 import useDebounce from "@/app/base/hooks/useDebouncedValue";
 import usePagination from "@/app/base/hooks/usePagination";
+import SitesTable from "@/app/sites/components/SitesTable";
 import { getSortBy } from "@/utils";
 import { useSearchParams, useNavigate } from "@/utils/router";
 
