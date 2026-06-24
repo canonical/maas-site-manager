@@ -2,15 +2,7 @@ import SitesList from "./SitesList";
 
 import { siteFactory } from "@/mocks/factories";
 import { sitesResolvers } from "@/testing/resolvers/sites";
-import {
-  renderWithMemoryRouter,
-  screen,
-  setupServer,
-  userEvent,
-  waitFor,
-  waitForLoadingToFinish,
-  within,
-} from "@/utils/test-utils";
+import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
 
 const searchSiteName = "SearchTestSite";
 const sites = siteFactory.buildList(3);
@@ -22,140 +14,170 @@ beforeAll(() => {
   mockServer.listen();
 });
 
-afterEach(() => {
-  mockServer.resetHandlers();
+beforeEach(() => {
   localStorage.clear();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  mockServer.resetHandlers();
 });
 
 afterAll(() => {
   mockServer.close();
 });
 
-it("displays loading text", () => {
-  renderWithMemoryRouter(<SitesList />);
+describe("SitesList", () => {
+  describe("display", () => {
+    it("displays a loading component while sites are loading", async () => {
+      renderWithMemoryRouter(<SitesList />);
 
-  expect(within(screen.getByRole("table", { name: /sites/i })).getByText(/loading/i)).toBeInTheDocument();
-});
-
-it("displays populated sites table", async () => {
-  renderWithMemoryRouter(<SitesList />);
-
-  expect(screen.getByRole("table", { name: /sites/i })).toBeInTheDocument();
-
-  await waitForLoadingToFinish();
-  await waitFor(() => {
-    expect(screen.getAllByRole("rowgroup")).toHaveLength(2);
-  });
-  const tableBody = screen.getAllByRole("rowgroup")[1];
-  expect(within(tableBody).getAllByRole("row")).toHaveLength(sites.length);
-  within(tableBody)
-    .getAllByRole("row")
-    .forEach((row, i) => {
-      expect(row).toHaveTextContent(new RegExp(sites[i].name, "i"));
+      await waitFor(() => {
+        expect(screen.getAllByRole("progressbar", { name: /loading/i }).length).toBeGreaterThan(0);
+      });
     });
-});
 
-it("disables the 'remove' button if no rows are selected", async () => {
-  renderWithMemoryRouter(<SitesList />);
-  expect(screen.getByRole("button", { name: /Remove/i })).toBeAriaDisabled();
-});
+    it("displays a populated sites table", async () => {
+      renderWithMemoryRouter(<SitesList />);
 
-it("enables the 'remove' button if some rows are selected", async () => {
-  renderWithMemoryRouter(<SitesList />);
-  await userEvent.click(screen.getByRole("checkbox", { name: /select all/i }));
-  await waitFor(() => {
-    expect(screen.getByRole("button", { name: /Remove/i })).not.toBeAriaDisabled();
+      expect(screen.getByRole("treegrid", { name: /sites/i })).toBeInTheDocument();
+
+      await waitFor(() => {
+        const tableBody = screen.getAllByRole("rowgroup")[1];
+        expect(within(tableBody).getAllByRole("row")).toHaveLength(sites.length);
+      });
+
+      const tableBody = screen.getAllByRole("rowgroup")[1];
+      within(tableBody)
+        .getAllByRole("row")
+        .forEach((row, i) => {
+          expect(row).toHaveTextContent(new RegExp(sites[i].name, "i"));
+        });
+    });
+
+    it("disables the remove button if no rows are selected", () => {
+      renderWithMemoryRouter(<SitesList />);
+
+      expect(screen.getByRole("button", { name: /Remove/i })).toBeAriaDisabled();
+    });
+
+    it("can hide and unhide columns", async () => {
+      renderWithMemoryRouter(<SitesList />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: "Columns" }));
+
+      [/Connection/i, /Address/i, /Time/i, /Machines/i, /Status/i].forEach((name) => {
+        expect(screen.getByRole("checkbox", { name })).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByRole("checkbox", { name: /Connection/i }));
+
+      expect(screen.getByRole("checkbox", { name: "4 out of 5 selected" })).toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: /Connection/i })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("checkbox", { name: /Connection/i }));
+
+      expect(screen.getByRole("checkbox", { name: "5 out of 5 selected" })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
+    });
+
+    it("can hide and unhide all columns", async () => {
+      renderWithMemoryRouter(<SitesList />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
+      });
+      expect(screen.getByRole("columnheader", { name: /Country/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /Local time/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /Machines/i })).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Columns" }));
+      await userEvent.click(screen.getByRole("checkbox", { name: "5 out of 5 selected" }));
+
+      expect(screen.getByRole("checkbox", { name: "0 out of 5 selected" })).toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: /Connection/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: /Country/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: /Local time/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: /Machines/i })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("checkbox", { name: "0 out of 5 selected" }));
+
+      expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /Country/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /Local time/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /Machines/i })).toBeInTheDocument();
+    });
   });
-});
 
-it("can hide and unhide columns", async () => {
-  renderWithMemoryRouter(<SitesList />);
-  expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
+  describe("actions", () => {
+    it("enables the remove button if some rows are selected", async () => {
+      renderWithMemoryRouter(<SitesList />);
 
-  await userEvent.click(screen.getByRole("button", { name: "Columns" }));
+      await waitFor(() => {
+        expect(screen.getByRole("checkbox", { name: /select all/i })).not.toBeDisabled();
+      });
 
-  [/Connection/i, /Address/i, /Time/i, /Machines/i, /Status/i].forEach((name) => {
-    expect(screen.getByRole("checkbox", { name })).toBeInTheDocument();
-  });
+      await userEvent.click(screen.getByRole("checkbox", { name: /select all/i }));
 
-  await userEvent.click(screen.getByRole("checkbox", { name: /Connection/i }));
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Remove/i })).not.toBeAriaDisabled();
+      });
+    });
 
-  expect(screen.getByRole("checkbox", { name: "4 out of 5 selected" })).toBeInTheDocument();
-  expect(screen.queryByRole("columnheader", { name: /Connection/i })).not.toBeInTheDocument();
+    it("toggles the select all checkbox on click", async () => {
+      renderWithMemoryRouter(<SitesList />);
 
-  await userEvent.click(screen.getByRole("checkbox", { name: /Connection/i }));
+      await waitFor(() => {
+        expect(screen.getByRole("checkbox", { name: /select all/i })).not.toBeDisabled();
+      });
 
-  expect(screen.getByRole("checkbox", { name: "5 out of 5 selected" })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
-});
+      const checkbox = screen.getByRole("checkbox", { name: /select all/i });
+      expect(checkbox).not.toBeChecked();
 
-it("can hide and unhide all columns", async () => {
-  renderWithMemoryRouter(<SitesList />);
+      await userEvent.click(checkbox);
 
-  expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Country/i })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Local time/i })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Machines/i })).toBeInTheDocument();
+      expect(checkbox).toBeChecked();
+    });
 
-  await userEvent.click(screen.getByRole("button", { name: "Columns" }));
-  await userEvent.click(screen.getByRole("checkbox", { name: "5 out of 5 selected" }));
+    it("adds search text to navigation url and narrows down search results", async () => {
+      const searchText = "SearchTestSite";
 
-  expect(screen.getByRole("checkbox", { name: "0 out of 5 selected" })).toBeInTheDocument();
+      renderWithMemoryRouter(<SitesList />);
 
-  expect(screen.queryByRole("columnheader", { name: /Connection/i })).not.toBeInTheDocument();
-  expect(screen.queryByRole("columnheader", { name: /Country/i })).not.toBeInTheDocument();
-  expect(screen.queryByRole("columnheader", { name: /Local time/i })).not.toBeInTheDocument();
-  expect(screen.queryByRole("columnheader", { name: /Machines/i })).not.toBeInTheDocument();
+      await waitFor(() => {
+        const tableBody = screen.getAllByRole("rowgroup")[1];
+        expect(within(tableBody).getAllByRole("row")).toHaveLength(sites.length);
+      });
 
-  await userEvent.click(screen.getByRole("checkbox", { name: "0 out of 5 selected" }));
+      const searchBox = screen.getByRole("searchbox", {
+        name: /search and filter/i,
+      });
 
-  expect(screen.getByRole("columnheader", { name: /Connection/i })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Country/i })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Local time/i })).toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: /Machines/i })).toBeInTheDocument();
-});
+      await userEvent.type(searchBox, searchText);
 
-it("toggles select all checkbox on click", async () => {
-  renderWithMemoryRouter(<SitesList />);
+      await waitFor(() => {
+        expect(
+          screen.getByRole("tab", {
+            name: /map/i,
+          }),
+        ).toHaveAttribute("href", `/sites/map?q=${searchText}`);
+      });
 
-  const checkbox = screen.getByRole("checkbox", { name: /select all/i });
-  expect(checkbox).not.toBeChecked();
+      expect(
+        screen.getByRole("tab", {
+          name: /table/i,
+        }),
+      ).toHaveAttribute("href", `/sites/list?q=${searchText}`);
 
-  await userEvent.click(checkbox);
-
-  expect(checkbox).toBeChecked();
-});
-
-it("adds search text to navigation url and narrows down search results", async () => {
-  const searchText = "SearchTestSite";
-  renderWithMemoryRouter(<SitesList />);
-  await waitForLoadingToFinish();
-  const searchBox = screen.getByRole("searchbox", {
-    name: /search and filter/i,
-  });
-  await userEvent.type(searchBox, searchText);
-
-  await waitFor(() => {
-    expect(
-      screen.getByRole("tab", {
-        name: /map/i,
-      }),
-    ).toHaveAttribute("href", `/sites/map?q=${searchText}`);
-  });
-  expect(
-    screen.getByRole("tab", {
-      name: /table/i,
-    }),
-  ).toHaveAttribute("href", `/sites/list?q=${searchText}`);
-
-  await waitFor(() => {
-    expect(screen.getAllByRole("rowgroup")).toHaveLength(2);
-  });
-  const tableBody = screen.getAllByRole("rowgroup")[1];
-  await waitFor(() => {
-    expect(within(tableBody).getAllByRole("row")).toHaveLength(1);
-  });
-  await waitFor(() => {
-    expect(within(tableBody).getAllByRole("row")[0]).toHaveTextContent(searchSiteName);
+      await waitFor(() => {
+        const tableBody = screen.getAllByRole("rowgroup")[1];
+        expect(within(tableBody).getAllByRole("row")).toHaveLength(1);
+        expect(within(tableBody).getAllByRole("row")[0]).toHaveTextContent(searchSiteName);
+      });
+    });
   });
 });
