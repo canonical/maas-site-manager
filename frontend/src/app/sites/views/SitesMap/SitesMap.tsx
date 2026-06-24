@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ContentSection } from "@canonical/maas-react-components";
 
 import { useSitesCoordinates } from "@/app/api/query/sites";
-import SitesTableControls from "@/app/sites/views/SitesList/SitesTable/SitesTableControls/SitesTableControls";
+import SitesTableControls from "@/app/sites/components/SitesTable/SitesTableControls/SitesTableControls";
 import Map from "@/app/sites/views/SitesMap/components/Map";
 import SitesHiddenButton from "@/app/sites/views/SitesMap/components/Map/SitesHiddenButton/SitesHiddenButton";
 import { formatSiteMarker } from "@/utils";

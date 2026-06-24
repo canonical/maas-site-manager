@@ -14,7 +14,7 @@ import {
   connectionIcons,
   connectionLabels,
   getLastSeenText,
-} from "@/app/sites/views/SitesList/SitesTable/ConnectionInfo/ConnectionInfo";
+} from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
 import { getCountryName } from "@/utils";
 
 const SiteDetailsContent = ({ id }: { id: NonNullable<SiteDetailsContextValue["selected"]> }) => {

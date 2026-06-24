@@ -10,12 +10,12 @@ import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
 import { useAppLayoutContext } from "@/app/context";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
-import AggregatedStatus from "@/app/sites/views/SitesList/SitesTable/AggregatedStatus/AggregatedStatus";
+import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus/AggregatedStatus";
 import {
   connectionIcons,
   connectionLabels,
   getLastSeenText,
-} from "@/app/sites/views/SitesList/SitesTable/ConnectionInfo/ConnectionInfo";
+} from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
 
 interface SiteSummaryProps extends DOMAttributes<HTMLElement> {
   id: Site["id"];
