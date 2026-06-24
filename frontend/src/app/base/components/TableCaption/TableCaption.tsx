@@ -7,9 +7,9 @@ import ErrorMessage from "@/app/base/components/ErrorMessage";
 type TableCationProps = PropsWithChildren;
 
 const TableCaption = ({ children }: TableCationProps) => (
-  <caption>
+  <div>
     <div className="p-strip">{children}</div>
-  </caption>
+  </div>
 );
 
 const Title = ({ children }: TableCationProps) => (
