@@ -27,9 +27,9 @@ export const useImageSourceTableColumns = () => {
       {
         id: "url",
         enableSorting: false,
-        header: () => <div>Source</div>,
         accessorFn: createAccessor("url"),
         accessorKey: "url",
+        header: "Source",
         cell: ({ getValue }) => {
           const { url } = getValue();
           return (
@@ -79,9 +79,9 @@ export const useImageSourceTableColumns = () => {
       {
         id: "syncing",
         enableSorting: false,
-        header: () => <div>Syncing</div>,
         accessorFn: createAccessor(["sync_interval", "url"]),
         accessorKey: "syncing",
+        header: "Syncing",
         cell: ({ getValue }) => {
           const { sync_interval, url } = getValue();
           if (url === "custom") {
@@ -114,9 +114,9 @@ export const useImageSourceTableColumns = () => {
       {
         id: "keyring",
         enableSorting: false,
-        header: () => <div>Signed with GPG key</div>,
         accessorFn: createAccessor(["keyring", "url"]),
         accessorKey: "keyring",
+        header: "Signed with GPG key",
         cell: ({ getValue }) => {
           const { keyring, url } = getValue();
           if (url === "custom") {
@@ -131,19 +131,20 @@ export const useImageSourceTableColumns = () => {
       {
         id: "priority",
         enableSorting: false,
+        enableSorting: true,
+        accessorFn: createAccessor("priority"),
+        accessorKey: "priority",
         header: () => (
-          <div>
-            Priority{" "}
+          <>
+            Priority
             <Tooltip
               message="If the same image is available from several sources, the image from the source with the higher priority takes precedence. 1 is the highest priority."
               position="btm-center"
             >
               <Icon name="help" />
             </Tooltip>
-          </div>
+          </>
         ),
-        accessorFn: createAccessor("priority"),
-        accessorKey: "priority",
         cell: ({ getValue }) => {
           const { priority } = getValue();
           return <div>{priority}</div>;
@@ -152,9 +153,9 @@ export const useImageSourceTableColumns = () => {
       {
         id: "actions",
         enableSorting: false,
-        header: () => <div>Actions</div>,
         accessorFn: createAccessor(["url", "id"]),
         accessorKey: "url",
+        header: "Actions",
         cell: ({ getValue }) => {
           const { url, id } = getValue();
           return (

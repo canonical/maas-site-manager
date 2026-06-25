@@ -5,14 +5,24 @@
     }
   }
 
-  thead th:first-child,
-  tbody td:first-child {
-    width: 20vw;
+  .name {
+    width: 20%;
   }
 
-  thead th.status,
-  tbody td.status {
-    width: 15vw;
+  .url {
+    width: 25%;
+  }
+
+  .status {
+    width: 15%;
+  }
+
+  .syncing, .keyring {
+    text-align: center;
+  }
+
+  .priority {
+    text-align: right;
   }
 
   .status-icon::before {
