@@ -196,7 +196,7 @@ const ImageSourceForm = ({ type }: { type: "add" | "edit" }) => {
                   available.
                 </p>
                 <Field as={Input} label="Automatically sync images" name="autosync" type="checkbox" />
-                {values.autosync === true && (
+                {values.autosync && (
                   <>
                     <Label htmlFor={syncIntervalFieldId}>Sync interval</Label>
                     <Field

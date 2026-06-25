@@ -22,12 +22,11 @@ afterAll(() => {
 });
 
 const renderForm = async (id: number) => {
-  const view = render(
+  return render(
     <BootSourceContext.Provider value={{ selected: id, setSelected: vi.fn() }}>
       <DeleteImageSource />
     </BootSourceContext.Provider>,
   );
-  return view;
 };
 
 it("shows the name of the site in the title and description", async () => {
