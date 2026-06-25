@@ -1,3 +1,4 @@
+import { Placeholder } from "@canonical/maas-react-components";
 import { Button, Icon, Tooltip } from "@canonical/react-components";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -19,6 +20,9 @@ export const useImageSourceTableColumns = () => {
         enableSorting: true,
         accessorFn: createAccessor("name"),
         accessorKey: "name",
+        meta: {
+          skeleton: () => <Placeholder variant="block" width="40%" />,
+        },
         cell: ({ getValue }) => {
           const { name } = getValue();
           return <div>{name}</div>;
@@ -29,6 +33,9 @@ export const useImageSourceTableColumns = () => {
         enableSorting: false,
         accessorFn: createAccessor("url"),
         accessorKey: "url",
+        meta: {
+          skeleton: () => <Placeholder variant="block" width="90%" />,
+        },
         header: "Source",
         cell: ({ getValue }) => {
           const { url } = getValue();
@@ -81,6 +88,9 @@ export const useImageSourceTableColumns = () => {
         enableSorting: false,
         accessorFn: createAccessor(["sync_interval", "url"]),
         accessorKey: "syncing",
+        meta: {
+          skeleton: () => <Placeholder variant="block" width="1.5rem" />,
+        },
         header: "Syncing",
         cell: ({ getValue }) => {
           const { sync_interval, url } = getValue();
@@ -116,6 +126,9 @@ export const useImageSourceTableColumns = () => {
         enableSorting: false,
         accessorFn: createAccessor(["keyring", "url"]),
         accessorKey: "keyring",
+        meta: {
+          skeleton: () => <Placeholder variant="block" width="1.5rem" />,
+        },
         header: "Signed with GPG key",
         cell: ({ getValue }) => {
           const { keyring, url } = getValue();
@@ -130,10 +143,12 @@ export const useImageSourceTableColumns = () => {
       },
       {
         id: "priority",
-        enableSorting: false,
         enableSorting: true,
         accessorFn: createAccessor("priority"),
         accessorKey: "priority",
+        meta: {
+          skeleton: () => <Placeholder variant="block" width="20%" />,
+        },
         header: () => (
           <>
             Priority
@@ -155,6 +170,14 @@ export const useImageSourceTableColumns = () => {
         enableSorting: false,
         accessorFn: createAccessor(["url", "id"]),
         accessorKey: "url",
+        meta: {
+          skeleton: () => (
+            <div>
+              <Placeholder variant="block" width="1.5rem" />
+              <Placeholder variant="block" width="1.5rem" />
+            </div>
+          ),
+        },
         header: "Actions",
         cell: ({ getValue }) => {
           const { url, id } = getValue();

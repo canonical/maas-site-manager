@@ -33,4 +33,17 @@
     color: $color-negative;
   }
 
+  td.p-generic-table__skeleton-cell {
+    &.actions > div {
+      display: flex;
+      flex-direction: row;
+      justify-content: end;
+      gap: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .p-placeholder {
+      height: $sp-large;
+    }
+  }
 }
