@@ -18,7 +18,6 @@ if (useMockData) {
   await worker.start({
     onUnhandledRequest(req) {
       const url = new URL(req.url);
-      console.info(req.method, url.href);
       if (url.href.includes(baseURL)) {
         console.warn("Found an unhandled %s request to %s", req.method, url.href);
       }

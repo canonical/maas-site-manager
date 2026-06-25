@@ -96,6 +96,18 @@ addEventListener('fetch', function (event) {
     return
   }
 
+  // Performance: bypass same-origin requests (re-applied by scripts/patch-msw-worker.mjs).
+  // Every mock handler in this project targets a cross-origin URL (the API at
+  // VITE_API_URL and external tile servers), so same-origin requests are only the
+  // Vite dev server's modules and static assets. Intercepting them adds a
+  // worker<->client round-trip per request, which slows cold dev loads. The worker
+  // is only registered when mock data is enabled in development; production never
+  // registers it. Remove this guard (and this script) if you add a handler for a
+  // same-origin request.
+  if (new URL(event.request.url).origin === self.location.origin) {
+    return
+  }
+
   // Opening the DevTools triggers the "only-if-cached" request
   // that cannot be handled by the worker. Bypass such requests.
   if (
