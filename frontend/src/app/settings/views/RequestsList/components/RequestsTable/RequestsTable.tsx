@@ -112,13 +112,13 @@ const RequestsTable = ({
         ))}
       </thead>
       {error ? (
-        <TableCaption>
+        <TableCaption inTable>
           <TableCaption.Error error={{ body: error }} />
         </TableCaption>
       ) : isPending ? (
         <DynamicTable.Loading table={table} />
       ) : table.getRowModel().rows.length < 1 ? (
-        <TableCaption>
+        <TableCaption inTable>
           <TableCaption.Title>No outstanding requests</TableCaption.Title>
           <TableCaption.Description>
             You have to request an enrollment in the site-manager-agent.

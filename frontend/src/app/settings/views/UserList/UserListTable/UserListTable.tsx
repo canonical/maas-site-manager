@@ -207,7 +207,7 @@ const UserListTable = ({
         ))}
       </thead>
       {error ? (
-        <TableCaption>
+        <TableCaption inTable>
           <TableCaption.Error error={{ body: error }} />
         </TableCaption>
       ) : isPending ? (

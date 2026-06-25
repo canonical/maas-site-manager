@@ -134,13 +134,13 @@ const TokensTable = ({
         ))}
       </thead>
       {error ? (
-        <TableCaption>
+        <TableCaption inTable>
           <TableCaption.Error error={{ body: error }} />
         </TableCaption>
       ) : isPending ? (
         <DynamicTable.Loading table={tokenTable} />
       ) : tokenTable.getRowModel().rows.length < 1 ? (
-        <TableCaption>
+        <TableCaption inTable>
           <TableCaption.Title>No tokens available</TableCaption.Title>
           <TableCaption.Description>
             Generate new tokens and follow the instructions above to enroll MAAS sites.

@@ -4,13 +4,23 @@ import { Notification } from "@canonical/react-components";
 
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 
-type TableCationProps = PropsWithChildren;
+type TableCationProps = PropsWithChildren<{ inTable?: boolean }>;
 
-const TableCaption = ({ children }: TableCationProps) => (
-  <div>
-    <div className="p-strip">{children}</div>
-  </div>
-);
+const TableCaption = ({ children, inTable = false }: TableCationProps) => {
+  if (inTable) {
+    return (
+      <caption>
+        <div className="p-strip">{children}</div>
+      </caption>
+    );
+  }
+
+  return (
+    <div>
+      <div className="p-strip">{children}</div>
+    </div>
+  );
+};
 
 const Title = ({ children }: TableCationProps) => (
   <div className="row">

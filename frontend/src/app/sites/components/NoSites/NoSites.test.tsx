@@ -4,13 +4,7 @@ import { enrollmentRequestFactory } from "@/mocks/factories";
 import { enrollmentRequestsResolvers } from "@/testing/resolvers/enrollmentRequests";
 import { getByTextContent, renderWithMemoryRouter, screen, setupServer, waitFor } from "@/utils/test-utils";
 
-const renderComponent = () =>
-  renderWithMemoryRouter(
-    // render inside a table to avoid warnings about invalid DOM nesting
-    <table>
-      <NoSites />
-    </table>,
-  );
+const renderComponent = () => renderWithMemoryRouter(<NoSites />);
 
 const enrollmentRequests = enrollmentRequestFactory.buildList(2);
 const mockServer = setupServer(enrollmentRequestsResolvers.listEnrollmentRequests.handler(enrollmentRequests));

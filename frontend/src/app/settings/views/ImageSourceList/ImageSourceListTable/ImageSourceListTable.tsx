@@ -35,7 +35,7 @@ const ImageSourceListTable = ({ data, error, isPending }: Props) => {
         ))}
       </thead>
       {error ? (
-        <TableCaption>
+        <TableCaption inTable>
           <TableCaption.Error error={error} />
         </TableCaption>
       ) : isPending ? (
