@@ -102,6 +102,6 @@
 @import "@/app/base/components/TableActions/TableActions";
 @import "@/app/sites/components/SiteSelection/SiteSelectionTable/SiteSelectionTable";
 @import "@/app/base/components/PaginationBar/PaginationBar";
-@import "@/app/settings/views/ImageSourceList/ImageSourceList";
+@import "@/app/settings/views/Source/ImageSourceList";
 @import "@/app/images/components/ImagesTable/ImagesTable";
 @include maas-contextual-menu;

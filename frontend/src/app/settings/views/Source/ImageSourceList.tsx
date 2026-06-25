@@ -1,7 +1,7 @@
 import { ContentSection, MainToolbar } from "@canonical/maas-react-components";
 import { Button } from "@canonical/react-components";
 
-import ImageSourceListTable from "./ImageSourceListTable";
+import ImageSourceListTable from "./components/ImageSourceListTable";
 
 import { useImageSources } from "@/app/api/query/imageSources";
 import { useAppLayoutContext } from "@/app/context";

@@ -39,15 +39,11 @@ export const sidebarComponent: Record<NonNullable<Sidebar>, React.FC> = {
   addToAvailableImages: lazy(() => import("@/app/images/components/AddToAvailableImages")),
   removeAvailableImages: lazy(() => import("@/app/images/components/RemoveAvailableImages")),
   sitesMissingData: lazy(() => import("@/app/sites/components/SitesMissingData")),
-  deleteBootSource: lazy(() => import("@/app/settings/views/ImageSourceList/components/DeleteImageSource")),
-  addBootSource: lazy(
-    () => import("@/app/settings/views/ImageSourceList/components/ImageSourceForm/AddImageSourceForm"),
-  ),
-  editBootSource: lazy(
-    () => import("@/app/settings/views/ImageSourceList/components/ImageSourceForm/EditImageSourceForm"),
-  ),
+  deleteBootSource: lazy(() => import("@/app/settings/views/Source/components/DeleteImageSource")),
+  addBootSource: lazy(() => import("@/app/settings/views/Source/components/ImageSourceForm/AddImageSourceForm")),
+  editBootSource: lazy(() => import("@/app/settings/views/Source/components/ImageSourceForm/EditImageSourceForm")),
   editCustomImagesSource: lazy(
-    () => import("@/app/settings/views/ImageSourceList/components/ImageSourceForm/EditCustomImagesSourceForm"),
+    () => import("@/app/settings/views/Source/components/ImageSourceForm/EditCustomImagesSourceForm"),
   ),
 } as const;
 

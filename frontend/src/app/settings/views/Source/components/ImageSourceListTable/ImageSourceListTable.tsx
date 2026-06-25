@@ -1,6 +1,6 @@
 import { GenericTable } from "@canonical/maas-react-components";
 
-import { useImageSourceTableColumns } from "../hooks";
+import { useImageSourceTableColumns } from "./useImageSourceTableColumns/useImageSourceTableColumns";
 
 import type { BootSource } from "@/app/apiclient";
 import TableCaption from "@/app/base/components/TableCaption";
