@@ -1,39 +1,15 @@
 import { ContentSection, MainToolbar } from "@canonical/maas-react-components";
 import { SearchBox } from "@canonical/react-components";
-import type { SortingState } from "@tanstack/react-table";
 
-import UserListTable from "./UserListTable";
-
-import type { SortBy, UserSortKey } from "@/app/api/handlers";
-import { useUsers } from "@/app/api/query/users";
-import PaginationBar from "@/app/base/components/PaginationBar/PaginationBar";
 import useDebounce from "@/app/base/hooks/useDebouncedValue";
-import usePagination from "@/app/base/hooks/usePagination";
 import { useAppLayoutContext } from "@/app/context";
-import { getSortBy, parseSearchTextToUrlFreeTextSearch } from "@/utils";
-
-const DEFAULT_PAGE_SIZE = 50;
+import UserListTable from "@/app/settings/views/UserList/UserListTable";
 
 const UserList = () => {
-  const { page, debouncedPage, size, handlePageSizeChange, setPage } = usePagination(DEFAULT_PAGE_SIZE);
+  const { setSidebar } = useAppLayoutContext();
+
   const [searchText, setSearchText] = useState("");
   const debounceSearchText = useDebounce(searchText);
-  const { setSidebar } = useAppLayoutContext();
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const sortBy = getSortBy(sorting) as SortBy<UserSortKey>;
-
-  const { data, error, isPending } = useUsers({
-    query: {
-      page: debouncedPage,
-      size,
-      sort_by: sortBy,
-      search_text: parseSearchTextToUrlFreeTextSearch(debounceSearchText),
-    },
-  });
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchText, setPage]);
 
   const handleSearchInput = (inputValue: string) => {
     setSearchText(inputValue);
@@ -61,18 +37,9 @@ const UserList = () => {
             </button>
           </MainToolbar.Controls>
         </MainToolbar>
-        <PaginationBar
-          currentPage={page}
-          dataContext="users"
-          handlePageSizeChange={handlePageSizeChange}
-          isPending={isPending}
-          itemsPerPage={size}
-          setCurrentPage={setPage}
-          totalItems={data?.total || 0}
-        />
       </ContentSection.Header>
       <ContentSection.Content>
-        <UserListTable data={data} error={error} isPending={isPending} setSorting={setSorting} sorting={sorting} />
+        <UserListTable debounceSearchText={debounceSearchText} />
       </ContentSection.Content>
     </ContentSection>
   );
