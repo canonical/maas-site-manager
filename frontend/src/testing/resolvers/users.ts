@@ -13,7 +13,29 @@ import { ExceptionCode } from "@/app/apiclient";
 import { userFactory } from "@/mocks/factories";
 import { apiUrls } from "@/utils/test-urls";
 
-const mockUsers = userFactory.buildList(155);
+const mockUsers = [
+  userFactory.build({
+    email: "admin@example.com",
+    full_name: "MAAS Admin",
+    id: 1,
+    is_admin: true,
+    username: "maas-admin",
+  }),
+  userFactory.build({
+    email: "user1@example.com",
+    full_name: "User One",
+    id: 2,
+    is_admin: false,
+    username: "user1",
+  }),
+  userFactory.build({
+    email: "user2@example.com",
+    full_name: "",
+    id: 3,
+    is_admin: false,
+    username: "user2",
+  }),
+];
 
 const mockListGetUsersError: GetV1UsersGetError = {
   error: {
@@ -212,4 +234,4 @@ const usersResolvers = {
     },
   },
 };
-export { usersResolvers };
+export { usersResolvers, mockUsers };
