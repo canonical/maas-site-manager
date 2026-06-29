@@ -3,7 +3,7 @@ import { SearchBox } from "@canonical/react-components";
 
 import useDebounce from "@/app/base/hooks/useDebouncedValue";
 import { useAppLayoutContext } from "@/app/context";
-import UserListTable from "@/app/settings/views/UserList/UserListTable";
+import UsersTable from "@/app/settings/views/Users/components/UsersTable";
 
 const UserList = () => {
   const { setSidebar } = useAppLayoutContext();
@@ -39,7 +39,7 @@ const UserList = () => {
         </MainToolbar>
       </ContentSection.Header>
       <ContentSection.Content>
-        <UserListTable debounceSearchText={debounceSearchText} />
+        <UsersTable debounceSearchText={debounceSearchText} />
       </ContentSection.Content>
     </ContentSection>
   );

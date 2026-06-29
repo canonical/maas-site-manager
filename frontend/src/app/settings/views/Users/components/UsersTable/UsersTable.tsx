@@ -5,16 +5,16 @@ import type { SortBy, UserSortKey } from "@/app/api/handlers";
 import { useUsers } from "@/app/api/query/users";
 import TableCaption from "@/app/base/components/TableCaption/TableCaption";
 import usePagination from "@/app/base/hooks/usePagination";
-import { useUsersTableColumns } from "@/app/settings/views/UserList/UserListTable/useUsersTableColumns/useUsersTableColumn";
+import { useUsersTableColumns } from "@/app/settings/views/Users/components/UsersTable/useUsersTableColumns/useUsersTableColumn";
 import { getSortBy, parseSearchTextToUrlFreeTextSearch } from "@/utils";
 
 const DEFAULT_PAGE_SIZE = 50;
 
-type UserListTableProps = {
+type UsersTableProps = {
   debounceSearchText: string;
 };
 
-const UserListTable = ({ debounceSearchText }: UserListTableProps) => {
+const UsersTable = ({ debounceSearchText }: UsersTableProps) => {
   const { page, debouncedPage, size, handlePageSizeChange, setPage } = usePagination(DEFAULT_PAGE_SIZE);
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -68,4 +68,4 @@ const UserListTable = ({ debounceSearchText }: UserListTableProps) => {
   );
 };
 
-export default UserListTable;
+export default UsersTable;

@@ -1,4 +1,4 @@
-import UserForm from "@/app/settings/views/UserList/components/UserForm";
+import UserForm from "@/app/settings/views/Users/components/UserForm";
 
 const UserAddForm = () => <UserForm type="add" />;
 

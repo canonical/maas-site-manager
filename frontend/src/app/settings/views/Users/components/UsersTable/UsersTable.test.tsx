@@ -1,4 +1,4 @@
-import UserListTable from "./UserListTable";
+import UsersTable from "./UsersTable";
 
 import { mockUsers, usersResolvers } from "@/testing/resolvers/users";
 import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
@@ -42,10 +42,10 @@ afterAll(() => {
   mockServer.close();
 });
 
-describe("UserListTable", () => {
+describe("UsersTable", () => {
   describe("display", () => {
     it("displays a loading component if users are loading", async () => {
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.getAllByRole("progressbar", { name: /loading/i }).length).toBeGreaterThan(0);
@@ -55,7 +55,7 @@ describe("UserListTable", () => {
     it("displays a message when rendering an empty list", async () => {
       mockServer.use(usersResolvers.listUsers.handler([]));
 
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.getByText("No users found.")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("UserListTable", () => {
     it("shows errors if present", async () => {
       mockServer.use(usersResolvers.listUsers.error());
 
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.getByText("Request failed with status code 401")).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("UserListTable", () => {
     });
 
     it("displays the columns correctly", async () => {
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.getByRole("button", { name: /Username/i })).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("UserListTable", () => {
     });
 
     it("can switch between username and full name display", async () => {
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();
@@ -118,7 +118,7 @@ describe("UserListTable", () => {
   describe("actions", () => {
     it("opens the edit user sidebar and selects the user when edit is clicked", async () => {
       const editableUser = mockUsers[1];
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();
@@ -136,7 +136,7 @@ describe("UserListTable", () => {
 
     it("redirects to personal details if a user tries to edit themselves", async () => {
       const currentUser = mockUsers[0];
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();
@@ -155,7 +155,7 @@ describe("UserListTable", () => {
 
     it("disables delete and shows a tooltip if a user tries to delete themselves", async () => {
       const currentUser = mockUsers[0];
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();
@@ -177,7 +177,7 @@ describe("UserListTable", () => {
 
     it("opens the delete user sidebar and selects a different user when delete is clicked", async () => {
       const editableUser = mockUsers[1];
-      renderWithMemoryRouter(<UserListTable debounceSearchText="" />);
+      renderWithMemoryRouter(<UsersTable debounceSearchText="" />);
 
       await waitFor(() => {
         expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();

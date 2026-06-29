@@ -27,11 +27,11 @@ export const sidebarLabels: Record<NonNullable<Sidebar>, string> = {
 };
 
 export const sidebarComponent: Record<NonNullable<Sidebar>, React.FC> = {
-  addUser: lazy(() => import("@/app/settings/views/UserList/components/UserForm/UserAddForm")),
+  addUser: lazy(() => import("@/app/settings/views/Users/components/UserForm/UserAddForm")),
   editSite: lazy(() => import("@/app/sites/components/EditSite")),
-  editUser: lazy(() => import("@/app/settings/views/UserList/components/UserForm/UserEditForm")),
+  editUser: lazy(() => import("@/app/settings/views/Users/components/UserForm/UserEditForm")),
   createToken: lazy(() => import("@/app/settings/views/TokensList/components/TokensCreate")),
-  deleteUser: lazy(() => import("@/app/settings/views/UserList/components/DeleteUser")),
+  deleteUser: lazy(() => import("@/app/settings/views/Users/components/DeleteUser")),
   removeSites: lazy(() => import("@/app/sites/components/RemoveSites")),
   siteDetails: lazy(() => import("@/app/sites/components/SiteDetails")),
   siteSelect: () => null,

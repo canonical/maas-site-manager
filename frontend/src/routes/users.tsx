@@ -1,4 +1,4 @@
-import UserList from "@/app/settings/views/UserList/UserList";
+import UserList from "@/app/settings/views/Users/UserList";
 
 const Users: React.FC = () => <UserList />;
 
