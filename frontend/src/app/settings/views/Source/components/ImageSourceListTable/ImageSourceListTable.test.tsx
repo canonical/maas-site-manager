@@ -1,12 +1,9 @@
-import type { ComponentProps } from "react";
-
 import ImageSourceListTable from "./ImageSourceListTable";
 
 import type { BootSource } from "@/app/apiclient";
 import { imageSourceFactory } from "@/mocks/factories";
+import { mockImageSources } from "@/testing/resolvers/imageSources";
 import { renderWithMemoryRouter, screen, userEvent, waitFor, within } from "@/utils/test-utils";
-
-const mockImageSources = imageSourceFactory.buildList(4);
 
 const mockUseAppLayoutContext = vi.spyOn(await import("@/app/context"), "useAppLayoutContext");
 const mockUseAppLayoutContextDirect = vi.spyOn(await import("@/app/context/AppLayoutContext"), "useAppLayoutContext");
@@ -14,19 +11,6 @@ const mockUseBootSourceContext = vi.spyOn(await import("@/app/context/BootSource
 
 const mockSetSidebar = vi.fn();
 const mockSetSelected = vi.fn();
-
-const renderImageSourceListTable = (overrides: Partial<ComponentProps<typeof ImageSourceListTable>> = {}) => {
-  return renderWithMemoryRouter(
-    <ImageSourceListTable
-      {...{
-        data: [imageSourceFactory.build()],
-        error: null,
-        isPending: false,
-        ...overrides,
-      }}
-    />,
-  );
-};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -52,7 +36,7 @@ afterEach(() => {
 describe("ImageSourceListTable", () => {
   describe("display", () => {
     it("displays a loading component if image sources are loading", async () => {
-      renderImageSourceListTable({ data: [], isPending: true });
+      renderWithMemoryRouter(<ImageSourceListTable data={[]} error={null} isPending={true} />);
 
       await waitFor(() => {
         expect(screen.getAllByRole("progressbar", { name: /loading/i }).length).toBeGreaterThan(0);
@@ -60,7 +44,7 @@ describe("ImageSourceListTable", () => {
     });
 
     it("displays a message when rendering an empty list", async () => {
-      renderImageSourceListTable({ data: [] });
+      renderWithMemoryRouter(<ImageSourceListTable data={[]} error={null} isPending={false} />);
 
       await waitFor(() => {
         expect(screen.getByText("No image sources configured.")).toBeInTheDocument();
@@ -70,7 +54,7 @@ describe("ImageSourceListTable", () => {
     it("shows errors if present", async () => {
       const errorMessage = "There has been an error!";
 
-      renderImageSourceListTable({ data: [], error: new Error(errorMessage) });
+      renderWithMemoryRouter(<ImageSourceListTable data={[]} error={new Error(errorMessage)} isPending={false} />);
 
       await waitFor(() => {
         expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -78,7 +62,7 @@ describe("ImageSourceListTable", () => {
     });
 
     it("displays the columns correctly", () => {
-      renderImageSourceListTable();
+      renderWithMemoryRouter(<ImageSourceListTable data={[]} error={null} isPending={false} />);
 
       ["Name", "Source", "Syncing", "Signed with GPG key", "Priority", "Actions"].forEach((column) => {
         expect(
@@ -90,7 +74,7 @@ describe("ImageSourceListTable", () => {
     });
 
     it("renders rows with details for each image source", () => {
-      renderImageSourceListTable({ data: mockImageSources });
+      renderWithMemoryRouter(<ImageSourceListTable data={mockImageSources} error={null} isPending={false} />);
 
       expect(screen.getByRole("treegrid", { name: "Image source list" })).toBeInTheDocument();
 
@@ -171,7 +155,7 @@ describe("ImageSourceListTable", () => {
         url: "custom",
       };
 
-      renderImageSourceListTable({ data: [customImageSource] });
+      renderWithMemoryRouter(<ImageSourceListTable data={[customImageSource]} error={null} isPending={false} />);
 
       const tableBody = screen.getAllByRole("rowgroup")[1];
       const customRow = within(tableBody).getByRole("row", { name: /Ubuntu/i });
@@ -190,7 +174,7 @@ describe("ImageSourceListTable", () => {
     it("opens the edit boot source sidebar and selects the image source when edit is clicked", async () => {
       const item = imageSourceFactory.build({ id: 17, name: "Ubuntu archive", url: "https://images.example.com" });
 
-      renderImageSourceListTable({ data: [item] });
+      renderWithMemoryRouter(<ImageSourceListTable data={[item]} error={null} isPending={false} />);
 
       const tableBody = screen.getAllByRole("rowgroup")[1];
       const row = within(tableBody).getByRole("row", { name: new RegExp(item.name, "i") });
@@ -204,7 +188,7 @@ describe("ImageSourceListTable", () => {
     it("opens the custom image source sidebar when editing the custom row", async () => {
       const item = imageSourceFactory.build({ id: 23, name: "Custom upload", url: "custom" });
 
-      renderImageSourceListTable({ data: [item] });
+      renderWithMemoryRouter(<ImageSourceListTable data={[item]} error={null} isPending={false} />);
 
       const tableBody = screen.getAllByRole("rowgroup")[1];
       const row = within(tableBody).getByRole("row", { name: /Custom upload/i });
@@ -218,7 +202,7 @@ describe("ImageSourceListTable", () => {
     it("opens the delete boot source sidebar when delete is clicked", async () => {
       const item = imageSourceFactory.build({ id: 42, name: "Daily mirror", url: "https://daily.example.com" });
 
-      renderImageSourceListTable({ data: [item] });
+      renderWithMemoryRouter(<ImageSourceListTable data={[item]} error={null} isPending={false} />);
 
       const tableBody = screen.getAllByRole("rowgroup")[1];
       const row = within(tableBody).getByRole("row", { name: new RegExp(item.name, "i") });
