@@ -16,7 +16,7 @@
       display: inline-block;
       width: 1px;
       height: 1rem;
-      background-color: $colors--light-theme--border-default;
+      background-color: var(--vf-color-border-default);
     }
   }
 }
@@ -24,4 +24,3 @@
 tr:hover .table-actions {
   opacity: 1;
 }
-

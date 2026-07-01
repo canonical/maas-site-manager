@@ -1,13 +1,7 @@
 .p-heading--small {
   @extend %table-header-label;
 
-  color: $color-dark;
+  color: var(--vf-color-text-default);
   margin-bottom: $sp-unit * 0.25;
   text-transform: uppercase;
-}
-
-.is-dark {
-  .p-heading--small {
-    color: $color-light;
-  }
 }

@@ -49,7 +49,7 @@
   }
 
   hr {
-    background: $colors--light-theme--border-low-contrast;
+    background: var(--vf-color-border-low-contrast);
     margin-bottom: 1rem;
   }
 }

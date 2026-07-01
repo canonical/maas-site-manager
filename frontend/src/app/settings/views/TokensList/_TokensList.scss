@@ -6,10 +6,9 @@ $instructions-height-medium: 10.9375rem;
   display: grid;
 
   @media only screen and (min-width: $breakpoint-small) {
-    background-color: white;
+    background-color: var(--vf-color-background-default);
     z-index: 1;
   }
-
 
   .tokens-list-certificate {
     display: grid;

@@ -1,9 +1,28 @@
 .l-navigation {
-  position: relative !important;
+  // Dock the side navigation into the `nav` grid column as an in-flow element
+  // from the small breakpoint upwards — the same breakpoint at which Vanilla
+  // turns the top navigation bar into the nav-column spacer. Both declarations
+  // are required: without `grid-area: nav`, the relatively positioned nav has
+  // no assigned grid area and is auto-placed into the main-content column,
+  // which inflates the first grid row to full height and pushes the main
+  // content off-screen (the layout only happened to work at >= 1036px, where
+  // the bundled maas-react-components stylesheet assigns the grid area for us).
+  // Below the small breakpoint the nav stays as Vanilla's fixed slide-in drawer.
+  @media (min-width: $breakpoint-small) {
+    position: relative !important;
+    grid-area: nav;
+  }
 
   .p-panel__controls {
     @media only screen and (min-width: ($breakpoint-xx-large)) {
       display: none;
     }
   }
+}
+
+// Pin the dark mode toggle to the bottom-right of the side navigation drawer
+// (see canonical/maas-ui AppSideNavigation).
+.dark-mode-toggle {
+  align-self: flex-end;
+  margin: 0 0.5rem 0.5rem 0 !important;
 }

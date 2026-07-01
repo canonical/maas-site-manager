@@ -25,6 +25,8 @@ beforeAll(() => {
 });
 afterEach(() => {
   mockServer.resetHandlers();
+  localStorage.clear();
+  document.body.classList.remove("is-dark");
 });
 afterAll(() => {
   mockServer.close();
@@ -142,4 +144,26 @@ it("displays the username of the logged in user", async () => {
       }),
     ).toBeInTheDocument();
   });
+});
+
+it("displays a dark mode toggle", () => {
+  renderWithMemoryRouter(<Navigation isLoggedIn />);
+
+  expect(screen.getByRole("button", { name: "Dark mode" })).toBeInTheDocument();
+});
+
+it("toggles dark mode when the toggle is clicked", async () => {
+  renderWithMemoryRouter(<Navigation isLoggedIn />);
+
+  expect(document.body).not.toHaveClass("is-dark");
+
+  await userEvent.click(screen.getByRole("button", { name: "Dark mode" }));
+
+  expect(document.body).toHaveClass("is-dark");
+  expect(screen.getByRole("button", { name: "Light mode" })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Light mode" }));
+
+  expect(document.body).not.toHaveClass("is-dark");
+  expect(screen.getByRole("button", { name: "Dark mode" })).toBeInTheDocument();
 });

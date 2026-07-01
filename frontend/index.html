@@ -1,16 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <script>
       globalThis.__ROOT_PATH__ = "";
-      globalThis.__assetsPath__ = (path) => [globalThis.__ROOT_PATH__, "%VITE_BASE_URL%", path].filter(Boolean).join("/").replace(/([^:])(\/\/+)/g, '$1/');
+      globalThis.__assetsPath__ = (path) =>
+        [globalThis.__ROOT_PATH__, "%VITE_BASE_URL%", path]
+          .filter(Boolean)
+          .join("/")
+          .replace(/([^:])(\/\/+)/g, "$1/");
     </script>
     <link rel="icon" type="image/png" href="%VITE_BASE_URL%maas-favicon-32px.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MAAS Site Manager</title>
   </head>
   <body>
+    <script>
+      // Apply the persisted (or system) colour scheme before first paint to avoid
+      // a flash of the wrong theme. Keep the storage key ("darkMode") in sync with
+      // DARK_MODE_STORAGE_KEY in src/app/base/hooks/useDarkMode.ts.
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("darkMode");
+          var isDark =
+            stored === null
+              ? !!window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+              : JSON.parse(stored) === true;
+          if (isDark) {
+            document.body.classList.add("is-dark");
+          }
+        } catch (error) {
+          /* localStorage or matchMedia unavailable; fall back to the light theme. */
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

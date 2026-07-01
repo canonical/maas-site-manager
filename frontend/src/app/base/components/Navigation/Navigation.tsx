@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { Navigation, NavigationBar } from "@canonical/maas-react-components";
+import { Button, ButtonAppearance, Icon } from "@canonical/react-components";
 import useLocalStorageState from "use-local-storage-state";
 
 import NavigationBanner from "./NavigationBanner";
@@ -10,6 +11,7 @@ import type { ExternalNavLink, LocalNavLink } from "./types";
 
 import { useCurrentUser } from "@/app/api/query/users";
 import BREAKPOINTS from "@/app/base/breakpoints";
+import useDarkMode from "@/app/base/hooks/useDarkMode";
 import { useGlobalKeyShortcut } from "@/app/base/hooks/useGlobalKeyShortcut";
 import type { RoutePath } from "@/app/base/routes";
 import { useAuthContext } from "@/app/context";
@@ -69,6 +71,26 @@ const AccountNavigationList = ({ handleNavlinkClick, path }: { handleNavlinkClic
         path={path}
       />
     </Navigation.List>
+  );
+};
+
+const DarkModeToggle = (): ReactElement => {
+  const [isDarkMode, toggleDarkMode] = useDarkMode();
+
+  return (
+    <Button
+      appearance={ButtonAppearance.BASE}
+      aria-label={isDarkMode ? "Light mode" : "Dark mode"}
+      className="dark-mode-toggle"
+      hasIcon
+      onClick={(event: React.MouseEvent<HTMLElement>) => {
+        toggleDarkMode();
+        // Remove focus so the side navigation can collapse on mouseleave.
+        event.currentTarget.blur();
+      }}
+    >
+      <Icon light name={isDarkMode ? "highlight-on" : "highlight-off"} />
+    </Button>
   );
 };
 
@@ -139,6 +161,7 @@ const AppNavigation = ({ isLoggedIn }: NavProps): ReactElement => {
               <NavigationList hideDivider items={navItemsBottom} onClick={handleNavlinkClick} path={path} />
             </Navigation.Content>
           </Navigation.Footer>
+          <DarkModeToggle />
         </Navigation.Drawer>
       </Navigation>
     </>

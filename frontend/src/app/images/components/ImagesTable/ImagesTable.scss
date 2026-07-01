@@ -1,7 +1,7 @@
 @mixin maas-contextual-menu {
   .p-contextual-menu__non-interactive {
-    border-bottom: 1px solid $color-mid-light;
-    color: $color-mid-dark;
+    border-bottom: 1px solid var(--vf-color-border-default);
+    color: var(--vf-color-text-muted);
     font-size: 0.75rem;
     font-weight: 400;
     padding: $spv--x-small $sph--large;

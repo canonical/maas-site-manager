@@ -1,7 +1,7 @@
 .table-cell__copy-button {
   margin-left: $sph--small;
   border: none;
-  background-color: $color-light;
+  background-color: var(--vf-color-background-default);
   font-weight: $font-weight-bold;
   font-size: 0.75rem !important;
   border-radius: 0.1875rem;
@@ -9,7 +9,7 @@
   transition: all 0.2s ease-out;
 
   &:hover {
-    background-color: $color-mid-x-light;
+    background-color: var(--vf-color-background-hover);
     opacity: 1;
   }
 

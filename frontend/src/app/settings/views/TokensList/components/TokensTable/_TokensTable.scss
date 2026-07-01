@@ -3,7 +3,7 @@
   th {
     vertical-align: middle;
   }
-  
+
   thead th {
     top: -#{$spv--medium};
     padding-top: $spv--large;
@@ -83,7 +83,7 @@
       }
 
       p {
-        color: $color-mid-dark;
+        color: var(--vf-color-text-muted);
       }
     }
   }

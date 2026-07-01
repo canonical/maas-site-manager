@@ -1,8 +1,8 @@
 .p-popover {
-  @extend %vf-bg--x-light;
   @extend %vf-has-box-shadow;
   @extend %vf-has-round-corners;
 
+  background-color: var(--vf-color-background-default);
   width: 13.5rem;
   z-index: 10;
 }
@@ -24,7 +24,7 @@
 .p-popover__secondary {
   @extend %popover-grid;
 
-  background: $color-light;
+  background: var(--vf-color-background-alt);
 }
 
 .p-popover__separator {

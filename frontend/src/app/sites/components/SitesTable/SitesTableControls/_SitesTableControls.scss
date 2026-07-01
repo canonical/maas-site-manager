@@ -1,10 +1,11 @@
-$box-shadow: 0 1px 1px 0 rgb(0 0 0 / 15%),
+$box-shadow:
+  0 1px 1px 0 rgb(0 0 0 / 15%),
   0 2px 2px -1px rgb(0 0 0 / 15%),
   0 0 3px 0 rgb(0 0 0 / 20%);
 
 .sites-table-controls {
   .remove-button__wrapper {
-    background-color: $color-x-light;
+    background-color: var(--vf-color-background-default);
     height: fit-content;
     width: fit-content;
     margin-bottom: $sph--large;
@@ -13,7 +14,7 @@ $box-shadow: 0 1px 1px 0 rgb(0 0 0 / 15%),
       margin-bottom: 0;
     }
   }
-  
+
   .p-segmented-control {
     width: fit-content;
   }
@@ -28,10 +29,14 @@ $box-shadow: 0 1px 1px 0 rgb(0 0 0 / 15%),
     .main-toolbar .main-toolbar__title {
       // outline to make text more readable on dark background (e.g. when above map ocean area)
       text-shadow:
-        1px 1px 0 #FFF, -1px 1px 0 #FFF,
-        1px -1px 0 #FFF, -1px -1px 0 #FFF,
-        0 1px 0 #FFF, 0 -1px 0 #FFF,
-        -1px 0 0 #FFF, 1px 0 0 #FFF;
+        1px 1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px -1px 0 #fff,
+        0 1px 0 #fff,
+        0 -1px 0 #fff,
+        -1px 0 0 #fff,
+        1px 0 0 #fff;
       -webkit-font-smoothing: auto;
     }
 
