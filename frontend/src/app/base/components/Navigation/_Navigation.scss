@@ -11,6 +11,11 @@
   @media (min-width: $breakpoint-small) {
     position: relative !important;
     grid-area: nav;
+
+    // Slight drop shadow to lift the docked side navigation off the main
+    // content, which shares the same background colour. `!important` wins over
+    // Vanilla's own breakpoint/hover box-shadow rules for `.l-navigation`.
+    box-shadow: 0.125rem 0 0.5rem 0 rgb(0 0 0 / 35%) !important;
   }
 
   .p-panel__controls {
