@@ -9,6 +9,7 @@ import { Aside } from "./components/Aside";
 import DocumentTitle from "@/app/base/components/MainLayout/components/DocumentTitle/DocumentTitle";
 import Navigation from "@/app/base/components/Navigation";
 import SecondaryNavigation from "@/app/base/components/SecondaryNavigation";
+import StatusBar from "@/app/base/components/StatusBar";
 import type { RoutePath } from "@/app/base/routes";
 import { routesConfig } from "@/app/base/routes";
 import { useAuthContext } from "@/app/context";
@@ -50,6 +51,7 @@ const MainLayout: React.FC = () => {
         </div>
       </AppMain>
       <Aside />
+      <StatusBar />
     </Application>
   );
 };

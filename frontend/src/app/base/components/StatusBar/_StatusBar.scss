@@ -1,0 +1,28 @@
+.l-status {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.status-bar__version {
+  margin: 0 0 0 0.5rem;
+}
+
+.status-bar__notifications-toggle {
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  display: flex;
+  gap: $sph--x-small;
+  margin: 0;
+  padding: $spv--x-small $sph--small;
+
+  &.is-active,
+  &:hover {
+    background-color: rgb(0 0 0 / 5%);
+  }
+
+  .status-bar__notifications-count {
+    margin-left: 0.2rem;
+  }
+}

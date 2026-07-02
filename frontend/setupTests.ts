@@ -53,6 +53,16 @@ if (!globalThis.URL.createObjectURL) {
 
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
+// jsdom does not implement the Web Animations API, which is used by some
+// @canonical/react-components components (e.g. toast notifications).
+if (!Element.prototype.animate) {
+  Element.prototype.animate = vi.fn(() => ({
+    cancel: vi.fn(),
+    finish: vi.fn(),
+    onfinish: null,
+  })) as unknown as Element["animate"];
+}
+
 const originalObserver = window.ResizeObserver;
 
 globalThis.__ROOT_PATH__ = "";
@@ -67,9 +77,16 @@ beforeAll(() => {
   }
 
   // simulate reduced motion enabled
-  vi.stubGlobal("matchMedia", (query: string) =>
-    query === "(prefers-reduced-motion)" ? { matches: true } : { matches: false },
-  );
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(prefers-reduced-motion)",
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
   vi.stubGlobal("AbortController", NodeAbortController);
 });
 
