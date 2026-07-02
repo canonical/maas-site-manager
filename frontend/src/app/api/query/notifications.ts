@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useToastNotification } from "@canonical/react-components";
 
@@ -53,27 +53,49 @@ const showNotificationToast = (toast: ToastNotificationHelper, item: AppNotifica
 };
 
 /**
- * Bridges back-end notifications to toast notifications.
+ * Surface a list of notifications as toast notifications, showing each one at
+ * most once (even across re-renders).
  *
- * The back-end does not expose a notifications endpoint yet, so `items` is
- * currently an empty placeholder. Once the endpoint is available, fetch the
- * active notifications (e.g. with a generated `useListNotifications` query) and
- * assign them to `items`; each one will then be surfaced as a toast. A matching
- * dismiss handler can be passed to the `ToastNotificationProvider`'s `onDismiss`
- * prop to dismiss notifications on the back-end.
+ * The effect is deliberately keyed on the notification ids rather than the
+ * `items` array: `items` is a new reference on every render, and because showing
+ * a toast updates the toast provider (which triggers another render), depending
+ * on the array itself would cause an infinite render loop.
  */
-export const useNotifications = (): void => {
+export const useShowNotificationToasts = (items: AppNotification[]): void => {
   const toast = useToastNotification();
-
-  // TODO(backend): replace with data from the notifications endpoint, e.g.
-  //   const { data } = useListNotifications({ query: { only_active: true } });
-  //   const items = data?.items ?? [];
-  const items: AppNotification[] = [];
+  const shownToastIds = useRef<Set<string>>(new Set());
+  const itemIds = items.map((item) => item.id).join(",");
 
   useEffect(() => {
     items.forEach((item) => {
+      const toastId = notificationToToastId(item.id);
+      if (shownToastIds.current.has(toastId)) {
+        return;
+      }
+      shownToastIds.current.add(toastId);
       showNotificationToast(toast, item);
     });
+    // `toast` is a new object each render and `items` is represented by
+    // `itemIds`; depending on either would defeat the loop protection above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]);
+  }, [itemIds]);
+};
+
+/**
+ * Bridges back-end notifications to toast notifications.
+ *
+ * The back-end does not expose a notifications endpoint yet, so no notifications
+ * are surfaced. Once the endpoint is available, fetch the active notifications
+ * (e.g. with a generated `useListNotifications` query) and pass them to
+ * `useShowNotificationToasts`. A matching dismiss handler can be passed to the
+ * `ToastNotificationProvider`'s `onDismiss` prop to dismiss them on the
+ * back-end.
+ */
+export const useNotifications = (): void => {
+  // TODO(backend): replace with data from the notifications endpoint, e.g.
+  //   const { data } = useListNotifications({ query: { only_active: true } });
+  //   const items = data?.items ?? [];
+  const items: AppNotification[] = [{ message: "Hello, world!", id: 1, category: "info" }];
+
+  useShowNotificationToasts(items);
 };
