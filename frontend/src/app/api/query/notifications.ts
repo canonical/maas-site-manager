@@ -95,7 +95,7 @@ export const useNotifications = (): void => {
   // TODO(backend): replace with data from the notifications endpoint, e.g.
   //   const { data } = useListNotifications({ query: { only_active: true } });
   //   const items = data?.items ?? [];
-  const items: AppNotification[] = [{ message: "Hello, world!", id: 1, category: "info" }];
+  const items: AppNotification[] = [];
 
   useShowNotificationToasts(items);
 };
