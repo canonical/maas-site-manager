@@ -4,9 +4,8 @@ import pluralize from "pluralize";
 
 import TokensTable from "./components/TokensTable/TokensTable";
 
-import { useDeleteTokens, useExportTokens, useTokens } from "@/app/api/query/tokens";
+import { useDeleteTokens, useExportTokens } from "@/app/api/query/tokens";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
-import PaginationBar from "@/app/base/components/PaginationBar";
 import RemoveButton from "@/app/base/components/RemoveButton";
 import docsUrls from "@/app/base/docsUrls";
 import usePagination from "@/app/base/hooks/usePagination";
@@ -18,10 +17,9 @@ const DEFAULT_PAGE_SIZE = 50;
 const TokensList = () => {
   const { setSidebar } = useAppLayoutContext();
   const { page, debouncedPage, size, handlePageSizeChange, setPage } = usePagination(DEFAULT_PAGE_SIZE);
-  const { rowSelection, clearRowSelection } = useRowSelection("tokens", { currentPage: page, pageSize: size });
-
-  const { error, data, isPending } = useTokens({
-    query: { page: debouncedPage, size },
+  const { rowSelection, setRowSelection, clearRowSelection } = useRowSelection("tokens", {
+    currentPage: page,
+    pageSize: size,
   });
 
   const {
@@ -44,6 +42,7 @@ const TokensList = () => {
   };
 
   const deletedTokensCount = tokensDeleteMutation.variables?.query.ids.length;
+
   return (
     <ContentSection>
       {tokensDeleteMutation.isSuccess && deletedTokensCount ? (
@@ -104,17 +103,16 @@ const TokensList = () => {
             </Button>
           </MainToolbar.Controls>
         </MainToolbar>
-        <PaginationBar
-          currentPage={page}
-          dataContext="tokens"
-          handlePageSizeChange={handlePageSizeChange}
-          isPending={isPending}
-          itemsPerPage={size}
-          setCurrentPage={setPage}
-          totalItems={data?.total || 0}
-        />
       </ContentSection.Header>
-      <TokensTable data={data} error={error} isPending={isPending} />
+      <TokensTable
+        debouncedPage={debouncedPage}
+        handlePageSizeChange={handlePageSizeChange}
+        page={page}
+        rowSelection={rowSelection}
+        setPage={setPage}
+        setRowSelection={setRowSelection}
+        size={size}
+      />
     </ContentSection>
   );
 };
