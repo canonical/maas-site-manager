@@ -123,7 +123,9 @@ export const useUsersTableColumns = () => {
             <TableActions
               className="u-align--right"
               deleteDisabled={currentUsername === username}
+              deleteLabel={`Delete ${username}`}
               deleteTooltip={currentUsername === username ? "You cannot delete your own user." : undefined}
+              editLabel={`Edit ${username}`}
               hasBorder
               onDelete={() => {
                 setSelectedUserId(id);

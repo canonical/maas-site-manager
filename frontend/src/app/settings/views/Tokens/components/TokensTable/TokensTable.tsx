@@ -26,7 +26,7 @@ const TokensTable = ({
 
   return (
     <GenericTable
-      aria-label="Tokens list"
+      aria-label="Tokens table"
       className="tokens-table"
       columns={columns}
       data={data?.items ?? []}
