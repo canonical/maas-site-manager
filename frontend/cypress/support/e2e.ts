@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import "@testing-library/cypress";
+import "cypress-axe";
 import "./commands";
 
 declare global {
