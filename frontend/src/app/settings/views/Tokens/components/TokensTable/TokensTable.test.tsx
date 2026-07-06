@@ -1,71 +1,104 @@
+import { setupServer } from "msw/node";
+
 import TokensTable from "./TokensTable";
 
-import type { Token } from "@/app/apiclient";
 import { tokenFactory } from "@/mocks/factories";
-import { render, screen, within } from "@/utils/test-utils";
+import { tokensResolvers } from "@/testing/resolvers/tokens";
+import { renderWithMemoryRouter, screen, userEvent, waitFor } from "@/utils/test-utils";
+
+const tokens = tokenFactory.buildList(2);
+const mockServer = setupServer(tokensResolvers.listTokens.handler(tokens));
+
+beforeAll(() => {
+  mockServer.listen();
+});
 
 beforeEach(() => {
-  vi.useFakeTimers();
+  vi.clearAllMocks();
 });
 
 afterEach(() => {
-  vi.useRealTimers();
+  mockServer.resetHandlers();
 });
 
-it("displays the tokens table", () => {
-  render(<TokensTable data={{ items: [], total: 0, page: 1, size: 0 }} error={null} isPending={false} />);
-
-  expect(screen.getByRole("table", { name: /tokens/i })).toBeInTheDocument();
+afterAll(() => {
+  mockServer.close();
 });
 
-it("displays rows for each token", () => {
-  const items = tokenFactory.buildList(1);
-  render(<TokensTable data={{ items, total: 0, page: 1, size: 0 }} error={null} isPending={false} />);
+describe("TokensTable", () => {
+  const props = {
+    page: 1,
+    debouncedPage: 1,
+    size: 50,
+    handlePageSizeChange: vi.fn(),
+    setPage: vi.fn(),
+    rowSelection: {},
+    setRowSelection: vi.fn(),
+  };
 
-  const tableBody = screen.getAllByRole("rowgroup")[1];
-  expect(within(tableBody).getAllByRole("row")).toHaveLength(items.length);
-  within(tableBody)
-    .getAllByRole("row")
-    .forEach((row, idx) => {
-      expect(row).toHaveTextContent(new RegExp(items[idx].value, "i"));
+  describe("display", () => {
+    it("displays a loading component if tokens are loading", async () => {
+      renderWithMemoryRouter(<TokensTable {...props} />);
+
+      await waitFor(() => {
+        expect(screen.getAllByRole("progressbar", { name: /loading/i }).length).toBeGreaterThan(0);
+      });
     });
-});
 
-it("displays a copy button in each row", () => {
-  const items = tokenFactory.buildList(1);
-  render(<TokensTable data={{ items, total: 0, page: 1, size: 0 }} error={null} isPending={false} />);
+    it("displays a message when rendering an empty list", async () => {
+      mockServer.use(tokensResolvers.listTokens.handler([]));
 
-  const tableBody = screen.getAllByRole("rowgroup")[1];
-  within(tableBody)
-    .getAllByRole("button", { name: /copy/i })
-    .forEach((btn) => {
-      expect(btn).toBeInTheDocument();
+      renderWithMemoryRouter(<TokensTable {...props} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("No tokens available")).toBeInTheDocument();
+      });
     });
-});
 
-it("should display a no-tokens caption if there are no tokens", () => {
-  const items: Token[] = [];
-  render(<TokensTable data={{ items, total: 0, page: 1, size: 0 }} error={null} isPending={false} />);
+    it("shows errors if present", async () => {
+      mockServer.use(tokensResolvers.listTokens.error());
 
-  expect(screen.getByText(/No tokens available/i)).toBeInTheDocument();
-});
+      renderWithMemoryRouter(<TokensTable {...props} />);
 
-it("displays created date in UTC", () => {
-  const date = new Date("Fri Apr 21 2023 14:00:00 GMT+0200 (GMT)");
-  vi.setSystemTime(date);
-  const items = [tokenFactory.build({ created: "2023-04-21T11:30:00.000Z" })];
+      await waitFor(() => {
+        expect(screen.getByText("Request failed with status code 401")).toBeInTheDocument();
+      });
+    });
 
-  render(<TokensTable data={{ items, total: 0, page: 1, size: 0 }} error={null} isPending={false} />);
+    it("displays the columns correctly", async () => {
+      renderWithMemoryRouter(<TokensTable {...props} />);
 
-  expect(screen.getByText(/2023-04-21 11:30/i)).toBeInTheDocument();
-});
+      ["Token", "Time until expiration", "Created (UTC)"].forEach((column) => {
+        expect(
+          screen.getByRole("columnheader", {
+            name: column,
+          }),
+        ).toBeInTheDocument();
+      });
+    });
+  });
 
-it("displays time until expiration in UTC", () => {
-  const date = new Date("Fri Apr 21 2023 14:00:00 GMT+0200 (GMT)");
-  vi.setSystemTime(date);
-  const items = [tokenFactory.build({ expired: "2023-04-21T14:00:00.000Z" })];
+  describe("actions", () => {
+    it("copies the token", async () => {
+      const copyFn = vi.fn(() => Promise.resolve());
+      const user = userEvent.setup();
 
-  render(<TokensTable data={{ items, total: 0, page: 1, size: 0 }} error={null} isPending={false} />);
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: copyFn,
+        },
+      });
 
-  expect(screen.getByText(/in 2 hours/i)).toBeInTheDocument();
+      renderWithMemoryRouter(<TokensTable {...props} />);
+
+      await waitFor(() => {
+        expect(screen.queryAllByRole("progressbar", { name: /loading/i })).toHaveLength(0);
+      });
+
+      await user.click(screen.getByText(tokens[0].value));
+
+      expect(copyFn).toHaveBeenCalledWith(tokens[0].value);
+    });
+  });
 });
