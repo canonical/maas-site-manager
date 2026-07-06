@@ -29,6 +29,7 @@ export const useTokensTableColumns = () => {
       {
         id: "token",
         accessorFn: createAccessor("value"),
+        enableSorting: false,
         header: "Token",
         cell: ({ getValue }) => {
           const { value } = getValue();
@@ -48,6 +49,7 @@ export const useTokensTableColumns = () => {
       {
         id: "expirationTime",
         accessorFn: createAccessor("expired"),
+        enableSorting: false,
         header: "Time until expiration",
         cell: ({ getValue }) => {
           const { expired } = getValue();
@@ -61,6 +63,7 @@ export const useTokensTableColumns = () => {
       {
         id: "created",
         accessorFn: createAccessor("created"),
+        enableSorting: false,
         header: "Created (UTC)",
         cell: ({ getValue }) => {
           const { created } = getValue();

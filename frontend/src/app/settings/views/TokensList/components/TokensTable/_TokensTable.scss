@@ -1,51 +1,16 @@
-.tokens-table {
-  td,
-  th {
-    vertical-align: middle;
+.p-generic-table.tokens-table {
+  thead {
+    padding-top: $sp-medium;
   }
 
-  thead th {
-    top: -#{$spv--medium};
-    padding-top: $spv--large;
+  .token {
+    width: 50%;
   }
 
-  thead th:first-child,
-  tbody td:first-child {
-    width: 3rem;
-  }
-
-  thead th:last-child,
-  tbody td:last-child {
-    width: 15rem;
-  }
-
-  thead th:nth-child(3),
-  tbody td:nth-child(3) {
-    width: 15rem;
-  }
-
-  @media screen and (min-width: $breakpoint-small) and (max-width: $breakpoint-large) {
-    thead th:last-child,
-    tbody td:last-child {
-      width: 10rem;
-    }
-
-    thead th:nth-child(3),
-    tbody td:nth-child(3) {
-      width: 10rem;
-    }
-  }
-
-  @media screen and (max-width: $breakpoint-small) {
-    thead th:last-child,
-    tbody td:last-child {
-      width: auto;
-    }
-
-    thead th:nth-child(3),
-    tbody td:nth-child(3) {
-      width: auto;
-    }
+  .expirationTime,
+  .created {
+    width: 25%;
+    min-width: 10rem;
   }
 
   .token-cell {
@@ -66,25 +31,7 @@
     }
   }
 
-  .empty-table-caption {
-    margin-top: $spv--x-large;
-
-    .empty-table-caption__body {
-      max-width: 50%;
-      margin: 0 auto;
-      text-align: left;
-
-      @media screen and (min-width: $breakpoint-small) and (max-width: $breakpoint-large) {
-        max-width: 70%;
-      }
-
-      @media screen and (max-width: $breakpoint-small) {
-        max-width: none;
-      }
-
-      p {
-        color: var(--vf-color-text-muted);
-      }
-    }
+  .p-generic-table__no-data {
+    color: var(--vf-color-text-muted);
   }
 }

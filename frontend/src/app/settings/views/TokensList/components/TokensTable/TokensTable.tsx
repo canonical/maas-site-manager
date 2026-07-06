@@ -51,7 +51,7 @@ const TokensTable = ({
         itemsPerPage: size,
         totalItems: data?.total || 0,
         handlePageSizeChange,
-        dataContext: "users",
+        dataContext: "tokens",
         setCurrentPage: setPage,
         isPending,
       }}
