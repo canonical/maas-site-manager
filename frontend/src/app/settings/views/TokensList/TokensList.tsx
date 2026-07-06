@@ -22,6 +22,8 @@ const TokensList = () => {
     pageSize: size,
   });
 
+  const selectedTokenCount = useMemo(() => Object.keys(rowSelection).length, [rowSelection]);
+
   const {
     data: exportTokensData,
     error: exportTokensError,
@@ -88,10 +90,10 @@ const TokensList = () => {
         </code>
         <MainToolbar>
           <MainToolbar.Controls>
+            <RemoveButton disabled={!selectedTokenCount} label="Delete" onClick={handleTokenDelete} />
             <Button disabled={isLoadingExportTokens} onClick={exportTokens}>
-              Export
+              {`Export ${selectedTokenCount ? `${selectedTokenCount} ${pluralize("token", selectedTokenCount)}` : "all tokens"}`}
             </Button>
-            <RemoveButton disabled={!Object.keys(rowSelection).length} label="Delete" onClick={handleTokenDelete} />
             <Button
               className="p-button--positive"
               onClick={() => {
