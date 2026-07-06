@@ -58,7 +58,7 @@ const SitesTable = ({
         />
       </ContentSection.Header>
       <GenericTable
-        aria-label="sites"
+        aria-label="Sites table"
         className="sites-table"
         columnVisibility={{ columnVisibility, setColumnVisibility }}
         columns={columns}
