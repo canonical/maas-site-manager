@@ -12,9 +12,9 @@ import { useRowSelection } from "@/app/context";
 import type { SiteDetailsContextValue } from "@/app/context/SiteDetailsContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import {
-    connectionIcons,
-    connectionLabels,
-    getLastSeenText,
+  connectionIcons,
+  connectionLabels,
+  getLastSeenText,
 } from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
 import { getCountryName } from "@/utils";
 

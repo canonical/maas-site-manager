@@ -12,9 +12,9 @@ import { lazySidePanel } from "@/app/base/sidePanel";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus/AggregatedStatus";
 import {
-    connectionIcons,
-    connectionLabels,
-    getLastSeenText,
+  connectionIcons,
+  connectionLabels,
+  getLastSeenText,
 } from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
 
 const EditSite = lazySidePanel(() => import("@/app/sites/components/EditSite"));
