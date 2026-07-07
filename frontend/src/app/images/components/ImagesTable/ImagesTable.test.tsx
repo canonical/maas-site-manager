@@ -38,7 +38,7 @@ describe("ImagesTable", () => {
       renderWithMemoryRouter(<ImagesTable />);
 
       await waitFor(() => {
-        expect(screen.getByText("Loading...")).toBeInTheDocument();
+        expect(screen.getAllByRole("progressbar", { name: /loading/i }).length).toBeGreaterThan(0);
       });
     });
 
