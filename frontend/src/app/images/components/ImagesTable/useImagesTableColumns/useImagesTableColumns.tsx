@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { formatBytes } from "@canonical/maas-react-components";
+import { formatBytes, Placeholder } from "@canonical/maas-react-components";
 import { Icon } from "@canonical/react-components";
 import type { Column, ColumnDef, Header, Row, Table } from "@tanstack/react-table";
 import pluralize from "pluralize";
@@ -33,6 +33,14 @@ const useImagesTableColumns = () => {
         {
           id: "os",
           accessorKey: "os",
+          meta: {
+            skeleton: () => (
+              <div>
+                <Placeholder variant="block" width="16ch" />
+                <Placeholder variant="block" width="8ch" />
+              </div>
+            ),
+          },
           cell: ({ row }: { row: Row<ImageWithId> }) => {
             return (
               <div>
@@ -49,6 +57,9 @@ const useImagesTableColumns = () => {
           accessorKey: "release",
           enableSorting: true,
           header: () => "Release title",
+          meta: {
+            skeleton: () => <Placeholder variant="block" width="18ch" />,
+          },
           cell: ({
             row: {
               original: { release },
@@ -62,12 +73,18 @@ const useImagesTableColumns = () => {
           accessorKey: "arch",
           enableSorting: false,
           header: () => "Architecture",
+          meta: {
+            skeleton: () => <Placeholder variant="block" width="8ch" />,
+          },
         },
         {
           id: "size",
           accessorKey: "size",
           enableSorting: false,
           header: () => "Size",
+          meta: {
+            skeleton: () => <Placeholder variant="block" width="9ch" />,
+          },
           cell: ({
             row: {
               original: { size },
@@ -84,6 +101,13 @@ const useImagesTableColumns = () => {
           accessorKey: "status",
           enableSorting: false,
           header: () => "Status",
+          meta: {
+            skeleton: () => (
+              <div>
+                <Placeholder variant="block" width="20ch" />
+              </div>
+            ),
+          },
           cell: ({ row: { original: image } }: { row: Row<ImageWithId> }) => <SyncStatus image={image} />,
         },
         {
@@ -91,6 +115,9 @@ const useImagesTableColumns = () => {
           accessorKey: "is_custom_image",
           enableSorting: false,
           header: "Custom",
+          meta: {
+            skeleton: () => <Placeholder variant="block" width="2ch" />,
+          },
           cell: ({
             row: {
               original: { custom_image_id },
@@ -104,6 +131,9 @@ const useImagesTableColumns = () => {
           accessorKey: "source",
           enableSorting: false,
           header: () => "Source",
+          meta: {
+            skeleton: () => <Placeholder variant="block" width="14ch" />,
+          },
           cell: ({ row: { original } }: { row: Row<ImageWithId> }) => <ChangeSourceDropdown image={original} />,
         },
         {
@@ -111,6 +141,9 @@ const useImagesTableColumns = () => {
           accessorKey: "id",
           header: () => "Action",
           enableSorting: false,
+          meta: {
+            skeleton: () => null,
+          },
           cell: ({ row }: { table: Table<ImageWithId>; row: Row<ImageWithId> }) => {
             const id = row.original.selection_id ?? row.original.custom_image_id;
             return (

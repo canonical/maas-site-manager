@@ -109,8 +109,8 @@ export const useUsersTableColumns = () => {
         meta: {
           skeleton: () => (
             <div>
-              <Placeholder variant="block" width="1.5rem" />
-              <Placeholder variant="block" width="1.5rem" />
+              <Placeholder variant="block" width="2ch" />
+              <Placeholder variant="block" width="2ch" />
             </div>
           ),
         },
