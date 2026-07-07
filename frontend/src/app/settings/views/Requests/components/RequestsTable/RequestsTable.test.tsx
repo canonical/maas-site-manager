@@ -1,80 +1,87 @@
+import { setupServer } from "msw/node";
+
 import RequestsTable from "./RequestsTable";
 
-import { enrollmentRequestFactory, enrollmentRequestQueryResultFactory } from "@/mocks/factories";
-import { formatUTCDateString } from "@/utils";
-import { renderWithMemoryRouter, screen, within } from "@/utils/test-utils";
+import { enrollmentRequestFactory } from "@/mocks/factories";
+import { enrollmentRequestsResolvers } from "@/testing/resolvers/enrollmentRequests";
+import { renderWithMemoryRouter, screen, waitFor } from "@/utils/test-utils";
 
-it("displays a loading text", () => {
-  const { rerender } = renderWithMemoryRouter(
-    <RequestsTable
-      currentPage={1}
-      data={enrollmentRequestQueryResultFactory.build()}
-      error={null}
-      isPending={true}
-      pageSize={50}
-    />,
-  );
+const enrollmentRequest = enrollmentRequestFactory.build({ name: "new-maas-site" });
+const enrollmentRequests = [enrollmentRequest, ...enrollmentRequestFactory.buildList(2)];
 
-  const table = screen.getByRole("table", { name: /enrollment requests/i });
-  expect(table).toBeInTheDocument();
-  expect(within(table).getByText(/Loading/i)).toBeInTheDocument();
+const mockServer = setupServer(
+  enrollmentRequestsResolvers.listEnrollmentRequests.handler(enrollmentRequests),
+  enrollmentRequestsResolvers.postEnrollmentRequests.handler(),
+);
 
-  rerender(
-    <RequestsTable
-      currentPage={1}
-      data={enrollmentRequestQueryResultFactory.build()}
-      error={null}
-      isPending={false}
-      pageSize={50}
-    />,
-  );
-
-  expect(within(table).queryByText(/Loading/i)).not.toBeInTheDocument();
+beforeAll(() => {
+  mockServer.listen();
 });
 
-it("should show a message if there are no open enrollment requests", () => {
-  renderWithMemoryRouter(
-    <RequestsTable
-      currentPage={1}
-      data={enrollmentRequestQueryResultFactory.build()}
-      error={null}
-      isPending={false}
-      pageSize={50}
-    />,
-  );
-
-  const table = screen.getByRole("table", { name: /enrollment requests/i });
-  expect(table).toBeInTheDocument();
-  expect(within(table).getByText(/No outstanding requests/i)).toBeInTheDocument();
+afterEach(() => {
+  mockServer.resetHandlers();
 });
 
-it("displays enrollment request in each table row correctly", () => {
-  const items = enrollmentRequestFactory.buildList(1);
-  renderWithMemoryRouter(
-    <RequestsTable
-      currentPage={1}
-      data={enrollmentRequestQueryResultFactory.build({ items })}
-      error={null}
-      isPending={false}
-      pageSize={50}
-    />,
-  );
+afterAll(() => {
+  mockServer.close();
+});
 
-  const tableBody = screen.getAllByRole("rowgroup")[1];
-  const tableRows = within(tableBody).getAllByRole("row");
+describe("RequestsTable", () => {
+  describe("display", () => {
+    it("displays a loading component if requests are loading", async () => {
+      renderWithMemoryRouter(<RequestsTable />);
 
-  expect(tableRows).toHaveLength(items.length);
+      await waitFor(() => {
+        expect(screen.getAllByRole("progressbar", { name: /loading/i }).length).toBeGreaterThan(0);
+      });
+    });
 
-  tableRows.forEach((row, i) => {
-    const checkbox = new RegExp(`select ${items[i].name}`, "i");
-    const name = items[i].name;
-    const url = new RegExp(items[i].url, "i");
-    const timeOfRequest = new RegExp(formatUTCDateString(items[i].created), "i");
-    const expectedCells = [checkbox, name, url, timeOfRequest];
+    it("displays a message when rendering an empty list", async () => {
+      mockServer.use(enrollmentRequestsResolvers.listEnrollmentRequests.handler([]));
 
-    expect(within(row).getAllByRole("cell")).toHaveLength(expectedCells.length);
-    expectedCells.forEach((cell) => {
-      expect(within(row).getByRole("cell", { name: cell })).toBeInTheDocument();
+      renderWithMemoryRouter(<RequestsTable />);
+
+      await waitFor(() => {
+        expect(screen.getByText("No outstanding requests")).toBeInTheDocument();
+      });
+    });
+
+    it("shows errors if present", async () => {
+      mockServer.use(enrollmentRequestsResolvers.listEnrollmentRequests.error());
+
+      renderWithMemoryRouter(<RequestsTable />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Request failed with status code 401")).toBeInTheDocument();
+      });
+    });
+
+    it("displays the columns correctly", async () => {
+      renderWithMemoryRouter(<RequestsTable />);
+
+      await waitFor(() => {
+        expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();
+      });
+
+      ["Name", "URL", "Time of request (UTC)"].forEach((column) => {
+        expect(
+          screen.getByRole("columnheader", {
+            name: column,
+          }),
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("actions", () => {
+    it("clicking the link redirects to the correct URL", async () => {
+      renderWithMemoryRouter(<RequestsTable />);
+
+      await waitFor(() => {
+        expect(screen.queryByRole("progressbar", { name: /loading/i })).not.toBeInTheDocument();
+      });
+
+      expect(screen.getByRole("link", { name: enrollmentRequest.url })).toHaveAttribute("href", enrollmentRequest.url);
     });
   });
 });

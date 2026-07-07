@@ -128,7 +128,7 @@ describe("UsersTable", () => {
         name: new RegExp(editableUser.username, "i"),
       });
 
-      await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
+      await userEvent.click(within(row).getByRole("button", { name: /Edit/ }));
 
       expect(mockSetSelectedUserId).toHaveBeenCalledWith(editableUser.id);
       expect(mockSetSidebar).toHaveBeenCalledWith("editUser");
@@ -146,7 +146,7 @@ describe("UsersTable", () => {
         name: new RegExp(currentUser.username, "i"),
       });
 
-      await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
+      await userEvent.click(within(row).getByRole("button", { name: /Edit/ }));
 
       expect(mockNavigate).toHaveBeenCalledWith("/account/details");
       expect(mockSetSelectedUserId).not.toHaveBeenCalled();
@@ -164,7 +164,7 @@ describe("UsersTable", () => {
       const row = within(screen.getAllByRole("rowgroup")[1]).getByRole("row", {
         name: new RegExp(currentUser.username, "i"),
       });
-      const deleteButton = within(row).getByRole("button", { name: "Delete" });
+      const deleteButton = within(row).getByRole("button", { name: /Delete/ });
 
       expect(deleteButton).toBeAriaDisabled();
 
@@ -187,7 +187,7 @@ describe("UsersTable", () => {
         name: new RegExp(editableUser.username, "i"),
       });
 
-      await userEvent.click(within(row).getByRole("button", { name: "Delete" }));
+      await userEvent.click(within(row).getByRole("button", { name: /Delete/ }));
 
       expect(mockSetSelectedUserId).toHaveBeenCalledWith(editableUser.id);
       expect(mockSetSidebar).toHaveBeenCalledWith("deleteUser");
