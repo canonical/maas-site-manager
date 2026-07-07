@@ -1,7 +1,7 @@
 import { ContentSection } from "@canonical/maas-react-components";
 
-import EnrollmentActions from "@/app/settings/views/RequestsList/components/EnrollmentActions";
-import RequestsTable from "@/app/settings/views/RequestsList/components/RequestsTable";
+import EnrollmentActions from "@/app/settings/views/Requests/components/EnrollmentActions";
+import RequestsTable from "@/app/settings/views/Requests/components/RequestsTable";
 
 const RequestsList = () => {
   return (

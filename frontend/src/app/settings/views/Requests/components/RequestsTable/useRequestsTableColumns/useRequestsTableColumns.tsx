@@ -2,7 +2,7 @@ import { ExternalLink } from "@canonical/maas-react-components";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { PendingSite } from "@/app/apiclient";
-import DateTime from "@/app/settings/views/RequestsList/components/DateTime";
+import DateTime from "@/app/settings/views/Requests/components/DateTime";
 
 type RequestColumnDef = ColumnDef<PendingSite, Partial<PendingSite>>;
 

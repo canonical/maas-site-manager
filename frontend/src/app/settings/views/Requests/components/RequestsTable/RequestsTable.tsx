@@ -5,7 +5,7 @@ import TableCaption from "@/app/base/components/TableCaption";
 import docsUrls from "@/app/base/docsUrls";
 import usePagination from "@/app/base/hooks/usePagination";
 import { useRowSelection } from "@/app/context/RowSelectionContext/RowSelectionContext";
-import { useRequestsTableColumns } from "@/app/settings/views/RequestsList/components/RequestsTable/useRequestsTableColumns/useRequestsTableColumns";
+import { useRequestsTableColumns } from "@/app/settings/views/Requests/components/RequestsTable/useRequestsTableColumns/useRequestsTableColumns";
 
 const DEFAULT_PAGE_SIZE = 50;
 
