@@ -34,4 +34,10 @@
   .p-generic-table__no-data {
     color: var(--vf-color-text-muted);
   }
+
+  td.p-generic-table__skeleton-cell {
+    .p-placeholder {
+      height: $sp-large;
+    }
+  }
 }
