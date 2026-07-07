@@ -2,10 +2,30 @@ import { setupServer } from "msw/node";
 
 import ImageSourceForm from "./ImageSourceForm";
 
-import { AppLayoutContext } from "@/app/context";
 import { BootSourceContext } from "@/app/context/BootSourceContext";
 import { imageSourceResolvers, mockImageSources } from "@/testing/resolvers/imageSources";
 import { render, screen, userEvent, waitFor } from "@/utils/test-utils";
+
+const { mockCloseSidePanel } = vi.hoisted(() => ({
+  mockCloseSidePanel: vi.fn(),
+}));
+
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: vi.fn(),
+      closeSidePanel: mockCloseSidePanel,
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
 
 const mockServer = setupServer(
   imageSourceResolvers.getImageSource.handler(),
@@ -82,14 +102,11 @@ it("hides the sync interval field when 'Automatically sync images' is unchecked"
 
 it("closes the side panel and resets selected source when 'Cancel' is clicked", async () => {
   const setSelected = vi.fn();
-  const setSidebar = vi.fn();
 
   render(
-    <AppLayoutContext.Provider value={{ sidebar: null, setSidebar, previousSidebar: null }}>
-      <BootSourceContext.Provider value={{ selected: mockImageSources[0].id, setSelected }}>
-        <ImageSourceForm type="edit" />
-      </BootSourceContext.Provider>
-    </AppLayoutContext.Provider>,
+    <BootSourceContext.Provider value={{ selected: mockImageSources[0].id, setSelected }}>
+      <ImageSourceForm type="edit" />
+    </BootSourceContext.Provider>,
   );
 
   await waitFor(() => {
@@ -101,6 +118,6 @@ it("closes the side panel and resets selected source when 'Cancel' is clicked", 
     expect(setSelected).toHaveBeenCalledWith(null);
   });
   await waitFor(() => {
-    expect(setSidebar).toHaveBeenCalledWith(null);
+    expect(mockCloseSidePanel).toHaveBeenCalled();
   });
 });

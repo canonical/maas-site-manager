@@ -1,3 +1,4 @@
+import { useSidePanel } from "@canonical/maas-react-components";
 import { Button, Input, Notification, Spinner } from "@canonical/react-components";
 import { Field, Form, Formik } from "formik";
 import * as Yup from "yup";
@@ -5,7 +6,7 @@ import * as Yup from "yup";
 import { useDeleteUser, useUser } from "@/app/api/query/users";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { useAppLayoutContext, useUserSelectionContext } from "@/app/context";
+import { useUserSelectionContext } from "@/app/context";
 import type { UserSelectionContextValue } from "@/app/context/UserSelectionContext";
 
 type DeleteUserFormValues = { confirmUsername: string };
@@ -25,7 +26,7 @@ const DeleteUserContent = ({
   setSelectedUserId: NonNullable<UserSelectionContextValue["setSelected"]>;
 }) => {
   const id = useId();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const {
     data: user,
     error,
@@ -47,7 +48,7 @@ const DeleteUserContent = ({
         { path: { id: user.id } },
         {
           onSuccess() {
-            setSidebar(null);
+            closeSidePanel();
             setSelectedUserId(null);
           },
         },
@@ -103,7 +104,7 @@ const DeleteUserContent = ({
                   <Button
                     appearance="base"
                     onClick={() => {
-                      setSidebar(null);
+                      closeSidePanel();
                     }}
                     type="button"
                   >

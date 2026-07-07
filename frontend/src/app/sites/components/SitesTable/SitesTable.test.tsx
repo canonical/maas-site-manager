@@ -10,11 +10,30 @@ import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within
 const enrollmentRequests = enrollmentRequestFactory.buildList(2);
 const mockServer = setupServer(enrollmentRequestsResolvers.listEnrollmentRequests.handler(enrollmentRequests));
 
-const mockUseAppLayoutContext = vi.spyOn(await import("@/app/context"), "useAppLayoutContext");
-const mockUseAppLayoutContextDirect = vi.spyOn(await import("@/app/context/AppLayoutContext"), "useAppLayoutContext");
+const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
+  mockOpenSidePanel: vi.fn(),
+  mockCloseSidePanel: vi.fn(),
+}));
+
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: mockOpenSidePanel,
+      closeSidePanel: mockCloseSidePanel,
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
+
 const mockUseSiteDetailsContext = vi.spyOn(await import("@/app/context/SiteDetailsContext"), "useSiteDetailsContext");
 
-const mockSetSidebar = vi.fn();
 const mockSetSiteId = vi.fn();
 
 const paginationProps = {
@@ -60,14 +79,6 @@ beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
 
-  const appLayoutContextValue = {
-    previousSidebar: null,
-    setSidebar: mockSetSidebar,
-    sidebar: null,
-  };
-
-  mockUseAppLayoutContext.mockReturnValue(appLayoutContextValue);
-  mockUseAppLayoutContextDirect.mockReturnValue(appLayoutContextValue);
   mockUseSiteDetailsContext.mockReturnValue({
     selected: null,
     setSelected: mockSetSiteId,
@@ -221,7 +232,7 @@ describe("SitesTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
       expect(mockSetSiteId).toHaveBeenCalledWith(item.id);
-      expect(mockSetSidebar).toHaveBeenCalledWith("editSite");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit site" }));
     });
 
     it("opens the remove sites sidebar when delete is clicked", async () => {
@@ -240,7 +251,7 @@ describe("SitesTable", () => {
 
       await userEvent.click(within(row).getByRole("button", { name: "Delete" }));
 
-      expect(mockSetSidebar).toHaveBeenCalledWith("removeSites");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove sites" }));
     });
 
     it("enables bulk remove when a row is selected and opens the remove sidebar", async () => {
@@ -265,7 +276,7 @@ describe("SitesTable", () => {
 
       await userEvent.click(removeButton);
 
-      expect(mockSetSidebar).toHaveBeenCalledWith("removeSites");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove sites" }));
     });
   });
 });

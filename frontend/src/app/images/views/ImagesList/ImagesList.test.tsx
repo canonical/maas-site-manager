@@ -29,13 +29,13 @@ describe("ImagesList", () => {
   it("renders add selection form", async () => {
     renderWithMemoryRouter(<ImagesList />, { withMainLayout: true });
     await userEvent.click(screen.getByRole("button", { name: "Add to available images" }));
-    expect(screen.getByRole("complementary", { name: "Add to available images" })).toBeInTheDocument();
+    expect(await screen.findByRole("complementary", { name: "Add to available images" })).toBeInTheDocument();
   });
 
   it("renders upload form", async () => {
     renderWithMemoryRouter(<ImagesList />, { withMainLayout: true });
     await userEvent.click(screen.getByRole("button", { name: "Upload custom image" }));
-    expect(screen.getByRole("complementary", { name: "Upload custom image" })).toBeInTheDocument();
+    expect(await screen.findByRole("complementary", { name: "Upload custom image" })).toBeInTheDocument();
   });
 
   it("renders delete form", async () => {
@@ -44,13 +44,13 @@ describe("ImagesList", () => {
       expect(screen.getAllByRole("button", { name: "Delete" }).length).toBeGreaterThan(0);
     });
     await userEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]);
-    expect(screen.getByRole("complementary", { name: "Remove available images" })).toBeInTheDocument();
+    expect(await screen.findByRole("complementary", { name: "Remove available images" })).toBeInTheDocument();
   });
 
   it("closes side panel form when canceled", async () => {
     renderWithMemoryRouter(<ImagesList />, { withMainLayout: true });
     await userEvent.click(screen.getByRole("button", { name: "Add to available images" }));
-    expect(screen.getByRole("complementary", { name: "Add to available images" })).toBeInTheDocument();
+    expect(await screen.findByRole("complementary", { name: "Add to available images" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
     });

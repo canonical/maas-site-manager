@@ -1,5 +1,6 @@
 import { useEffect, useId } from "react";
 
+import { useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon, Input, Notification } from "@canonical/react-components";
 import type { FormikHelpers } from "formik";
 import { Field, Form, Formik } from "formik";
@@ -9,7 +10,8 @@ import * as Yup from "yup";
 import ErrorMessage from "../../../base/components/ErrorMessage";
 
 import { useDeleteSites, useSite } from "@/app/api/query/sites";
-import { useAppLayoutContext, useRowSelection } from "@/app/context";
+import type { ReturnablePanelProps } from "@/app/base/sidePanels";
+import { useRowSelection } from "@/app/context";
 
 const initialValues = {
   confirmText: "",
@@ -35,9 +37,9 @@ const createHandleValidate =
     return errors;
   };
 
-const RemoveSites = () => {
+const RemoveSites = ({ onClose }: ReturnablePanelProps) => {
   const { rowSelection, clearRowSelection } = useRowSelection("sites");
-  const { previousSidebar, setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const deleteSitesMutation = useDeleteSites();
   const sitesCount = rowSelection && Object.keys(rowSelection).length;
   const id = useId();
@@ -54,7 +56,7 @@ const RemoveSites = () => {
       {
         onSuccess() {
           setSubmitting(false);
-          setSidebar(null);
+          closeSidePanel();
           clearRowSelection();
         },
       },
@@ -64,9 +66,9 @@ const RemoveSites = () => {
   // close the sidebar when there are no sites selected
   useEffect(() => {
     if (!sitesCount) {
-      setSidebar(null);
+      closeSidePanel();
     }
-  }, [sitesCount, setSidebar]);
+  }, [sitesCount, closeSidePanel]);
 
   return (
     <Formik<RemoveSitesFormValues>
@@ -104,10 +106,10 @@ const RemoveSites = () => {
               <Button
                 appearance="base"
                 onClick={() => {
-                  if (previousSidebar) {
-                    setSidebar(previousSidebar);
+                  if (onClose) {
+                    onClose();
                   } else {
-                    setSidebar(null);
+                    closeSidePanel();
                   }
                 }}
                 type="button"

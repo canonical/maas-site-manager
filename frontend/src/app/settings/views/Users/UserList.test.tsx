@@ -2,18 +2,30 @@ import UserList from "./UserList";
 
 import { renderWithMemoryRouter, screen, userEvent } from "@/utils/test-utils";
 
-const mockUseAppLayoutContext = vi.spyOn(await import("@/app/context"), "useAppLayoutContext");
+const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
+  mockOpenSidePanel: vi.fn(),
+  mockCloseSidePanel: vi.fn(),
+}));
 
-const mockSetSidebar = vi.fn();
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: mockOpenSidePanel,
+      closeSidePanel: mockCloseSidePanel,
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
-
-  mockUseAppLayoutContext.mockReturnValue({
-    previousSidebar: null,
-    setSidebar: mockSetSidebar,
-    sidebar: null,
-  });
 });
 
 describe("UserList", () => {
@@ -34,7 +46,7 @@ describe("UserList", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Add user" }));
 
-      expect(mockSetSidebar).toHaveBeenCalledWith("addUser");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Add user" }));
     });
   });
 });

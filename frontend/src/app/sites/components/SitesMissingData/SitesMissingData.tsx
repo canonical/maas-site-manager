@@ -1,4 +1,4 @@
-import { ExternalLink } from "@canonical/maas-react-components";
+import { ExternalLink, useSidePanel } from "@canonical/maas-react-components";
 import { Accordion, ActionButton, Button, Input, Label, Spinner, Notification } from "@canonical/react-components";
 import type { FormikErrors, FormikHelpers } from "formik";
 import { Field, Form, Formik, useFormikContext } from "formik";
@@ -8,7 +8,6 @@ import * as Yup from "yup";
 import { useEditSite, useSites } from "@/app/api/query/sites";
 import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
-import { useAppLayoutContext } from "@/app/context";
 import { coordinateSchema } from "@/app/sites/components/EditSite/constants";
 import type { CoordinatesFormValue } from "@/app/sites/components/EditSite/types";
 import { parseCoordinatesFormValue } from "@/app/sites/components/EditSite/utils";
@@ -81,7 +80,7 @@ const SiteMissingDataField = ({ site }: { site: Site }) => {
 
 const SitesMissingData = () => {
   const headingId = useId();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const { data, error, isPending } = useSites({ query: { coordinates: false, page: 1, size: 20 } });
   const sites = data?.items;
 
@@ -93,9 +92,9 @@ const SitesMissingData = () => {
   useEffect(() => {
     // Close the side panel if there's no more sites with missing data
     if (!isPending && !error && sites && sites.length === 0) {
-      setSidebar(null);
+      closeSidePanel();
     }
-  }, [sites, isPending, error, setSidebar]);
+  }, [sites, isPending, error, closeSidePanel]);
 
   const handleSubmit = async (values: SitesMissingDataValues, helpers: FormikHelpers<SitesMissingDataValues>) => {
     const { sitesCoordinates } = values;
@@ -190,7 +189,7 @@ const SitesMissingData = () => {
                   appearance="base"
                   onClick={() => {
                     resetForm();
-                    setSidebar(null);
+                    closeSidePanel();
                   }}
                   type="button"
                 >

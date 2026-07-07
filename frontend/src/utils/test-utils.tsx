@@ -2,9 +2,10 @@
 import type { ReactElement } from "react";
 import * as React from "react";
 
+import { SidePanelContextProvider } from "@canonical/maas-react-components";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { RenderOptions, RenderResult } from "@testing-library/react";
-import { screen, render, waitForElementToBeRemoved } from "@testing-library/react";
+import { render, screen, waitForElementToBeRemoved } from "@testing-library/react";
 
 import Layout from "@/app/base/components/Layout";
 import { AppLayoutContextProvider, AuthContextProvider, RowSelectionContextProviders } from "@/app/context";
@@ -21,7 +22,11 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
     },
   });
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SidePanelContextProvider>{children}</SidePanelContextProvider>
+    </QueryClientProvider>
+  );
 };
 
 const makeProvidersWithMemoryRouter =
@@ -78,10 +83,11 @@ export const getByTextContent = (text: RegExp | string) => {
 
 export const waitForLoadingToFinish = () => waitForElementToBeRemoved(screen.queryByText(/loading/i));
 
-export { screen, within, waitFor, act, renderHook, fireEvent } from "@testing-library/react";
+export { act, fireEvent, renderHook, screen, waitFor, within } from "@testing-library/react";
 
 export type { RenderResult } from "@testing-library/react";
 
-export { customRender as render };
 export { default as userEvent } from "@testing-library/user-event";
 export { setupServer } from "msw/node";
+export { customRender as render };
+

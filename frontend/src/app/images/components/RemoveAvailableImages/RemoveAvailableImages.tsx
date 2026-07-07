@@ -1,12 +1,12 @@
 import type { ReactElement } from "react";
 
-import { ContentSection } from "@canonical/maas-react-components";
+import { ContentSection, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Notification } from "@canonical/react-components";
 import type { RowSelectionState } from "@tanstack/react-table";
 import pluralize from "pluralize";
 
 import { useDeleteCustomImage, useRemoveImagesFromSelection } from "@/app/api/query/images";
-import { useAppLayoutContext, useRowSelection } from "@/app/context";
+import { useRowSelection } from "@/app/context";
 
 const getUpstreamAndCustomImageIds = (rowSelection: RowSelectionState) => {
   const upstreamImages = Object.keys(rowSelection).filter((key) => !key.startsWith("custom-"));
@@ -20,7 +20,7 @@ const getUpstreamAndCustomImageIds = (rowSelection: RowSelectionState) => {
 export const RemoveAvailableImages = (): ReactElement => {
   const { rowSelection, clearRowSelection } = useRowSelection("images");
   const imagesCount = Object.keys(rowSelection).length;
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
 
   const deleteImagesMutation = useRemoveImagesFromSelection();
   const deleteCustomImagesMutation = useDeleteCustomImage();
@@ -28,9 +28,9 @@ export const RemoveAvailableImages = (): ReactElement => {
   // close sidebar when there are no images selected
   useEffect(() => {
     if (!imagesCount) {
-      setSidebar(null);
+      closeSidePanel();
     }
-  }, [imagesCount, setSidebar]);
+  }, [imagesCount, closeSidePanel]);
 
   const imagesCountText = pluralize("available image", imagesCount || 0, true);
 
@@ -50,7 +50,7 @@ export const RemoveAvailableImages = (): ReactElement => {
         <Button
           appearance="base"
           onClick={() => {
-            setSidebar(null);
+            closeSidePanel();
             clearRowSelection();
           }}
           type="button"
@@ -63,7 +63,7 @@ export const RemoveAvailableImages = (): ReactElement => {
             const { upstreamImageIds, customImageIds } = getUpstreamAndCustomImageIds(rowSelection);
             deleteImagesMutation.mutate({ body: { selection_ids: upstreamImageIds } });
             deleteCustomImagesMutation.mutate({ body: { asset_ids: customImageIds } });
-            setSidebar(null);
+            closeSidePanel();
             clearRowSelection();
           }}
           type="button"

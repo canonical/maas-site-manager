@@ -5,24 +5,35 @@ import { imageSourceFactory } from "@/mocks/factories";
 import { mockImageSources } from "@/testing/resolvers/imageSources";
 import { renderWithMemoryRouter, screen, userEvent, waitFor, within } from "@/utils/test-utils";
 
-const mockUseAppLayoutContext = vi.spyOn(await import("@/app/context"), "useAppLayoutContext");
-const mockUseAppLayoutContextDirect = vi.spyOn(await import("@/app/context/AppLayoutContext"), "useAppLayoutContext");
+const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
+  mockOpenSidePanel: vi.fn(),
+  mockCloseSidePanel: vi.fn(),
+}));
+
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: mockOpenSidePanel,
+      closeSidePanel: mockCloseSidePanel,
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
+
 const mockUseBootSourceContext = vi.spyOn(await import("@/app/context/BootSourceContext"), "useBootSourceContext");
 
-const mockSetSidebar = vi.fn();
 const mockSetSelected = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
 
-  const appLayoutContextValue = {
-    previousSidebar: null,
-    setSidebar: mockSetSidebar,
-    sidebar: null,
-  };
-
-  mockUseAppLayoutContext.mockReturnValue(appLayoutContextValue);
-  mockUseAppLayoutContextDirect.mockReturnValue(appLayoutContextValue);
   mockUseBootSourceContext.mockReturnValue({
     selected: null,
     setSelected: mockSetSelected,
@@ -182,7 +193,7 @@ describe("ImageSourceListTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: "Edit image source" }));
 
       expect(mockSetSelected).toHaveBeenCalledWith(item.id);
-      expect(mockSetSidebar).toHaveBeenCalledWith("editBootSource");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit image source" }));
     });
 
     it("opens the custom image source sidebar when editing the custom row", async () => {
@@ -196,7 +207,7 @@ describe("ImageSourceListTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: "Edit image source" }));
 
       expect(mockSetSelected).toHaveBeenCalledWith(item.id);
-      expect(mockSetSidebar).toHaveBeenCalledWith("editCustomImagesSource");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit custom images" }));
     });
 
     it("opens the delete boot source sidebar when delete is clicked", async () => {
@@ -210,7 +221,7 @@ describe("ImageSourceListTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: "Delete image source" }));
 
       expect(mockSetSelected).toHaveBeenCalledWith(item.id);
-      expect(mockSetSidebar).toHaveBeenCalledWith("deleteBootSource");
+      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Delete image source" }));
     });
   });
 });

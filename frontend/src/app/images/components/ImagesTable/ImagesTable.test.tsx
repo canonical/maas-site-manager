@@ -6,18 +6,30 @@ import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from 
 const images = selectedImageFactory.buildList(2, { os: "Hannah Montana Linux" });
 const mockServer = setupServer(imageResolvers.selectedImages.handler(images));
 
-const mockUseAppLayoutContext = vi.spyOn(await import("@/app/context/AppLayoutContext"), "useAppLayoutContext");
+const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
+  mockOpenSidePanel: vi.fn(),
+  mockCloseSidePanel: vi.fn(),
+}));
 
-const mockSetSidebar = vi.fn();
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: mockOpenSidePanel,
+      closeSidePanel: mockCloseSidePanel,
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
-
-  mockUseAppLayoutContext.mockReturnValue({
-    previousSidebar: null,
-    setSidebar: mockSetSidebar,
-    sidebar: null,
-  });
 });
 
 beforeAll(() => {
@@ -77,7 +89,7 @@ describe("ImagesTable", () => {
       await userEvent.click(screen.getByRole("button", { name: "Delete" }));
 
       await waitFor(() => {
-        expect(mockSetSidebar).toHaveBeenCalledWith("removeAvailableImages");
+        expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove available images" }));
       });
     });
   });

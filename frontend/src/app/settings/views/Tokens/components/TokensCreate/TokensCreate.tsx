@@ -1,5 +1,6 @@
 import { useId } from "react";
 
+import { useSidePanel } from "@canonical/maas-react-components";
 import { Button, Input, Label, Notification } from "@canonical/react-components";
 import type { FormikHelpers } from "formik";
 import { Field, Formik } from "formik";
@@ -11,7 +12,6 @@ import { humanIntervalToISODuration } from "./utils";
 import type { MutationErrorResponse } from "@/app/api";
 import { useCreateTokens } from "@/app/api/query/tokens";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import { useAppLayoutContext } from "@/app/context";
 
 const initialValues = {
   count: "",
@@ -45,7 +45,7 @@ const TokensCreate = () => {
   const durationId = useId();
   const countId = useId();
   const tokensCreateMutation = useCreateTokens();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const handleSubmit = async (
     { count, duration }: TokensCreateFormValues,
     { setSubmitting }: FormikHelpers<TokensCreateFormValues>,
@@ -59,7 +59,7 @@ const TokensCreate = () => {
       },
       {
         onSuccess: () => {
-          setSidebar(null);
+          closeSidePanel();
         },
       },
     );
@@ -116,7 +116,7 @@ const TokensCreate = () => {
               <Button
                 appearance="base"
                 onClick={() => {
-                  setSidebar(null);
+                  closeSidePanel();
                 }}
                 type="button"
               >

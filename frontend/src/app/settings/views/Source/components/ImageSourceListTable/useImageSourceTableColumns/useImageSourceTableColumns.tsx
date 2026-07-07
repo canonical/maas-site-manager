@@ -1,16 +1,16 @@
-import { Placeholder } from "@canonical/maas-react-components";
+import { Placeholder, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon, Tooltip } from "@canonical/react-components";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { BootSource } from "@/app/apiclient";
-import { useAppLayoutContext } from "@/app/context";
+import { sidePanels } from "@/app/base/sidePanels";
 import { useBootSourceContext } from "@/app/context/BootSourceContext";
 import { createAccessor } from "@/utils";
 
 type BootSourceColumnDef = ColumnDef<BootSource, Partial<BootSource>>;
 
 export const useImageSourceTableColumns = () => {
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel } = useSidePanel();
   const { setSelected } = useBootSourceContext();
 
   return useMemo<BootSourceColumnDef[]>(
@@ -191,9 +191,9 @@ export const useImageSourceTableColumns = () => {
                 onClick={() => {
                   setSelected(id!);
                   if (url === "custom") {
-                    setSidebar("editCustomImagesSource");
+                    openSidePanel(sidePanels.editCustomImagesSource);
                   } else {
-                    setSidebar("editBootSource");
+                    openSidePanel(sidePanels.editBootSource);
                   }
                 }}
               >
@@ -206,7 +206,7 @@ export const useImageSourceTableColumns = () => {
                   className="is-dense u-table-cell-padding-overlap"
                   onClick={() => {
                     setSelected(id!);
-                    setSidebar("deleteBootSource");
+                    openSidePanel(sidePanels.deleteBootSource);
                   }}
                 >
                   <Icon name="delete" />
@@ -217,6 +217,6 @@ export const useImageSourceTableColumns = () => {
         },
       },
     ],
-    [setSidebar, setSelected],
+    [openSidePanel, setSelected],
   );
 };

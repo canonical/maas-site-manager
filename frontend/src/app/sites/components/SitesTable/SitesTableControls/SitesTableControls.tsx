@@ -1,4 +1,4 @@
-import { MainToolbar } from "@canonical/maas-react-components";
+import { MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { SearchBox } from "@canonical/react-components";
 import classNames from "classnames";
 
@@ -7,7 +7,7 @@ import SitesViewControl from "./SitesViewControl";
 
 import type { UseSitesResult } from "@/app/api/query/sites";
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { useAppLayoutContext } from "@/app/context/AppLayoutContext";
+import { sidePanels } from "@/app/base/sidePanels";
 import { useRowSelection } from "@/app/context/RowSelectionContext/RowSelectionContext";
 import { useLocation } from "@/utils/router";
 
@@ -23,7 +23,7 @@ const SitesTableControls = ({
   searchText?: string;
 }) => {
   const { pathname } = useLocation();
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel } = useSidePanel();
   const { rowSelection } = useRowSelection("sites");
   const isRemoveDisabled = Object.keys(rowSelection).length <= 0;
   const isMapView = pathname === "/sites/map";
@@ -49,7 +49,7 @@ const SitesTableControls = ({
             <RemoveButton
               disabled={isRemoveDisabled}
               onClick={() => {
-                setSidebar("removeSites");
+                openSidePanel(sidePanels.removeSites);
               }}
               showDeleteIcon
               type="button"

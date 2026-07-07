@@ -1,4 +1,4 @@
-import { ContentSection } from "@canonical/maas-react-components";
+import { ContentSection, useSidePanel } from "@canonical/maas-react-components";
 import { ActionButton, Button, Input, Label, Notification, Spinner } from "@canonical/react-components";
 import { Field, Formik } from "formik";
 import isEqual from "lodash/isEqual";
@@ -8,7 +8,6 @@ import type { MutationErrorResponse } from "@/app/api";
 import { useAddUser, useEditUser, useUser } from "@/app/api/query/users";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import { useAppLayoutContext } from "@/app/context";
 import { useUserSelectionContext } from "@/app/context/UserSelectionContext";
 
 const baseInitialValues = {
@@ -64,11 +63,11 @@ const UserForm = ({ type }: { type: "add" | "edit" }) => {
   const [initialValues, setInitialValues] = useState<UserFormValues>(baseInitialValues);
 
   const { selected: selectedUserId, setSelected: setSelectedUserId } = useUserSelectionContext();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const { data: user, error, isPending } = useUser({ path: { id: selectedUserId! } }, type === "edit");
 
   const resetForm = () => {
-    setSidebar(null);
+    closeSidePanel();
     setSelectedUserId(null);
     setInitialValues(baseInitialValues);
   };

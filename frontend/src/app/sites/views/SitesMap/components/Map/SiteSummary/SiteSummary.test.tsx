@@ -8,6 +8,27 @@ import { sitesResolvers } from "@/testing/resolvers/sites";
 import { apiUrls } from "@/utils/test-urls";
 import { renderWithMemoryRouter, waitFor, screen, setupServer, userEvent, fireEvent } from "@/utils/test-utils";
 
+const { mockOpenSidePanel } = vi.hoisted(() => ({
+  mockOpenSidePanel: vi.fn(),
+}));
+
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: mockOpenSidePanel,
+      closeSidePanel: vi.fn(),
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
+
 const stats = statsFactory.build();
 const site = siteFactory.build({ url: "https://example.com", stats });
 const mockServer = setupServer(sitesResolvers.getSite.handler([site]));
@@ -58,18 +79,6 @@ it("displays an error notification when site fetch fails", async () => {
 });
 
 it("opens the edit site sidebar when the edit button is clicked", async () => {
-  // Mocks get hoisted to the top of the file, so we also have to hoist this function
-  // to avoid "setSidebar is undefined" errors
-  const setSidebar = vi.hoisted(() => vi.fn());
-
-  vi.mock("@/app/context", async () => {
-    const actualContext = await vi.importActual("@/app/context");
-    return {
-      ...actualContext,
-      useAppLayoutContext: () => ({ setSidebar }),
-    };
-  });
-
   renderWithMemoryRouter(<SiteSummary id={site.id} />);
 
   await waitFor(() => {
@@ -78,9 +87,7 @@ it("opens the edit site sidebar when the edit button is clicked", async () => {
 
   await userEvent.click(screen.getByRole("button", { name: "Edit" }));
 
-  expect(setSidebar).toHaveBeenCalledWith("editSite");
-
-  vi.restoreAllMocks();
+  expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit site" }));
 });
 
 it("keeps the increased marker size when hovering over the site summary", async () => {

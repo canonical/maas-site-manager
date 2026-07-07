@@ -1,4 +1,4 @@
-import { Placeholder } from "@canonical/maas-react-components";
+import { Placeholder, useSidePanel } from "@canonical/maas-react-components";
 import { Button } from "@canonical/react-components";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -6,14 +6,15 @@ import { useCurrentUser } from "@/app/api/query/users";
 import type { User } from "@/app/apiclient";
 import SortIndicator from "@/app/base/components/SortIndicator";
 import TableActions from "@/app/base/components/TableActions";
-import { useAppLayoutContext, useUserSelectionContext } from "@/app/context";
+import { sidePanels } from "@/app/base/sidePanels";
+import { useUserSelectionContext } from "@/app/context";
 import { createAccessor } from "@/utils";
 import { useNavigate } from "@/utils/router";
 
 type UserColumnDef = ColumnDef<User, Partial<User>>;
 
 export const useUsersTableColumns = () => {
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel } = useSidePanel();
   const { setSelected: setSelectedUserId } = useUserSelectionContext();
   const [isShowingFullName, setIsShowingFullName] = useState(false);
   const { data: currentUser } = useCurrentUser();
@@ -129,12 +130,12 @@ export const useUsersTableColumns = () => {
               hasBorder
               onDelete={() => {
                 setSelectedUserId(id);
-                setSidebar("deleteUser");
+                openSidePanel(sidePanels.deleteUser);
               }}
               onEdit={() => {
                 if (username !== currentUsername) {
                   setSelectedUserId(id);
-                  setSidebar("editUser");
+                  openSidePanel(sidePanels.editUser);
                 } else {
                   navigate("/account/details");
                 }
@@ -144,6 +145,6 @@ export const useUsersTableColumns = () => {
         },
       },
     ],
-    [currentUsername, isShowingFullName, navigate, setSelectedUserId, setSidebar],
+    [currentUsername, isShowingFullName, navigate, setSelectedUserId, openSidePanel],
   );
 };

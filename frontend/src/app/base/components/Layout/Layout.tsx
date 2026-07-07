@@ -1,11 +1,10 @@
 import type { ReactElement } from "react";
 import { Suspense } from "react";
 
-import { ContentSection, GenericTable, Placeholder } from "@canonical/maas-react-components";
+import { ContentSection, GenericTable, Placeholder, SidePanel } from "@canonical/maas-react-components";
 import { Application, AppMain } from "@canonical/react-components";
 import classNames from "classnames";
 
-import Aside from "@/app/base/components/Layout/components/Aside";
 import DocumentTitle from "@/app/base/components/Layout/components/DocumentTitle/DocumentTitle";
 import Navigation from "@/app/base/components/Navigation";
 import SecondaryNavigation from "@/app/base/components/SecondaryNavigation";
@@ -49,7 +48,7 @@ const Layout = (): ReactElement => {
             </div>
           </div>
         </AppMain>
-        <Aside />
+        <SidePanel />
         <StatusBar />
       </Application>
     </>

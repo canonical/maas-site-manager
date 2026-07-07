@@ -1,4 +1,4 @@
-import { ExternalLink } from "@canonical/maas-react-components";
+import { ExternalLink, useSidePanel } from "@canonical/maas-react-components";
 import { Spinner, Notification, Button, Icon } from "@canonical/react-components";
 import classNames from "classnames";
 import get from "lodash/get";
@@ -7,7 +7,8 @@ import { useSite } from "@/app/api/query/sites";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 import LocalTime from "@/app/base/components/LocalTime/LocalTime";
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { useAppLayoutContext, useRowSelection } from "@/app/context";
+import { sidePanels, type ReturnablePanelProps } from "@/app/base/sidePanels";
+import { useRowSelection } from "@/app/context";
 import type { SiteDetailsContextValue } from "@/app/context/SiteDetailsContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import {
@@ -19,9 +20,13 @@ import { getCountryName } from "@/utils";
 
 const SiteDetailsContent = ({ id }: { id: NonNullable<SiteDetailsContextValue["selected"]> }) => {
   const { data: site, error, isPending } = useSite({ path: { id } });
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel, closeSidePanel } = useSidePanel();
   const { setRowSelection } = useRowSelection("sites");
   const stats = site?.stats;
+
+  const reopenSiteDetails = () => {
+    openSidePanel(sidePanels.siteDetails);
+  };
 
   useEffect(() => {
     const marker = document.getElementById(`site-marker-${id}`);
@@ -46,7 +51,7 @@ const SiteDetailsContent = ({ id }: { id: NonNullable<SiteDetailsContextValue["s
         className="site-details__close-button"
         hasIcon
         onClick={() => {
-          setSidebar(null);
+          closeSidePanel();
         }}
       >
         <Icon name="close" />
@@ -153,7 +158,7 @@ const SiteDetailsContent = ({ id }: { id: NonNullable<SiteDetailsContextValue["s
             <Button
               appearance="base"
               onClick={() => {
-                setSidebar("editSite");
+                openSidePanel<ReturnablePanelProps>({ ...sidePanels.editSite, props: { onClose: reopenSiteDetails } });
               }}
             >
               <Icon name="edit" /> Edit
@@ -161,7 +166,10 @@ const SiteDetailsContent = ({ id }: { id: NonNullable<SiteDetailsContextValue["s
             <RemoveButton
               onClick={() => {
                 setRowSelection({ [site.id]: true });
-                setSidebar("removeSites");
+                openSidePanel<ReturnablePanelProps>({
+                  ...sidePanels.removeSites,
+                  props: { onClose: reopenSiteDetails },
+                });
               }}
               showDeleteIcon
             />

@@ -1,4 +1,4 @@
-import { ContentSection, FileUpload } from "@canonical/maas-react-components";
+import { ContentSection, FileUpload, useSidePanel } from "@canonical/maas-react-components";
 import type { SelectProps } from "@canonical/react-components";
 import { ActionButton, Button, Input, Label, Notification, Select } from "@canonical/react-components";
 import classNames from "classnames";
@@ -12,7 +12,6 @@ import type { MutationErrorResponse } from "@/app/api";
 import { useUploadCustomImage } from "@/app/api/query/images";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import { useAppLayoutContext } from "@/app/context";
 import "./_UploadCustomImage.scss";
 
 type UploadImageFormValues = {
@@ -65,7 +64,7 @@ const UploadImageSchema: Yup.Schema = Yup.object().shape({
 });
 
 const UploadCustomImage = () => {
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const [uploadProgress, setUploadProgress] = useState(0);
   const uploadImageMutation = useUploadCustomImage({
     onUploadProgress: (progressEvent) => {
@@ -107,7 +106,7 @@ const UploadCustomImage = () => {
         },
         {
           onSuccess: () => {
-            setSidebar(null);
+            closeSidePanel();
           },
         },
       );
@@ -228,7 +227,7 @@ const UploadCustomImage = () => {
                   appearance="base"
                   onClick={() => {
                     resetForm();
-                    setSidebar(null);
+                    closeSidePanel();
                   }}
                   type="button"
                 >

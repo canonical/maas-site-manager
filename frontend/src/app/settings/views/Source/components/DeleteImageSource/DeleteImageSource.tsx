@@ -1,13 +1,12 @@
-import { ContentSection } from "@canonical/maas-react-components";
+import { ContentSection, useSidePanel } from "@canonical/maas-react-components";
 import { ActionButton, Button, Spinner } from "@canonical/react-components";
 
 import { useDeleteImageSource, useImageSource } from "@/app/api/query/imageSources";
-import { useAppLayoutContext } from "@/app/context";
 import { useBootSourceContext } from "@/app/context/BootSourceContext";
 
 const DeleteImageSource = () => {
   const { selected: id } = useBootSourceContext();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
 
   const { data: imageSource, isPending } = useImageSource({ path: { id: id! } });
   const deleteImageSource = useDeleteImageSource();
@@ -30,7 +29,7 @@ const DeleteImageSource = () => {
               <Button
                 appearance="base"
                 onClick={() => {
-                  setSidebar(null);
+                  closeSidePanel();
                 }}
                 type="button"
               >
@@ -40,7 +39,7 @@ const DeleteImageSource = () => {
                 appearance="negative"
                 onClick={() => {
                   deleteImageSource.mutate({ path: { id: id! } });
-                  setSidebar(null);
+                  closeSidePanel();
                 }}
                 type="submit"
               >

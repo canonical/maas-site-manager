@@ -7,7 +7,6 @@ import useLocalStorageState from "use-local-storage-state";
 import type { UseSitesResult } from "@/app/api/query/sites";
 import type { SitesGetResponse } from "@/app/apiclient";
 import TableCaption from "@/app/base/components/TableCaption/TableCaption";
-import { useAppLayoutContext } from "@/app/context";
 import { useRowSelection } from "@/app/context/RowSelectionContext/RowSelectionContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import NoSites from "@/app/sites/components/NoSites";
@@ -51,9 +50,8 @@ const SitesTable = ({
     pageSize: paginationProps.itemsPerPage,
   });
   const { setSelected: setSiteId } = useSiteDetailsContext();
-  const { setSidebar } = useAppLayoutContext();
 
-  const columns = useSitesTableColumns({ setRowSelection, setSiteId, setSidebar });
+  const columns = useSitesTableColumns({ setRowSelection, setSiteId });
 
   return (
     <ContentSection>

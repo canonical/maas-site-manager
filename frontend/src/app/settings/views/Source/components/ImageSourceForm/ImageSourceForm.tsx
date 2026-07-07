@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 
-import { ContentSection } from "@canonical/maas-react-components";
+import { ContentSection, useSidePanel } from "@canonical/maas-react-components";
 import { ActionButton, Button, Input, Label, Notification, Spinner, Textarea } from "@canonical/react-components";
 import { Field, Formik } from "formik";
 import * as Yup from "yup";
@@ -13,7 +13,6 @@ import type {
 } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import { useAppLayoutContext } from "@/app/context";
 import { useBootSourceContext } from "@/app/context/BootSourceContext";
 
 const baseInitialValues = {
@@ -38,7 +37,7 @@ const ImageSourceSchema = Yup.object().shape({
 
 const ImageSourceForm = ({ type }: { type: "add" | "edit" }) => {
   const { selected: selectedBootSourceId, setSelected } = useBootSourceContext();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const [initialValues, setInitialValues] = useState<ImageSourceFormValues>(baseInitialValues);
 
   const createImageSource = useCreateImageSource();
@@ -77,7 +76,7 @@ const ImageSourceForm = ({ type }: { type: "add" | "edit" }) => {
 
   const resetForm = () => {
     setSelected(null);
-    setSidebar(null);
+    closeSidePanel();
     setInitialValues(baseInitialValues);
   };
 

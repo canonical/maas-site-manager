@@ -1,5 +1,6 @@
 import { useId } from "react";
 
+import { useSidePanel } from "@canonical/maas-react-components";
 import { ActionButton, Button, Input, Label, Notification, Spinner, Select } from "@canonical/react-components";
 import { Field, Formik } from "formik";
 import en from "i18n-iso-countries/langs/en.json";
@@ -14,7 +15,7 @@ import { useEditSite, useSite } from "@/app/api/query/sites";
 import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import { useAppLayoutContext } from "@/app/context";
+import type { ReturnablePanelProps } from "@/app/base/sidePanels";
 import type { SiteDetailsContextValue } from "@/app/context/SiteDetailsContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import { getCountryName } from "@/utils";
@@ -52,9 +53,11 @@ type SiteFormValues = typeof baseInitialValues;
 const EditSiteContent = ({
   siteId,
   setSiteId,
+  onClose,
 }: {
   siteId: NonNullable<SiteDetailsContextValue["selected"]>;
   setSiteId: NonNullable<SiteDetailsContextValue["setSelected"]>;
+  onClose?: () => void;
 }) => {
   const headingId = useId();
   const countryId = useId();
@@ -65,7 +68,7 @@ const EditSiteContent = ({
   const coordinatesId = useId();
 
   const [initialValues, setInitialValues] = useState<SiteFormValues>(baseInitialValues);
-  const { previousSidebar, setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
   const { data: site, error, isPending } = useSite({ path: { id: siteId } });
 
   const updateSite = useEditSite();
@@ -101,11 +104,11 @@ const EditSiteContent = ({
 
   const resetForm = () => {
     setInitialValues(baseInitialValues);
-    if (previousSidebar) {
-      setSidebar(previousSidebar);
+    if (onClose) {
+      onClose();
     } else {
       setSiteId(null);
-      setSidebar(null);
+      closeSidePanel();
     }
   };
 
@@ -198,10 +201,10 @@ const EditSiteContent = ({
   );
 };
 
-const EditSite = () => {
+const EditSite = ({ onClose }: ReturnablePanelProps) => {
   const { selected: siteId, setSelected: setSiteId } = useSiteDetailsContext();
 
-  return siteId ? <EditSiteContent setSiteId={setSiteId} siteId={siteId} /> : null;
+  return siteId ? <EditSiteContent onClose={onClose} setSiteId={setSiteId} siteId={siteId} /> : null;
 };
 
 export default EditSite;

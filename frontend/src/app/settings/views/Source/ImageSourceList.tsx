@@ -1,13 +1,13 @@
-import { ContentSection, MainToolbar } from "@canonical/maas-react-components";
+import { ContentSection, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { Button } from "@canonical/react-components";
 
 import ImageSourceListTable from "./components/ImageSourceListTable";
 
 import { useImageSources } from "@/app/api/query/imageSources";
-import { useAppLayoutContext } from "@/app/context";
+import { sidePanels } from "@/app/base/sidePanels";
 
 const ImageSourceList = () => {
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel } = useSidePanel();
   const { data, error, isPending } = useImageSources();
 
   return (
@@ -19,7 +19,7 @@ const ImageSourceList = () => {
             <Button
               appearance="positive"
               onClick={() => {
-                setSidebar("addBootSource");
+                openSidePanel(sidePanels.addBootSource);
               }}
             >
               Add image source

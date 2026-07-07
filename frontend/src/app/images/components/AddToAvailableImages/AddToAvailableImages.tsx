@@ -1,4 +1,4 @@
-import { ContentSection } from "@canonical/maas-react-components";
+import { ContentSection, useSidePanel } from "@canonical/maas-react-components";
 import type { MultiSelectItem } from "@canonical/react-components";
 import { ActionButton, Button, Spinner, Notification, Accordion, MultiSelect } from "@canonical/react-components";
 import { Field, Form, Formik } from "formik";
@@ -7,7 +7,6 @@ import ErrorMessage from "../../../base/components/ErrorMessage";
 
 import { useAddImagesToSelection, useSelectableImages } from "@/app/api/query/images";
 import type { SelectableImage } from "@/app/apiclient";
-import { useAppLayoutContext } from "@/app/context";
 
 import "./_AddToAvailableImages.scss";
 
@@ -90,10 +89,10 @@ const AddToAvailableImages = () => {
     }
   }, [data]);
 
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
 
   const resetForm = () => {
-    setSidebar(null);
+    closeSidePanel();
     setInitialValues(images ? getInitialState(images) : {});
   };
 

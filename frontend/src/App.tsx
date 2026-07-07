@@ -1,8 +1,9 @@
 import "@/styles/App.scss";
+import { SidePanelContextProvider } from "@canonical/maas-react-components";
 import { ToastNotificationProvider } from "@canonical/react-components";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { AppLayoutContextProvider, AuthContextProvider } from "@/app/context";
+import { AuthContextProvider } from "@/app/context";
 import { BootSourceContextProvider } from "@/app/context/BootSourceContext";
 import { RowSelectionContextProviders } from "@/app/context/RowSelectionContext";
 import { SiteDetailsContextProvider } from "@/app/context/SiteDetailsContext";
@@ -17,7 +18,7 @@ const router = createBrowserRouter(routes, { basename });
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppLayoutContextProvider>
+      <SidePanelContextProvider>
         <AuthContextProvider>
           <RowSelectionContextProviders>
             <UserSelectionContextProvider>
@@ -31,7 +32,7 @@ const App: React.FC = () => {
             </UserSelectionContextProvider>
           </RowSelectionContextProviders>
         </AuthContextProvider>
-      </AppLayoutContextProvider>
+      </SidePanelContextProvider>
     </QueryClientProvider>
   );
 };

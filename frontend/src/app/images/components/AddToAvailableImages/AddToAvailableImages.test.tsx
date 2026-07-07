@@ -17,18 +17,30 @@ const mockServer = setupServer(
   imageResolvers.addImageToSelection.handler(),
 );
 
-const mockUseAppLayoutContext = vi.spyOn(await import("@/app/context/AppLayoutContext"), "useAppLayoutContext");
+const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
+  mockOpenSidePanel: vi.fn(),
+  mockCloseSidePanel: vi.fn(),
+}));
 
-const mockSetSidebar = vi.fn();
+vi.mock("@canonical/maas-react-components", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    useSidePanel: () => ({
+      openSidePanel: mockOpenSidePanel,
+      closeSidePanel: mockCloseSidePanel,
+      setSidePanelSize: vi.fn(),
+      isOpen: false,
+      title: "",
+      size: "regular" as const,
+      component: null,
+      props: {},
+    }),
+  };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
-
-  mockUseAppLayoutContext.mockReturnValue({
-    previousSidebar: null,
-    setSidebar: mockSetSidebar,
-    sidebar: null,
-  });
 });
 
 beforeAll(() => {
@@ -62,7 +74,7 @@ describe("AddToAvailableImages", () => {
       expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     });
     await userEvent.click(screen.getByRole("button", { name: /Cancel/i }));
-    expect(mockSetSidebar).toHaveBeenCalledWith(null);
+    expect(mockCloseSidePanel).toHaveBeenCalled();
   });
 
   it("enabled submission when form is edited and calls add image on save click", async () => {

@@ -1,4 +1,4 @@
-import { ContentSection } from "@canonical/maas-react-components";
+import { ContentSection, useSidePanel } from "@canonical/maas-react-components";
 import { ActionButton, Button, Input, Label, Notification, Spinner } from "@canonical/react-components";
 import { Field, Formik } from "formik";
 import * as Yup from "yup";
@@ -8,7 +8,6 @@ import { useImageSource, useUpdateImageSource } from "@/app/api/query/imageSourc
 import type { PatchBootSourceV1BootassetSourcesIdPatchData } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import { useAppLayoutContext } from "@/app/context";
 import { useBootSourceContext } from "@/app/context/BootSourceContext";
 
 const baseInitialValues = {
@@ -24,7 +23,7 @@ const CustomImagesSourceSchema = Yup.object().shape({
 const EditCustomImagesSourceForm = () => {
   const [initialValues, setInitialValues] = useState<CustomImagesSourceFormValues>(baseInitialValues);
   const { selected: selectedBootSourceId, setSelected } = useBootSourceContext();
-  const { setSidebar } = useAppLayoutContext();
+  const { closeSidePanel } = useSidePanel();
 
   const updateImageSource = useUpdateImageSource();
   const { data: imageSource, error, isPending } = useImageSource({ path: { id: selectedBootSourceId! } });
@@ -35,7 +34,7 @@ const EditCustomImagesSourceForm = () => {
   const resetForm = () => {
     setInitialValues(baseInitialValues);
     setSelected(null);
-    setSidebar(null);
+    closeSidePanel();
   };
 
   useEffect(() => {

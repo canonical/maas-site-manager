@@ -1,6 +1,7 @@
+import { useSidePanel } from "@canonical/maas-react-components";
 import type { GeoJSONSource } from "maplibre-gl";
 
-import { useAppLayoutContext } from "@/app/context";
+import { sidePanels } from "@/app/base/sidePanels";
 import { useMap } from "@/app/context/MapContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import Popup from "@/app/sites/views/SitesMap/components/Map/MarkersLayer/Popup";
@@ -41,7 +42,7 @@ const createClusterLayerOptions = () =>
 
 const MarkersLayer = ({ geojson }: { geojson: GeoJSON.FeatureCollection }) => {
   const map = useMap();
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel } = useSidePanel();
   const { setSelected: setSiteId } = useSiteDetailsContext();
   const { popupRef, popup, showPopup, hidePopup, handleMouseEnter } = usePopup();
 
@@ -49,11 +50,11 @@ const MarkersLayer = ({ geojson }: { geojson: GeoJSON.FeatureCollection }) => {
     (id: number) => {
       if (id) {
         setSiteId(id);
-        setSidebar("siteDetails");
+        openSidePanel(sidePanels.siteDetails);
       }
       hidePopup({ isImmediate: true });
     },
-    [setSiteId, setSidebar, hidePopup],
+    [setSiteId, openSidePanel, hidePopup],
   );
 
   useMarkers({

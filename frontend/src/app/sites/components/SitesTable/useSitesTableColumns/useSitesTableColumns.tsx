@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { ExternalLink, Placeholder } from "@canonical/maas-react-components";
+import { ExternalLink, Placeholder, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon } from "@canonical/react-components";
 import type { ColumnDef, OnChangeFn, RowSelectionState } from "@tanstack/react-table";
 
@@ -9,7 +9,7 @@ import LocalTime from "@/app/base/components/LocalTime";
 import SortIndicator from "@/app/base/components/SortIndicator";
 import TableActions from "@/app/base/components/TableActions";
 import TooltipButton from "@/app/base/components/TooltipButton";
-import type { Sidebar } from "@/app/context/AppLayoutContext";
+import { sidePanels } from "@/app/base/sidePanels";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus";
 import ConnectionInfo from "@/app/sites/components/SitesTable/ConnectionInfo";
 import ColumnsVisibilityControl from "@/app/sites/components/SitesTable/SitesTableControls/ColumnsVisibilityControl";
@@ -20,12 +20,11 @@ export type SiteColumnDef = ColumnDef<Site, Partial<Site>>;
 const useSitesTableColumns = ({
   setRowSelection,
   setSiteId,
-  setSidebar,
 }: {
   setRowSelection: OnChangeFn<RowSelectionState>;
   setSiteId: OnChangeFn<number | null>;
-  setSidebar: (sidebar: Sidebar) => void;
 }): SiteColumnDef[] => {
+  const { openSidePanel } = useSidePanel();
   return useMemo(
     () =>
       [
@@ -218,13 +217,13 @@ const useSitesTableColumns = ({
                 onDelete={() => {
                   if (id) {
                     setRowSelection({ [id]: true });
-                    setSidebar("removeSites");
+                    openSidePanel(sidePanels.removeSites);
                   }
                 }}
                 onEdit={() => {
                   if (id) {
                     setSiteId(id);
-                    setSidebar("editSite");
+                    openSidePanel(sidePanels.editSite);
                   }
                 }}
               />
@@ -232,7 +231,7 @@ const useSitesTableColumns = ({
           },
         },
       ] as SiteColumnDef[],
-    [setRowSelection, setSidebar, setSiteId],
+    [setRowSelection, openSidePanel, setSiteId],
   );
 };
 

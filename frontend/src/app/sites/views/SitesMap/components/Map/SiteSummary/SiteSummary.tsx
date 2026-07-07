@@ -1,6 +1,6 @@
 import type { DOMAttributes } from "react";
 
-import { ExternalLink } from "@canonical/maas-react-components";
+import { ExternalLink, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Card, Icon, Notification, Spinner } from "@canonical/react-components";
 import classNames from "classnames";
 import get from "lodash/get";
@@ -8,7 +8,7 @@ import get from "lodash/get";
 import { useSite } from "@/app/api/query/sites";
 import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
-import { useAppLayoutContext } from "@/app/context";
+import { sidePanels } from "@/app/base/sidePanels";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus/AggregatedStatus";
 import {
@@ -22,7 +22,7 @@ interface SiteSummaryProps extends DOMAttributes<HTMLElement> {
 }
 const SiteSummary = ({ id, ...props }: SiteSummaryProps) => {
   const { data: site, error, isPending } = useSite({ path: { id } });
-  const { setSidebar } = useAppLayoutContext();
+  const { openSidePanel } = useSidePanel();
   const { setSelected: setSiteId } = useSiteDetailsContext();
   const { stats } = site || {};
 
@@ -61,7 +61,7 @@ const SiteSummary = ({ id, ...props }: SiteSummaryProps) => {
                 className="site-summary__button--edit"
                 onClick={() => {
                   setSiteId(id);
-                  setSidebar("editSite");
+                  openSidePanel(sidePanels.editSite);
                 }}
               >
                 <Icon name="edit" /> Edit
