@@ -6,7 +6,7 @@ import { SiteMarkerSvg } from "@/app/sites/views/SitesMap/components/Map/SiteMar
 import { siteFactory, statsFactory } from "@/mocks/factories";
 import { sitesResolvers } from "@/testing/resolvers/sites";
 import { apiUrls } from "@/utils/test-urls";
-import { renderWithMemoryRouter, waitFor, screen, setupServer, userEvent, fireEvent } from "@/utils/test-utils";
+import { fireEvent, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
 
 const { mockOpenSidePanel } = vi.hoisted(() => ({
   mockOpenSidePanel: vi.fn(),

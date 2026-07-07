@@ -6,10 +6,13 @@ import { useCurrentUser } from "@/app/api/query/users";
 import type { User } from "@/app/apiclient";
 import SortIndicator from "@/app/base/components/SortIndicator";
 import TableActions from "@/app/base/components/TableActions";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { useUserSelectionContext } from "@/app/context";
 import { createAccessor } from "@/utils";
 import { useNavigate } from "@/utils/router";
+
+const DeleteUser = lazySidePanel(() => import("@/app/settings/views/Users/components/DeleteUser"));
+const UserEditForm = lazySidePanel(() => import("@/app/settings/views/Users/components/UserForm/UserEditForm"));
 
 type UserColumnDef = ColumnDef<User, Partial<User>>;
 
@@ -130,12 +133,12 @@ export const useUsersTableColumns = () => {
               hasBorder
               onDelete={() => {
                 setSelectedUserId(id);
-                openSidePanel(sidePanels.deleteUser);
+                openSidePanel({ component: DeleteUser, title: "Delete user" });
               }}
               onEdit={() => {
                 if (username !== currentUsername) {
                   setSelectedUserId(id);
-                  openSidePanel(sidePanels.editUser);
+                  openSidePanel({ component: UserEditForm, title: "Edit user" });
                 } else {
                   navigate("/account/details");
                 }

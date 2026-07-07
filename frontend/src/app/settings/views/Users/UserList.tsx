@@ -2,8 +2,10 @@ import { ContentSection, MainToolbar, useSidePanel } from "@canonical/maas-react
 import { SearchBox } from "@canonical/react-components";
 
 import useDebounce from "@/app/base/hooks/useDebouncedValue";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import UsersTable from "@/app/settings/views/Users/components/UsersTable";
+
+const UserAddForm = lazySidePanel(() => import("@/app/settings/views/Users/components/UserForm/UserAddForm"));
 
 const UserList = () => {
   const { openSidePanel } = useSidePanel();
@@ -29,7 +31,7 @@ const UserList = () => {
             />
             <button
               onClick={() => {
-                openSidePanel(sidePanels.addUser);
+                openSidePanel({ component: UserAddForm, title: "Add user" });
               }}
               type="button"
             >

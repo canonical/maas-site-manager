@@ -8,14 +8,16 @@ import get from "lodash/get";
 import { useSite } from "@/app/api/query/sites";
 import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus/AggregatedStatus";
 import {
-  connectionIcons,
-  connectionLabels,
-  getLastSeenText,
+    connectionIcons,
+    connectionLabels,
+    getLastSeenText,
 } from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
+
+const EditSite = lazySidePanel(() => import("@/app/sites/components/EditSite"));
 
 interface SiteSummaryProps extends DOMAttributes<HTMLElement> {
   id: Site["id"];
@@ -61,7 +63,7 @@ const SiteSummary = ({ id, ...props }: SiteSummaryProps) => {
                 className="site-summary__button--edit"
                 onClick={() => {
                   setSiteId(id);
-                  openSidePanel(sidePanels.editSite);
+                  openSidePanel({ component: EditSite, title: "Edit site" });
                 }}
               >
                 <Icon name="edit" /> Edit

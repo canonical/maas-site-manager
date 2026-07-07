@@ -6,11 +6,13 @@ import type { Column, ColumnDef, Header, Row, Table } from "@tanstack/react-tabl
 import pluralize from "pluralize";
 
 import TableActions from "@/app/base/components/TableActions";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { ChangeSourceDropdown } from "@/app/images/components/ImagesTable/ChangeSourceDropdown";
 import type { ImageWithId } from "@/app/images/components/ImagesTable/ImagesTable";
 import SyncStatus from "@/app/images/components/ImagesTable/SyncStatus";
 import { toTitleCase } from "@/utils";
+
+const RemoveAvailableImages = lazySidePanel(() => import("@/app/images/components/RemoveAvailableImages"));
 
 export type ImageColumnDef = ColumnDef<ImageWithId, Partial<ImageWithId>>;
 
@@ -157,7 +159,7 @@ const useImagesTableColumns = () => {
                     if (!row.getIsSelected()) {
                       row.toggleSelected();
                     }
-                    openSidePanel(sidePanels.removeAvailableImages);
+                    openSidePanel({ component: RemoveAvailableImages, title: "Remove available images" });
                   }
                 }}
               />

@@ -1,7 +1,7 @@
 import { useId } from "react";
 
 import { useSidePanel } from "@canonical/maas-react-components";
-import { ActionButton, Button, Input, Label, Notification, Spinner, Select } from "@canonical/react-components";
+import { ActionButton, Button, Input, Label, Notification, Select, Spinner } from "@canonical/react-components";
 import { Field, Formik } from "formik";
 import en from "i18n-iso-countries/langs/en.json";
 import * as Yup from "yup";
@@ -15,7 +15,7 @@ import { useEditSite, useSite } from "@/app/api/query/sites";
 import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
 import FormikFormContent from "@/app/base/components/FormikFormContent";
-import type { ReturnablePanelProps } from "@/app/base/sidePanels";
+import type { ReturnablePanelProps } from "@/app/base/sidePanel";
 import type { SiteDetailsContextValue } from "@/app/context/SiteDetailsContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import { getCountryName } from "@/utils";

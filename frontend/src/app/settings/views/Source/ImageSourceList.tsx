@@ -4,7 +4,11 @@ import { Button } from "@canonical/react-components";
 import ImageSourceListTable from "./components/ImageSourceListTable";
 
 import { useImageSources } from "@/app/api/query/imageSources";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
+
+const AddImageSourceForm = lazySidePanel(
+  () => import("@/app/settings/views/Source/components/ImageSourceForm/AddImageSourceForm"),
+);
 
 const ImageSourceList = () => {
   const { openSidePanel } = useSidePanel();
@@ -19,7 +23,7 @@ const ImageSourceList = () => {
             <Button
               appearance="positive"
               onClick={() => {
-                openSidePanel(sidePanels.addBootSource);
+                openSidePanel({ component: AddImageSourceForm, title: "Add image source" });
               }}
             >
               Add image source

@@ -9,11 +9,14 @@ import LocalTime from "@/app/base/components/LocalTime";
 import SortIndicator from "@/app/base/components/SortIndicator";
 import TableActions from "@/app/base/components/TableActions";
 import TooltipButton from "@/app/base/components/TooltipButton";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus";
 import ConnectionInfo from "@/app/sites/components/SitesTable/ConnectionInfo";
 import ColumnsVisibilityControl from "@/app/sites/components/SitesTable/SitesTableControls/ColumnsVisibilityControl";
 import { createAccessor, getCountryName } from "@/utils";
+
+const RemoveSites = lazySidePanel(() => import("@/app/sites/components/RemoveSites"));
+const EditSite = lazySidePanel(() => import("@/app/sites/components/EditSite"));
 
 export type SiteColumnDef = ColumnDef<Site, Partial<Site>>;
 
@@ -217,13 +220,13 @@ const useSitesTableColumns = ({
                 onDelete={() => {
                   if (id) {
                     setRowSelection({ [id]: true });
-                    openSidePanel(sidePanels.removeSites);
+                    openSidePanel({ component: RemoveSites, title: "Remove sites" });
                   }
                 }}
                 onEdit={() => {
                   if (id) {
                     setSiteId(id);
-                    openSidePanel(sidePanels.editSite);
+                    openSidePanel({ component: EditSite, title: "Edit site" });
                   }
                 }}
               />

@@ -1,12 +1,14 @@
 import { useSidePanel } from "@canonical/maas-react-components";
 import type { GeoJSONSource } from "maplibre-gl";
 
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { useMap } from "@/app/context/MapContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import Popup from "@/app/sites/views/SitesMap/components/Map/MarkersLayer/Popup";
 import SiteSummary from "@/app/sites/views/SitesMap/components/Map/SiteSummary";
 import { useMarkers, usePopup } from "@/app/sites/views/SitesMap/components/Map/hooks";
+
+const SiteDetails = lazySidePanel(() => import("@/app/sites/components/SiteDetails"));
 
 const markerHeight = 47;
 const markerOffset = parseFloat((markerHeight / 2).toFixed(1));
@@ -50,7 +52,7 @@ const MarkersLayer = ({ geojson }: { geojson: GeoJSON.FeatureCollection }) => {
     (id: number) => {
       if (id) {
         setSiteId(id);
-        openSidePanel(sidePanels.siteDetails);
+        openSidePanel({ component: SiteDetails, title: "Site details" });
       }
       hidePopup({ isImmediate: true });
     },

@@ -9,11 +9,13 @@ import ErrorMessage from "@/app/base/components/ErrorMessage";
 import RemoveButton from "@/app/base/components/RemoveButton";
 import docsUrls from "@/app/base/docsUrls";
 import usePagination from "@/app/base/hooks/usePagination";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context";
 import { saveToFile } from "@/utils";
 
 const DEFAULT_PAGE_SIZE = 50;
+
+const TokensCreate = lazySidePanel(() => import("@/app/settings/views/TokensList/components/TokensCreate"));
 
 const TokensList = () => {
   const { openSidePanel } = useSidePanel();
@@ -98,7 +100,7 @@ const TokensList = () => {
             <Button
               className="p-button--positive"
               onClick={() => {
-                openSidePanel(sidePanels.createToken);
+                openSidePanel({ component: TokensCreate, title: "Generate tokens" });
               }}
               type="button"
             >

@@ -10,7 +10,7 @@ import * as Yup from "yup";
 import ErrorMessage from "../../../base/components/ErrorMessage";
 
 import { useDeleteSites, useSite } from "@/app/api/query/sites";
-import type { ReturnablePanelProps } from "@/app/base/sidePanels";
+import type { ReturnablePanelProps } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context";
 
 const initialValues = {

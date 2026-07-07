@@ -1,13 +1,17 @@
 import type { ReactElement } from "react";
 
-import { MainToolbar, ContentSection, useSidePanel } from "@canonical/maas-react-components";
+import { ContentSection, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { Button } from "@canonical/react-components";
 
 import ImagesTable from "../../components/ImagesTable";
 
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context";
+
+const RemoveAvailableImages = lazySidePanel(() => import("@/app/images/components/RemoveAvailableImages"));
+const AddToAvailableImages = lazySidePanel(() => import("@/app/images/components/AddToAvailableImages"));
+const UploadCustomImage = lazySidePanel(() => import("@/app/images/components/UploadCustomImage"));
 
 const ImagesList = (): ReactElement => {
   const { rowSelection } = useRowSelection("images");
@@ -24,13 +28,13 @@ const ImagesList = (): ReactElement => {
               disabled={isDeleteDisabled}
               label="Remove available images"
               onClick={() => {
-                openSidePanel(sidePanels.removeAvailableImages);
+                openSidePanel({ component: RemoveAvailableImages, title: "Remove available images" });
               }}
               type="button"
             />
             <Button
               onClick={() => {
-                openSidePanel(sidePanels.addToAvailableImages);
+                openSidePanel({ component: AddToAvailableImages, title: "Add to available images" });
               }}
               type="button"
             >
@@ -38,7 +42,7 @@ const ImagesList = (): ReactElement => {
             </Button>
             <Button
               onClick={() => {
-                openSidePanel(sidePanels.uploadCustomImage);
+                openSidePanel({ component: UploadCustomImage, title: "Upload custom image" });
               }}
               type="button"
             >

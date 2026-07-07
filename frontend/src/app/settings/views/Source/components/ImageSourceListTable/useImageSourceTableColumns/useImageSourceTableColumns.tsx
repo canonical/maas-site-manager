@@ -3,9 +3,17 @@ import { Button, Icon, Tooltip } from "@canonical/react-components";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { BootSource } from "@/app/apiclient";
-import { sidePanels } from "@/app/base/sidePanels";
+import { lazySidePanel } from "@/app/base/sidePanel";
 import { useBootSourceContext } from "@/app/context/BootSourceContext";
 import { createAccessor } from "@/utils";
+
+const EditCustomImagesSourceForm = lazySidePanel(
+  () => import("@/app/settings/views/Source/components/ImageSourceForm/EditCustomImagesSourceForm"),
+);
+const EditImageSourceForm = lazySidePanel(
+  () => import("@/app/settings/views/Source/components/ImageSourceForm/EditImageSourceForm"),
+);
+const DeleteImageSource = lazySidePanel(() => import("@/app/settings/views/Source/components/DeleteImageSource"));
 
 type BootSourceColumnDef = ColumnDef<BootSource, Partial<BootSource>>;
 
@@ -191,9 +199,9 @@ export const useImageSourceTableColumns = () => {
                 onClick={() => {
                   setSelected(id!);
                   if (url === "custom") {
-                    openSidePanel(sidePanels.editCustomImagesSource);
+                    openSidePanel({ component: EditCustomImagesSourceForm, title: "Edit custom images" });
                   } else {
-                    openSidePanel(sidePanels.editBootSource);
+                    openSidePanel({ component: EditImageSourceForm, title: "Edit image source" });
                   }
                 }}
               >
@@ -206,7 +214,7 @@ export const useImageSourceTableColumns = () => {
                   className="is-dense u-table-cell-padding-overlap"
                   onClick={() => {
                     setSelected(id!);
-                    openSidePanel(sidePanels.deleteBootSource);
+                    openSidePanel({ component: DeleteImageSource, title: "Delete image source" });
                   }}
                 >
                   <Icon name="delete" />
