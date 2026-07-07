@@ -4,6 +4,7 @@ import { useImageSourceTableColumns } from "./useImageSourceTableColumns/useImag
 
 import type { BootSource } from "@/app/apiclient";
 import TableCaption from "@/app/base/components/TableCaption";
+import { isDev } from "@/constants";
 
 type ImageSourcesListTableProps = {
   data: BootSource[];
@@ -20,6 +21,7 @@ const ImageSourceListTable = ({ data, error, isPending }: ImageSourcesListTableP
       className="image-source-table"
       columns={columns}
       data={data}
+      debug={isDev}
       isLoading={isPending}
       loadingVariant="skeleton"
       noData={

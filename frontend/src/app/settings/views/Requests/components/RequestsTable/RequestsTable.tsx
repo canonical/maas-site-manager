@@ -6,6 +6,7 @@ import docsUrls from "@/app/base/docsUrls";
 import usePagination from "@/app/base/hooks/usePagination";
 import { useRowSelection } from "@/app/context/RowSelectionContext/RowSelectionContext";
 import { useRequestsTableColumns } from "@/app/settings/views/Requests/components/RequestsTable/useRequestsTableColumns/useRequestsTableColumns";
+import { isDev } from "@/constants";
 
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -32,6 +33,7 @@ const RequestsTable = () => {
       className="requests-table"
       columns={columns}
       data={data?.items ?? []}
+      debug={isDev}
       isLoading={isPending}
       loadingVariant="skeleton"
       noData={

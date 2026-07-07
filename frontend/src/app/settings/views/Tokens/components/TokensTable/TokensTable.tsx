@@ -5,6 +5,7 @@ import TableCaption from "@/app/base/components/TableCaption";
 import type usePagination from "@/app/base/hooks/usePagination";
 import type { useRowSelection } from "@/app/context";
 import { useTokensTableColumns } from "@/app/settings/views/Tokens/components/TokensTable/useTokensTableColumns/useTokensTableColumns";
+import { isDev } from "@/constants";
 
 type TokensTableProps = Omit<ReturnType<typeof usePagination>, "handleNextClick" | "handlePreviousClick"> &
   Omit<ReturnType<typeof useRowSelection>, "clearRowSelection">;
@@ -30,6 +31,7 @@ const TokensTable = ({
       className="tokens-table"
       columns={columns}
       data={data?.items ?? []}
+      debug={isDev}
       isLoading={isPending}
       loadingVariant="skeleton"
       noData={
