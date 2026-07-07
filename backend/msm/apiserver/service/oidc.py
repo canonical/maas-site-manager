@@ -3,7 +3,7 @@ from typing import (
 )
 
 from httpx import AsyncClient
-from sqlalchemy import Select, insert, select, update
+from sqlalchemy import Select, delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from msm.apiserver.db.models.oidc_provider import (
@@ -26,9 +26,8 @@ from msm.common.oauth2_client import OAuth2Client
 class OIDCService(Service):
     def __init__(self, connection: AsyncConnection):
         super().__init__(connection)
-        #TODO: Cache httpx_client and oauth2_client when we have a service cache
+        # TODO: Cache httpx_client and oauth2_client when we have a service cache
         self.httpx_client = AsyncClient()
-
 
     async def get_by_enabled(self) -> OIDCProvider | None:
         """Get the enabled OIDC provider, if any."""
@@ -166,6 +165,27 @@ class OIDCService(Service):
                 ],
             )
         return OAuth2Client(provider=provider)
+
+    async def delete(self, provider_id: int) -> None:
+        """Delete an existing OIDC provider."""
+        existing_enabled = await self.get_by_enabled()
+        if existing_enabled and existing_enabled.id == provider_id:
+            raise ConflictException(
+                code=ExceptionCode.ALREADY_EXISTS,
+                message="Cannot delete the enabled OIDC provider.",
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.ALREADY_EXISTS,
+                        messages=[
+                            "Please disable the OIDC provider before deleting it."
+                        ],
+                    )
+                ],
+            )
+        stmt = delete(OIDCProviderTable).where(
+            OIDCProviderTable.c.id == provider_id
+        )
+        await self.conn.execute(stmt)
 
     def _select_statement(self, include_metadata: bool = True) -> Select[Any]:
         fields = [
