@@ -1,0 +1,43 @@
+.p-generic-table.tokens-table {
+  thead {
+    padding-top: $sp-medium;
+  }
+
+  .token {
+    width: 50%;
+  }
+
+  .expirationTime,
+  .created {
+    width: 25%;
+    min-width: 10rem;
+  }
+
+  .token-cell {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    &:hover .table-cell__copy-button {
+      opacity: 1;
+    }
+
+    .token-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      direction: rtl;
+    }
+  }
+
+  .p-generic-table__no-data {
+    color: var(--vf-color-text-muted);
+  }
+
+  td.p-generic-table__skeleton-cell {
+    .p-placeholder {
+      height: $sp-large;
+    }
+  }
+}
