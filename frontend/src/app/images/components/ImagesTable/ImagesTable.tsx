@@ -8,6 +8,7 @@ import { filterCells, filterHeaders } from "./useImagesTableColumns/useImagesTab
 import { useSelectedImages } from "@/app/api/query/images";
 import type { SelectedImage } from "@/app/apiclient";
 import { useRowSelection } from "@/app/context";
+import { isDev } from "@/constants";
 
 export type ImageWithId = SelectedImage & { id: number | string };
 
@@ -33,6 +34,7 @@ export const ImagesTable = (): ReactElement => {
       className="images-table"
       columns={columns}
       data={data}
+      debug={isDev}
       filterCells={filterCells}
       filterHeaders={filterHeaders}
       groupBy={["os"]}

@@ -6,6 +6,7 @@ import { useUsers } from "@/app/api/query/users";
 import TableCaption from "@/app/base/components/TableCaption/TableCaption";
 import usePagination from "@/app/base/hooks/usePagination";
 import { useUsersTableColumns } from "@/app/settings/views/Users/components/UsersTable/useUsersTableColumns/useUsersTableColumn";
+import { isDev } from "@/constants";
 import { getSortBy, parseSearchTextToUrlFreeTextSearch } from "@/utils";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -41,6 +42,7 @@ const UsersTable = ({ debounceSearchText }: UsersTableProps) => {
       className="users-table"
       columns={columns}
       data={data?.items ?? []}
+      debug={isDev}
       isLoading={isPending}
       loadingVariant="skeleton"
       noData={
