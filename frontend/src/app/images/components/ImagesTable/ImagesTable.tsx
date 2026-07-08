@@ -37,6 +37,7 @@ export const ImagesTable = (): ReactElement => {
       filterHeaders={filterHeaders}
       groupBy={["os"]}
       isLoading={selectedImages.isPending}
+      loadingVariant="skeleton"
       noData="No images found."
       pinGroup={[{ value: "ubuntu", isTop: true }]}
       selection={{

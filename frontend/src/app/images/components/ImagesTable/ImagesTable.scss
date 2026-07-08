@@ -9,8 +9,26 @@
   }
 }
 
-.images-table {
+.p-generic-table.images-table {
   .custom {
     text-align: center;
+
+    &.p-generic-table__skeleton-cell {
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  td.p-generic-table__skeleton-cell {
+    & > div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+    }
+
+    .p-placeholder {
+      height: $sp-large;
+    }
   }
 }
