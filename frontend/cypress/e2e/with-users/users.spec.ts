@@ -4,6 +4,8 @@ context("Users", () => {
   beforeEach(() => {
     cy.login();
     cy.visit("/settings/users");
+    cy.findByRole("treegrid").should("exist");
+    cy.get("tbody .p-generic-table__skeleton-row", { timeout: LONG_TIMEOUT }).should("have.length", 0);
   });
 
   it("can open and close the 'Add user' form", () => {
@@ -16,8 +18,9 @@ context("Users", () => {
   it("can open and close the 'Edit user' form", () => {
     cy.findAllByRole("row", { timeout: LONG_TIMEOUT })
       .eq(2)
-      .then(($row) => {
-        const username = $row.find("td").eq(0).text();
+      .find("td.username")
+      .invoke("text")
+      .then((username) => {
         cy.findByRole("button", { name: `Edit ${username}` }).click();
         cy.findByRole("form", { name: `Edit ${username}` }).should("be.visible");
         cy.findByRole("button", { name: "Cancel" }).click();
@@ -28,8 +31,9 @@ context("Users", () => {
   it("can open and close the 'Delete user' form", () => {
     cy.findAllByRole("row", { timeout: LONG_TIMEOUT })
       .eq(2)
-      .then(($row) => {
-        const username = $row.find("td").eq(0).text();
+      .find("td.username")
+      .invoke("text")
+      .then((username) => {
         cy.findByRole("button", { name: `Delete ${username}` }).click();
         cy.findByRole("form", { name: `Delete ${username}` }).should("be.visible");
         cy.findByRole("button", { name: "Cancel" }).click();
@@ -47,8 +51,9 @@ context("Users", () => {
   it("closes the form after editing a user", () => {
     cy.findAllByRole("row", { timeout: LONG_TIMEOUT })
       .eq(2)
-      .then(($row) => {
-        const username = $row.find("td").eq(0).text();
+      .find("td.username")
+      .invoke("text")
+      .then((username) => {
         cy.findByRole("button", { name: `Edit ${username}` }).click();
         cy.findByRole("form", { name: `Edit ${username}` }).should("be.visible");
         cy.findByRole("textbox", { name: /Username/i }).type("12345");
@@ -69,19 +74,25 @@ context("Users", () => {
   });
 
   it("can delete a user", () => {
-    const testUsername = "Watto89";
-    cy.findByRole("button", { name: new RegExp(`Delete ${testUsername}`, "i"), timeout: LONG_TIMEOUT }).click();
-    cy.findByPlaceholderText(testUsername).should("exist");
-    cy.findByPlaceholderText(testUsername)
-      .closest("form")
-      .findByRole("button", { name: /delete/i })
-      .should("have.attr", "aria-disabled", "true");
-    cy.findByPlaceholderText(testUsername).type(testUsername);
-    cy.findByPlaceholderText(testUsername)
-      .closest("form")
-      .findByRole("button", { name: /delete/i })
-      .should("not.have.attr", "aria-disabled", "true")
-      .click();
-    cy.findByPlaceholderText(testUsername).should("not.exist");
+    cy.findAllByRole("row", { timeout: LONG_TIMEOUT })
+      .eq(2)
+      .find("td.username")
+      .invoke("text")
+      .then((username) => {
+        cy.findByRole("button", { name: `Delete ${username}` }).click();
+        cy.findByRole("form", { name: `Delete ${username}` }).should("be.visible");
+        cy.findByPlaceholderText(username).should("exist");
+        cy.findByPlaceholderText(username)
+          .closest("form")
+          .findByRole("button", { name: /delete/i })
+          .should("have.attr", "aria-disabled", "true");
+        cy.findByPlaceholderText(username).type(username);
+        cy.findByPlaceholderText(username)
+          .closest("form")
+          .findByRole("button", { name: /delete/i })
+          .should("not.have.attr", "aria-disabled", "true")
+          .click();
+        cy.findByPlaceholderText(username).should("not.exist");
+      });
   });
 });

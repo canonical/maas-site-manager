@@ -11,7 +11,8 @@ pagesWithTable.forEach(({ title, path }) => {
     beforeEach(() => {
       cy.login();
       cy.visit(path);
-      cy.get("tbody .p-checkbox__input", { timeout: LONG_TIMEOUT }).should("have.length.greaterThan", 0);
+      cy.findByRole("treegrid").should("exist");
+      cy.get("tbody .p-generic-table__skeleton-row", { timeout: LONG_TIMEOUT }).should("have.length", 0);
     });
 
     it("clicking unchecked 'select all' checkbox selects all items on the current page", () => {
@@ -23,10 +24,10 @@ pagesWithTable.forEach(({ title, path }) => {
 
     it("clicking partially checked 'select all' checkbox selects all items on the current page", () => {
       cy.get("tbody .p-checkbox__input").first().click({ force: true });
-      cy.findByRole("checkbox", { name: /select all/i }).should("have.attr", "aria-checked", "mixed");
+      cy.findByRole("checkbox", { name: /select all/i }).should("have.prop", "indeterminate", true);
       cy.findByRole("checkbox", { name: /select all/i }).click({ force: true });
       cy.findByRole("checkbox", { name: /select all/i }).should("be.checked");
-      cy.findByRole("checkbox", { name: /select all/i }).should("not.have.attr", "aria-checked", "mixed");
+      cy.findByRole("checkbox", { name: /select all/i }).should("not.have.prop", "indeterminate", true);
       cy.get("tbody .p-checkbox__input:not(:checked)").should("not.exist");
     });
 

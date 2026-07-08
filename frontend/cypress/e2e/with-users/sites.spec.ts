@@ -24,7 +24,8 @@ context("Sites", () => {
   });
 
   it("opens remove sites panel if remove button is pressed", () => {
-    cy.get("tbody .p-checkbox__input", { timeout: LONG_TIMEOUT }).should("have.length.greaterThan", 0);
+    cy.findByRole("treegrid", { name: /Sites table/i }).should("exist");
+    cy.get("tbody .p-generic-table__skeleton-row", { timeout: LONG_TIMEOUT }).should("have.length", 0);
     cy.findByRole("complementary", { name: /Remove sites/i }).should("not.exist");
     cy.findByRole("checkbox", { name: /select all/i }).click({ force: true });
     cy.findByRole("button", { name: /Remove/i }).click();
@@ -32,7 +33,8 @@ context("Sites", () => {
   });
 
   it("can close remove site panel using Escape key", () => {
-    cy.get("tbody .p-checkbox__input", { timeout: LONG_TIMEOUT }).should("have.length.greaterThan", 0);
+    cy.findByRole("treegrid", { name: /Sites table/i }).should("exist");
+    cy.get("tbody .p-generic-table__skeleton-row", { timeout: LONG_TIMEOUT }).should("have.length", 0);
     cy.findByRole("complementary", { name: /Remove sites/i }).should("not.exist");
     cy.findByRole("checkbox", { name: /select all/i }).click({ force: true });
     cy.findByRole("button", { name: /Remove/i }).click();

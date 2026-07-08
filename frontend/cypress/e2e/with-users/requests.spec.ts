@@ -4,6 +4,8 @@ context("Requests", () => {
   beforeEach(() => {
     cy.login();
     cy.visit("/settings/requests");
+    cy.findByRole("treegrid").should("exist");
+    cy.get("tbody .p-generic-table__skeleton-row", { timeout: LONG_TIMEOUT }).should("have.length", 0);
   });
 
   it("goes to the sites page if the user clicks on the sites link", () => {
