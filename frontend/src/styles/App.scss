@@ -80,6 +80,7 @@
 @import "@/styles/vanilla-overrides";
 
 // components styles
+@import "@/app/base/components/LayoutSkeleton/LayoutSkeleton";
 @import "@/app/base/components/MainLayout/MainLayout";
 @import "@/app/base/components/Navigation/Navigation";
 @import "@/app/base/components/StatusBar/StatusBar";

@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 
-import { ContentSection } from "@canonical/maas-react-components";
-import { Application, AppMain, Spinner } from "@canonical/react-components";
+import { Application, AppMain } from "@canonical/react-components";
 import classNames from "classnames";
 
 import { Aside } from "./components/Aside";
 
+import LayoutSkeleton from "@/app/base/components/LayoutSkeleton";
 import DocumentTitle from "@/app/base/components/MainLayout/components/DocumentTitle/DocumentTitle";
 import Navigation from "@/app/base/components/Navigation";
 import SecondaryNavigation from "@/app/base/components/SecondaryNavigation";
@@ -25,6 +25,7 @@ const MainLayout: React.FC = () => {
   const { status } = useAuthContext();
   const isLoggedIn = status === "authenticated";
   const isSideNavVisible = matchPath("/settings/*", pathname) || matchPath("/account/*", pathname);
+  const isTableView = pathname.endsWith("/list") || (pathname.startsWith("/settings/") && pathname !== "/settings/map");
 
   return (
     <Application>
@@ -37,13 +38,7 @@ const MainLayout: React.FC = () => {
         <div className="l-main__content">
           <div className="row">
             <div className="col-12">
-              <Suspense
-                fallback={
-                  <ContentSection>
-                    <Spinner text="Loading..." />
-                  </ContentSection>
-                }
-              >
+              <Suspense fallback={isTableView ? <LayoutSkeleton.TableView /> : <LayoutSkeleton.SettingsView />}>
                 <Outlet />
               </Suspense>
             </div>
