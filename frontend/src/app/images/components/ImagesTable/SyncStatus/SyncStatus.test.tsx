@@ -50,5 +50,5 @@ test("displays DownloadingStatus when image is downloading", () => {
   });
 
   renderWithMemoryRouter(<SyncStatus image={image} />);
-  expect(screen.getByText("Downloading 1%")).toBeInTheDocument();
+  expect(screen.getByText(/Downloading[\s\S]*1\.00%/)).toBeInTheDocument();
 });
