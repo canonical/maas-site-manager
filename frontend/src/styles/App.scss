@@ -96,7 +96,6 @@
 @import "@/app/base/components/CopyButton/CopyButton";
 @import "@/app/base/components/ControlsBar/ControlsBar";
 @import "@/app/base/components/TooltipButton/TooltipButton";
-@import "@/app/base/components/DynamicTable/DynamicTable";
 @import "@/app/sites/views/SitesMap/components/Map/Map";
 @import "@/app/sites/views/SitesMap/SitesMap";
 @import "@/app/sites/views/SitesMap/components/Map/SiteSummary/SiteSummary";
@@ -105,7 +104,6 @@
 @import "@/app/sites/views/SitesMap/components/Map/SiteMarker/SiteMarker";
 @import "@/app/base/components/TableActions/TableActions";
 @import "@/app/sites/components/SiteSelection/SiteSelectionTable/SiteSelectionTable";
-@import "@/app/base/components/PaginationBar/PaginationBar";
 @import "@/app/settings/views/Source/ImageSourceList";
 @import "@/app/images/components/ImagesTable/ImagesTable";
 @include maas-contextual-menu;

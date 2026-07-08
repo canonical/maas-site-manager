@@ -6,7 +6,6 @@ import useLocalStorageState from "use-local-storage-state";
 
 import type { UseSitesResult } from "@/app/api/query/sites";
 import type { SitesGetResponse } from "@/app/apiclient";
-import type { PaginationBarProps } from "@/app/base/components/PaginationBar/PaginationBar";
 import TableCaption from "@/app/base/components/TableCaption/TableCaption";
 import { useAppLayoutContext } from "@/app/context";
 import { useRowSelection } from "@/app/context/RowSelectionContext/RowSelectionContext";
@@ -30,7 +29,16 @@ const SitesTable = ({
 }: Pick<UseSitesResult, "data" | "error" | "isPending"> & {
   searchText: string;
   setSearchText: (text: string) => void;
-  paginationProps: PaginationBarProps;
+  paginationProps: {
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
+    handlePageSizeChange: (size: number) => void;
+    dataContext: string;
+    setCurrentPage: (page: number) => void;
+    isPending: boolean;
+    pageSizes?: number[];
+  };
   sorting: SortingState;
   setSorting: Dispatch<SetStateAction<SortingState>>;
 }) => {
@@ -58,7 +66,7 @@ const SitesTable = ({
         />
       </ContentSection.Header>
       <GenericTable
-        aria-label="sites"
+        aria-label="Sites table"
         className="sites-table"
         columnVisibility={{ columnVisibility, setColumnVisibility }}
         columns={columns}
