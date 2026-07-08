@@ -24,7 +24,8 @@ import {
   getV1TokensGetQueryKey,
   postV1TokensPostMutation,
 } from "@/app/apiclient/@tanstack/react-query.gen";
-import { maxPageSize } from "@/app/base/components/PaginationBar";
+
+const maxPageSize = 200;
 
 export const useTokens = (options?: Options<GetV1TokensGetData>) => {
   return useQuery(
