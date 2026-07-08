@@ -38,8 +38,8 @@ const useSitesTableColumns = ({
             isInteractiveHeader: true,
             skeleton: () => (
               <div>
-                <Placeholder variant="block" width="65%" />
-                <Placeholder variant="block" width="90%" />
+                <Placeholder variant="block" width="16ch" />
+                <Placeholder variant="block" width="24ch" />
               </div>
             ),
           },
@@ -98,8 +98,8 @@ const useSitesTableColumns = ({
           meta: {
             skeleton: () => (
               <div>
-                <Placeholder variant="block" width="50%" />
-                <Placeholder variant="block" width="65%" />
+                <Placeholder variant="block" width="12ch" />
+                <Placeholder variant="block" width="16ch" />
               </div>
             ),
           },
@@ -125,8 +125,8 @@ const useSitesTableColumns = ({
           meta: {
             skeleton: () => (
               <div>
-                <Placeholder variant="block" width="55%" />
-                <Placeholder variant="block" width="80%" />
+                <Placeholder variant="block" width="14ch" />
+                <Placeholder variant="block" width="22ch" />
               </div>
             ),
           },
@@ -157,7 +157,7 @@ const useSitesTableColumns = ({
           accessorFn: createAccessor(["timezone"]),
           header: "Local time (24hr)",
           meta: {
-            skeleton: () => <Placeholder variant="block" width="50%" />,
+            skeleton: () => <Placeholder variant="block" width="10ch" />,
           },
           cell: ({ getValue }) => {
             const { timezone } = getValue();
@@ -175,7 +175,7 @@ const useSitesTableColumns = ({
           accessorFn: createAccessor("stats"),
           header: "Machines",
           meta: {
-            skeleton: () => <Placeholder variant="block" width="30%" />,
+            skeleton: () => <Placeholder variant="block" width="5ch" />,
           },
           cell: ({ getValue }) => {
             const { stats } = getValue();
@@ -190,8 +190,8 @@ const useSitesTableColumns = ({
           meta: {
             skeleton: () => (
               <div>
-                <Placeholder variant="block" width="100%" />
-                <Placeholder variant="block" width="60%" />
+                <Placeholder variant="block" width="18ch" />
+                <Placeholder variant="block" width="12ch" />
               </div>
             ),
           },

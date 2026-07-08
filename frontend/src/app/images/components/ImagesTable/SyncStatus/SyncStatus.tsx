@@ -19,8 +19,9 @@ const QueuedStatus = () => (
 
 const DownloadingStatus = ({ image }: { image: SelectedImage }) => (
   <div>
-    <Icon aria-hidden="true" className="u-animation--spin" name="spinner" /> Downloading{" "}
-    {(image.downloaded / image.size) * 100}%
+    <Icon aria-hidden="true" className="u-animation--spin" name="spinner" /> Downloading
+    <br />
+    {((image.downloaded / image.size) * 100).toFixed(2)}%
   </div>
 );
 
@@ -50,7 +51,11 @@ const getImageStatus = (image: SelectedImage): Status | null => {
 
 const SyncStatusContainer = ({ image }: { image: SelectedImage }) => {
   const status = getImageStatus(image);
-  return status ? <SyncStatus image={image} status={status} /> : <Placeholder isPending />;
+  return status ? (
+    <SyncStatus image={image} status={status} />
+  ) : (
+    <Placeholder height="1rem" variant="block" width="20ch" />
+  );
 };
 
 export default SyncStatusContainer;

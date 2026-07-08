@@ -10,7 +10,7 @@ const SitesCount = ({
   totalSites: number | null;
 }) =>
   isPending ? (
-    <Placeholder isPending={isPending} text="xx" />
+    <Placeholder height="1rem" variant="block" width="10ch" />
   ) : (
     <span>{`${pluralize("MAAS sites", totalSites || 0, !!totalSites)}`}</span>
   );

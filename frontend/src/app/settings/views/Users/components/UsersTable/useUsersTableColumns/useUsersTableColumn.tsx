@@ -109,8 +109,8 @@ export const useUsersTableColumns = () => {
         meta: {
           skeleton: () => (
             <div>
-              <Placeholder variant="block" width="1.5rem" />
-              <Placeholder variant="block" width="1.5rem" />
+              <Placeholder variant="block" width="2ch" />
+              <Placeholder variant="block" width="2ch" />
             </div>
           ),
         },
@@ -123,7 +123,9 @@ export const useUsersTableColumns = () => {
             <TableActions
               className="u-align--right"
               deleteDisabled={currentUsername === username}
+              deleteLabel={`Delete ${username}`}
               deleteTooltip={currentUsername === username ? "You cannot delete your own user." : undefined}
+              editLabel={`Edit ${username}`}
               hasBorder
               onDelete={() => {
                 setSelectedUserId(id);

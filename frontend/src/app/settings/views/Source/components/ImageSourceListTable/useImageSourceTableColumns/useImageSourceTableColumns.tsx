@@ -21,7 +21,7 @@ export const useImageSourceTableColumns = () => {
         accessorFn: createAccessor("name"),
         accessorKey: "name",
         meta: {
-          skeleton: () => <Placeholder variant="block" width="40%" />,
+          skeleton: () => <Placeholder variant="block" width="12ch" />,
         },
         cell: ({ getValue }) => {
           const { name } = getValue();
@@ -34,7 +34,7 @@ export const useImageSourceTableColumns = () => {
         accessorFn: createAccessor("url"),
         accessorKey: "url",
         meta: {
-          skeleton: () => <Placeholder variant="block" width="90%" />,
+          skeleton: () => <Placeholder variant="block" width="28ch" />,
         },
         header: "Source",
         cell: ({ getValue }) => {
@@ -89,7 +89,7 @@ export const useImageSourceTableColumns = () => {
         accessorFn: createAccessor(["sync_interval", "url"]),
         accessorKey: "syncing",
         meta: {
-          skeleton: () => <Placeholder variant="block" width="1.5rem" />,
+          skeleton: () => <Placeholder variant="block" width="2ch" />,
         },
         header: "Syncing",
         cell: ({ getValue }) => {
@@ -127,7 +127,7 @@ export const useImageSourceTableColumns = () => {
         accessorFn: createAccessor(["keyring", "url"]),
         accessorKey: "keyring",
         meta: {
-          skeleton: () => <Placeholder variant="block" width="1.5rem" />,
+          skeleton: () => <Placeholder variant="block" width="2ch" />,
         },
         header: "Signed with GPG key",
         cell: ({ getValue }) => {
@@ -147,7 +147,7 @@ export const useImageSourceTableColumns = () => {
         accessorFn: createAccessor("priority"),
         accessorKey: "priority",
         meta: {
-          skeleton: () => <Placeholder variant="block" width="20%" />,
+          skeleton: () => <Placeholder variant="block" width="4ch" />,
         },
         header: () => (
           <>
@@ -173,8 +173,8 @@ export const useImageSourceTableColumns = () => {
         meta: {
           skeleton: () => (
             <div>
-              <Placeholder variant="block" width="1.5rem" />
-              <Placeholder variant="block" width="1.5rem" />
+              <Placeholder variant="block" width="2ch" />
+              <Placeholder variant="block" width="2ch" />
             </div>
           ),
         },
