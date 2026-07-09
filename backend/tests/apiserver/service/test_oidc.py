@@ -302,3 +302,37 @@ class TestOIDCService:
             await service.update(other.id, OIDCProviderUpdate(enabled=True))
 
         assert excinfo.value.code == ExceptionCode.ALREADY_EXISTS
+
+    async def test_delete_success(
+        self,
+        factory: Factory,
+        service: OIDCService,
+    ) -> None:
+        provider = await insert_provider(
+            factory, name="provider", enabled=False
+        )
+
+        await service.delete(provider.id)
+
+        rows = await factory.get("oidc_provider")
+        assert len(rows) == 0
+
+    async def test_delete_raises_exception_when_enabled(
+        self,
+        factory: Factory,
+        service: OIDCService,
+    ) -> None:
+        provider = await insert_provider(
+            factory, name="provider", enabled=True
+        )
+
+        with pytest.raises(ConflictException) as excinfo:
+            await service.delete(provider.id)
+
+        assert excinfo.value.code == ExceptionCode.ALREADY_EXISTS
+        assert (
+            "Cannot delete the enabled OIDC provider." in excinfo.value.message
+        )
+
+        rows = await factory.get("oidc_provider")
+        assert len(rows) == 1

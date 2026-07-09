@@ -76,6 +76,34 @@ describe("TokensTable", () => {
         ).toBeInTheDocument();
       });
     });
+
+    it("displays created date in UTC", async () => {
+      const date = new Date("Fri Apr 21 2023 14:00:00 GMT+0200 (GMT)");
+      vi.setSystemTime(date);
+      const testTokens = [tokenFactory.build({ created: "2023-04-21T11:30:00.000Z" })];
+
+      mockServer.use(tokensResolvers.listTokens.handler(testTokens));
+
+      renderWithMemoryRouter(<TokensTable {...props} />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/2023-04-21[\s\S]*11:30/i)).toBeInTheDocument();
+      });
+    });
+
+    it("displays time until expiration in UTC", async () => {
+      const date = new Date("Fri Apr 21 2023 14:00:00 GMT+0200 (GMT)");
+      vi.setSystemTime(date);
+      const testTokens = [tokenFactory.build({ expired: "2023-04-21T14:00:00.000Z" })];
+
+      mockServer.use(tokensResolvers.listTokens.handler(testTokens));
+
+      renderWithMemoryRouter(<TokensTable {...props} />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/in[\s\S]*2 hours/i)).toBeInTheDocument();
+      });
+    });
   });
 
   describe("actions", () => {
