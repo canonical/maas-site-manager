@@ -100,22 +100,24 @@ const RemoveSites = () => {
               placeholder={`remove ${sitesCountText}`}
               type="text"
             />
-            <Button
-              appearance="base"
-              onClick={() => {
-                if (previousSidebar) {
-                  setSidebar(previousSidebar);
-                } else {
-                  setSidebar(null);
-                }
-              }}
-              type="button"
-            >
-              Cancel
-            </Button>
-            <Button appearance="negative" disabled={!dirty || isSubmitting} type="submit">
-              <Icon light name="delete" /> Remove
-            </Button>
+            <div className="u-flex u-flex--justify-end u-padding-top--medium">
+              <Button
+                appearance="base"
+                onClick={() => {
+                  if (previousSidebar) {
+                    setSidebar(previousSidebar);
+                  } else {
+                    setSidebar(null);
+                  }
+                }}
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button appearance="negative" disabled={!dirty || isSubmitting} type="submit">
+                <Icon light name="delete" /> Remove
+              </Button>
+            </div>
           </div>
         </Form>
       )}
