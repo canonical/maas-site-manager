@@ -1,7 +1,7 @@
-import { Suspense, useEffect } from "react";
+import { type ReactElement, Suspense, useEffect } from "react";
 
-import { ContentSection } from "@canonical/maas-react-components";
-import { Col, Row, Spinner, useOnEscapePressed, usePrevious, AppAside } from "@canonical/react-components";
+import { ContentSection, Placeholder } from "@canonical/maas-react-components";
+import { Col, Row, useOnEscapePressed, usePrevious, AppAside } from "@canonical/react-components";
 
 import { useAppLayoutContext } from "@/app/context";
 import type { Sidebar } from "@/app/context/AppLayoutContext";
@@ -53,7 +53,7 @@ export const SidebarComponents = ({ sidebar }: { sidebar: NonNullable<Sidebar> }
   return <ComponentToRender />;
 };
 
-export const Aside = () => {
+const Aside = () => {
   const { pathname } = useLocation();
   const previousPathname = usePrevious(pathname);
   const { sidebar, setSidebar } = useAppLayoutContext();
@@ -79,17 +79,42 @@ export const Aside = () => {
     >
       <Row>
         <Col size={12}>
-          <Suspense
-            fallback={
-              <ContentSection>
-                <Spinner text="Loading..." />
-              </ContentSection>
-            }
-          >
-            {sidebar && <SidebarComponents sidebar={sidebar} />}
-          </Suspense>
+          <Suspense fallback={<AsideSkeleton />}>{sidebar && <SidebarComponents sidebar={sidebar} />}</Suspense>
         </Col>
       </Row>
     </AppAside>
   );
 };
+
+const AsideSkeleton = (): ReactElement => {
+  return (
+    <ContentSection aria-hidden="true" className="aside-skeleton">
+      {/* Side panel title skeleton */}
+      <ContentSection.Title>
+        <Placeholder height="2rem" variant="block" width="16ch" />
+      </ContentSection.Title>
+      {/* Side panel form skeleton */}
+      <ContentSection.Content className="aside-skeleton__form">
+        <div className="layout-skeleton__form-description">
+          <Placeholder height="1.5rem" variant="block" width="100%" />
+          <Placeholder height="1.5rem" variant="block" width="70%" />
+        </div>
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div className="layout-skeleton__form-field" key={`aside-skeleton-field-${index}`}>
+            <Placeholder height="1.5rem" variant="block" width="14ch" />
+            <Placeholder height="2.5rem" variant="block" width="100%" />
+          </div>
+        ))}
+      </ContentSection.Content>
+      {/* Side panel footer skeleton */}
+      <ContentSection.Footer className="aside-skeleton__footer">
+        <Placeholder height="2rem" variant="block" width="8ch" />
+        <Placeholder height="2rem" variant="block" width="10ch" />
+      </ContentSection.Footer>
+    </ContentSection>
+  );
+};
+
+Aside.Skeleton = AsideSkeleton;
+
+export default Aside;
