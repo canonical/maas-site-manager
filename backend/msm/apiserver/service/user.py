@@ -80,6 +80,14 @@ class UserService(Service):
                 return models.User(**user._asdict())
         return None
 
+    async def get_by_username(self, username: str) -> models.User | None:
+        """Gets a user by username."""
+        stmt = self._select_statement().where(User.c.username == username)
+        if result := await self.conn.execute(stmt):
+            if user := result.one_or_none():
+                return models.User(**user._asdict())
+        return None
+
     async def get_by_id(self, id: int) -> models.User | None:
         """Gets a user by id."""
         stmt = self._select_statement().where(User.c.id == id)

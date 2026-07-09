@@ -15,6 +15,7 @@ class User(BaseModel):
     username: str
     full_name: str
     is_admin: bool
+    provider_id: int | None = None
     auth_id: UUID
 
 
@@ -33,6 +34,7 @@ class UserCreate(BaseModel):
     full_name: str
     password: str
     is_admin: bool
+    provider_id: int | None = None
 
 
 class UserUpdate(BaseModel):

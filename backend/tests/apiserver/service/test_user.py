@@ -111,3 +111,16 @@ class TestUserService:
         new_password = "new-secret"
         await service.update_password(user.id, new_password)
         assert await service.password_matches(user.id, new_password)
+
+    async def test_get_by_username(
+        self,
+        user: User,
+        service: UserService,
+    ) -> None:
+        assert await service.get_by_username(user.username) == user
+
+    async def test_get_by_username_unknown(
+        self,
+        service: UserService,
+    ) -> None:
+        assert await service.get_by_username("unknown_user") is None

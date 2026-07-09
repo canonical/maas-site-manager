@@ -20,7 +20,13 @@ from msm.apiserver.exceptions.catalog import (
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.oidc import OIDCService
+from msm.apiserver.service.user import UserService
 from msm.common.enums import OIDCProviderAccessTokenType
+from msm.common.oauth2_client import (
+    OAuthCallbackData,
+    OAuthTokenData,
+    OAuthUserData,
+)
 from tests.fixtures.factory import Factory
 
 METADATA = {
@@ -34,8 +40,18 @@ METADATA = {
 
 
 @pytest.fixture
-def service(db_connection: AsyncConnection) -> Iterator[OIDCService]:
-    yield OIDCService(db_connection)
+def mock_users() -> Mock:
+    users = Mock(spec=UserService)
+    users.get_by_username = AsyncMock(return_value=None)
+    users.create = AsyncMock()
+    return users
+
+
+@pytest.fixture
+def service(
+    db_connection: AsyncConnection, mock_users: Mock
+) -> Iterator[OIDCService]:
+    yield OIDCService(db_connection, mock_users)
 
 
 def make_create_details(
@@ -88,6 +104,48 @@ async def insert_provider(
         "oidc_provider", OIDCProviderTable.c.name == name
     )
     return OIDCProvider(**row)
+
+
+def make_user_data(
+    email: str = "user@example.com",
+    name: str = "Test User",
+) -> OAuthUserData:
+    return OAuthUserData(
+        sub="sub-123",
+        email=email,
+        given_name="Test",
+        family_name="User",
+        name=name,
+    )
+
+
+def make_callback_data(
+    user_data: OAuthUserData | None = None,
+) -> OAuthCallbackData:
+    tokens = OAuthTokenData(
+        access_token="access-token",
+        id_token=Mock(),
+        refresh_token="refresh-token",
+    )
+    return OAuthCallbackData(
+        tokens=tokens,
+        user_info=user_data or make_user_data(),
+    )
+
+
+def patch_oauth_client(
+    mocker: MockerFixture,
+    service: OIDCService,
+    callback_data: OAuthCallbackData,
+) -> Mock:
+    mock_client = Mock()
+    mock_client.callback = AsyncMock(return_value=callback_data)
+    mock_client.provider = Mock()
+    mock_client.provider.id = 1
+    mocker.patch.object(
+        service, "_get_oauth_client", AsyncMock(return_value=mock_client)
+    )
+    return mock_client
 
 
 def mock_metadata_response(
@@ -336,3 +394,56 @@ class TestOIDCService:
 
         rows = await factory.get("oidc_provider")
         assert len(rows) == 1
+
+    async def test_get_callback_returns_tokens(
+        self,
+        mocker: MockerFixture,
+        factory: Factory,
+        service: OIDCService,
+        mock_users: Mock,
+    ) -> None:
+        await insert_provider(factory)
+        callback_data = make_callback_data()
+        mock_client = patch_oauth_client(mocker, service, callback_data)
+
+        result = await service.get_callback(
+            code="auth-code", nonce="nonce-123"
+        )
+
+        assert result == callback_data.tokens
+        mock_client.callback.assert_awaited_once_with(
+            code="auth-code", nonce="nonce-123"
+        )
+        mock_users.create.assert_awaited_once()
+
+    async def test_login_or_create_user_creates_user_when_not_found(
+        self,
+        service: OIDCService,
+        mock_users: Mock,
+    ) -> None:
+        user_data = make_user_data()
+        mock_users.get_by_username.return_value = None
+
+        await service._login_or_create_user(user=user_data, provider_id=42)
+
+        mock_users.get_by_username.assert_awaited_once_with(user_data.email)
+        mock_users.create.assert_awaited_once()
+        details = mock_users.create.call_args.kwargs["details"]
+        assert details.email == user_data.email
+        assert details.username == user_data.email
+        assert details.full_name == user_data.name
+        assert details.is_admin is False
+        assert details.provider_id == 42
+
+    async def test_login_or_create_user_skips_creation_when_user_exists(
+        self,
+        service: OIDCService,
+        mock_users: Mock,
+    ) -> None:
+        user_data = make_user_data()
+        mock_users.get_by_username.return_value = Mock()
+
+        await service._login_or_create_user(user=user_data, provider_id=42)
+
+        mock_users.get_by_username.assert_awaited_once_with(user_data.email)
+        mock_users.create.assert_not_awaited()

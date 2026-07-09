@@ -12,6 +12,7 @@ from msm.apiserver.db.models.oidc_provider import (
     OIDCProviderMetadata,
     OIDCProviderUpdate,
 )
+from msm.apiserver.db.models.user import UserCreate
 from msm.apiserver.db.tables import OIDCProvider as OIDCProviderTable
 from msm.apiserver.exceptions.catalog import (
     BadGatewayException,
@@ -20,14 +21,20 @@ from msm.apiserver.exceptions.catalog import (
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.base import Service
-from msm.common.oauth2_client import OAuth2Client
+from msm.apiserver.service.user import UserService
+from msm.common.oauth2_client import (
+    OAuth2Client,
+    OAuthTokenData,
+    OAuthUserData,
+)
 
 
 class OIDCService(Service):
-    def __init__(self, connection: AsyncConnection):
+    def __init__(self, connection: AsyncConnection, users: UserService):
         super().__init__(connection)
         # TODO: Cache httpx_client and oauth2_client when we have a service cache
         self.httpx_client = AsyncClient()
+        self.users = users
 
     async def get_by_enabled(self) -> OIDCProvider | None:
         """Get the enabled OIDC provider, if any."""
@@ -186,6 +193,34 @@ class OIDCService(Service):
             OIDCProviderTable.c.id == provider_id
         )
         await self.conn.execute(stmt)
+
+    async def get_callback(self, code: str, nonce: str) -> OAuthTokenData:
+        """Handle the OIDC callback and deal with user creation or login."""
+        client = await self._get_oauth_client()
+        data = await client.callback(code=code, nonce=nonce)
+        tokens, user_info = data.tokens, data.user_info
+        await self._login_or_create_user(
+            user=user_info, provider_id=client.provider.id
+        )
+        return tokens
+
+    async def _login_or_create_user(
+        self, user: OAuthUserData, provider_id: int
+    ) -> None:
+        """Login or create a user based on the OIDC user info."""
+        # OIDC users should be identified by their email which is set as their username
+        if not await self.users.get_by_username(user.email):
+            # Create a new user if not found
+            await self.users.create(
+                details=UserCreate(
+                    email=user.email,
+                    username=user.email,
+                    full_name=user.name or "",
+                    password="",
+                    is_admin=False,
+                    provider_id=provider_id,
+                )
+            )
 
     def _select_statement(self, include_metadata: bool = True) -> Select[Any]:
         fields = [

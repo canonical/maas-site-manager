@@ -99,6 +99,9 @@ User = Table(
     Column("password", Text, nullable=False),  # this is the hashed password
     Column("is_admin", Boolean, nullable=False, default=False),
     Column(
+        "provider_id", Integer, ForeignKey("oidc_provider.id"), nullable=True
+    ),
+    Column(
         "auth_id",
         UUID(as_uuid=True),
         nullable=False,
