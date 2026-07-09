@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { RenderOptions, RenderResult } from "@testing-library/react";
 import { screen, render, waitForElementToBeRemoved } from "@testing-library/react";
 
-import MainLayout from "@/app/base/components/MainLayout";
+import Layout from "@/app/base/components/Layout";
 import { AppLayoutContextProvider, AuthContextProvider, RowSelectionContextProviders } from "@/app/context";
 import type { MemoryRouterProps } from "@/utils/router";
 import { MemoryRouter } from "@/utils/router";
@@ -33,7 +33,7 @@ const makeProvidersWithMemoryRouter =
           <AppLayoutContextProvider>
             <AuthContextProvider>
               <RowSelectionContextProviders>
-                {withMainLayout ? <MainLayout /> : null}
+                {withMainLayout ? <Layout /> : null}
                 {children}
               </RowSelectionContextProviders>
             </AuthContextProvider>
