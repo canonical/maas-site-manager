@@ -29,6 +29,7 @@ def upgrade() -> None:
         "oidc_provider",
         ["provider_id"],
         ["id"],
+        ondelete="CASCADE",
     )
     # ### end Alembic commands ###
 

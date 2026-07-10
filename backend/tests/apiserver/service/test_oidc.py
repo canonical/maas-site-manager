@@ -416,7 +416,7 @@ class TestOIDCService:
         )
         mock_users.create.assert_awaited_once()
 
-    async def test_login_or_create_user_creates_user_when_not_found(
+    async def test_create_user_if_not_exists_creates_user_when_not_found(
         self,
         service: OIDCService,
         mock_users: Mock,
@@ -424,7 +424,9 @@ class TestOIDCService:
         user_data = make_user_data()
         mock_users.get_by_username.return_value = None
 
-        await service._login_or_create_user(user=user_data, provider_id=42)
+        await service._create_user_if_not_exists(
+            user=user_data, provider_id=42
+        )
 
         mock_users.get_by_username.assert_awaited_once_with(user_data.email)
         mock_users.create.assert_awaited_once()
@@ -435,15 +437,42 @@ class TestOIDCService:
         assert details.is_admin is False
         assert details.provider_id == 42
 
-    async def test_login_or_create_user_skips_creation_when_user_exists(
+    async def test_create_user_if_not_exists_skips_creation_when_user_exists_with_matching_provider(
         self,
         service: OIDCService,
         mock_users: Mock,
     ) -> None:
         user_data = make_user_data()
-        mock_users.get_by_username.return_value = Mock()
+        existing_user = Mock()
+        existing_user.provider_id = 42
+        mock_users.get_by_username.return_value = existing_user
 
-        await service._login_or_create_user(user=user_data, provider_id=42)
+        await service._create_user_if_not_exists(
+            user=user_data, provider_id=42
+        )
 
+        mock_users.get_by_username.assert_awaited_once_with(user_data.email)
+        mock_users.create.assert_not_awaited()
+
+    async def test_create_user_if_not_exists_provider_id_mismatch(
+        self,
+        service: OIDCService,
+        mock_users: Mock,
+    ) -> None:
+        user_data = make_user_data()
+        existing_user = Mock()
+        existing_user.provider_id = 99  # Different provider
+        mock_users.get_by_username.return_value = existing_user
+
+        with pytest.raises(ConflictException) as excinfo:
+            await service._create_user_if_not_exists(
+                user=user_data, provider_id=42
+            )
+
+        assert excinfo.value.code == ExceptionCode.ALREADY_EXISTS
+        assert (
+            "User already exists with a different OIDC provider."
+            in excinfo.value.message
+        )
         mock_users.get_by_username.assert_awaited_once_with(user_data.email)
         mock_users.create.assert_not_awaited()

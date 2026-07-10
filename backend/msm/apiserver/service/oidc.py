@@ -199,18 +199,18 @@ class OIDCService(Service):
         client = await self._get_oauth_client()
         data = await client.callback(code=code, nonce=nonce)
         tokens, user_info = data.tokens, data.user_info
-        await self._login_or_create_user(
+        await self._create_user_if_not_exists(
             user=user_info, provider_id=client.provider.id
         )
         return tokens
 
-    async def _login_or_create_user(
+    async def _create_user_if_not_exists(
         self, user: OAuthUserData, provider_id: int
     ) -> None:
-        """Login or create a user based on the OIDC user info."""
+        """Create a new user if they do not already exist."""
         # OIDC users should be identified by their email which is set as their username
-        if not await self.users.get_by_username(user.email):
-            # Create a new user if not found
+        existing_user = await self.users.get_by_username(user.email)
+        if not existing_user:
             await self.users.create(
                 details=UserCreate(
                     email=user.email,
@@ -220,6 +220,20 @@ class OIDCService(Service):
                     is_admin=False,
                     provider_id=provider_id,
                 )
+            )
+            return
+        if existing_user.provider_id != provider_id:
+            raise ConflictException(
+                code=ExceptionCode.ALREADY_EXISTS,
+                message="User already exists with a different OIDC provider.",
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.ALREADY_EXISTS,
+                        messages=[
+                            "Please use the correct OIDC provider to log in."
+                        ],
+                    )
+                ],
             )
 
     def _select_statement(self, include_metadata: bool = True) -> Select[Any]:
