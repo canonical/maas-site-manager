@@ -25,7 +25,7 @@ import {
   postV1TokensPostMutation,
 } from "@/app/apiclient/@tanstack/react-query.gen";
 
-const maxPageSize = 200;
+const maxPageSize = 100;
 
 export const useTokens = (options?: Options<GetV1TokensGetData>) => {
   return useQuery(
