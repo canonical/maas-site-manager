@@ -21,8 +21,38 @@
   }
 }
 
-.l-aside.is-maas-site-manager {
+.l-aside {
   background: var(--vf-color-background-default);
+
+  .section-header--side-panel {
+    display: none;
+  }
+}
+
+.aside-skeleton {
+  .aside-skeleton__header {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .aside-skeleton__form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding-bottom: 0.75rem;
+
+    .aside-skeleton__form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+
+  .aside-skeleton__footer {
+    display: flex;
+    justify-content: end;
+    gap: 1rem;
+  }
 }
 
 .layout-skeleton {
@@ -58,7 +88,6 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
-
       }
 
       &.actions {

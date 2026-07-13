@@ -8,7 +8,7 @@ import type { RenderOptions, RenderResult } from "@testing-library/react";
 import { render, screen, waitForElementToBeRemoved } from "@testing-library/react";
 
 import Layout from "@/app/base/components/Layout";
-import { AppLayoutContextProvider, AuthContextProvider, RowSelectionContextProviders } from "@/app/context";
+import { AuthContextProvider, RowSelectionContextProviders } from "@/app/context";
 import type { MemoryRouterProps } from "@/utils/router";
 import { MemoryRouter } from "@/utils/router";
 
@@ -35,14 +35,12 @@ const makeProvidersWithMemoryRouter =
     return (
       <Providers>
         <MemoryRouter {...memoryRouterProps}>
-          <AppLayoutContextProvider>
-            <AuthContextProvider>
-              <RowSelectionContextProviders>
-                {withMainLayout ? <Layout /> : null}
-                {children}
-              </RowSelectionContextProviders>
-            </AuthContextProvider>
-          </AppLayoutContextProvider>
+          <AuthContextProvider>
+            <RowSelectionContextProviders>
+              {withMainLayout ? <Layout /> : null}
+              {children}
+            </RowSelectionContextProviders>
+          </AuthContextProvider>
         </MemoryRouter>
       </Providers>
     );

@@ -1,8 +1,7 @@
 import type { ComponentType } from "react";
 import { lazy, Suspense } from "react";
 
-import { ContentSection } from "@canonical/maas-react-components";
-import { Spinner } from "@canonical/react-components";
+import { ContentSection, Placeholder } from "@canonical/maas-react-components";
 
 /**
  * Props shared by side panels that can be opened on top of another panel (e.g.
@@ -40,8 +39,29 @@ export const lazySidePanel = (loader: () => Promise<{ default: ComponentType }>)
   const SidePanelContent = (props: Record<string, unknown>) => (
     <Suspense
       fallback={
-        <ContentSection>
-          <Spinner text="Loading..." />
+        <ContentSection aria-hidden="true" className="aside-skeleton">
+          {/* Side panel title skeleton */}
+          <ContentSection.Title>
+            <Placeholder height="2rem" variant="block" width="16ch" />
+          </ContentSection.Title>
+          {/* Side panel form skeleton */}
+          <ContentSection.Content className="aside-skeleton__form">
+            <div className="layout-skeleton__form-description">
+              <Placeholder height="1.5rem" variant="block" width="100%" />
+              <Placeholder height="1.5rem" variant="block" width="70%" />
+            </div>
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div className="layout-skeleton__form-field" key={`aside-skeleton-field-${index}`}>
+                <Placeholder height="1.5rem" variant="block" width="14ch" />
+                <Placeholder height="2.5rem" variant="block" width="100%" />
+              </div>
+            ))}
+          </ContentSection.Content>
+          {/* Side panel footer skeleton */}
+          <ContentSection.Footer className="aside-skeleton__footer">
+            <Placeholder height="2rem" variant="block" width="8ch" />
+            <Placeholder height="2rem" variant="block" width="10ch" />
+          </ContentSection.Footer>
         </ContentSection>
       }
     >
