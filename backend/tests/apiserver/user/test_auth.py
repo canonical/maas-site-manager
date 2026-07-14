@@ -38,6 +38,8 @@ AUTHENTICATED_ROUTES = (
     ("GET", "/api/v1/selectable-images"),
     ("POST", "/api/v1/selectable-images:select"),
     ("GET", "/api/v1/bootasset-items/{id}"),
+    ("GET", "/api/v1/external_auth:get_active"),
+    ("POST", "/api/v1/external_auth"),
     ("GET", "/api/v1/selected-images"),
     ("POST", "/api/v1/selected-images:remove"),
     ("GET", "/api/v1/settings"),
