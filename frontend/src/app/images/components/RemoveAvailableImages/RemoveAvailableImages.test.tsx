@@ -6,38 +6,19 @@ import * as context from "@/app/context";
 import { imageResolvers } from "@/testing/resolvers/images";
 import { apiUrls } from "@/utils/test-urls";
 import {
-  getByTextContent,
-  render,
-  renderWithMemoryRouter,
-  screen,
-  setupServer,
-  userEvent,
-  waitFor,
+    getByTextContent,
+    mockSidePanel,
+    render,
+    renderWithMemoryRouter,
+    screen,
+    setupServer,
+    userEvent,
+    waitFor,
 } from "@/utils/test-utils";
 
 const mockServer = setupServer(imageResolvers.removeImageFromSelection.handler(), imageResolvers.removeImage.handler());
 
-const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
+const { mockClose } = await mockSidePanel();
 
 const clearRowSelection = vi.fn();
 
@@ -79,7 +60,7 @@ describe("RemoveAvailableImages", () => {
       expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     });
     await userEvent.click(screen.getByRole("button", { name: /Cancel/i }));
-    expect(mockCloseSidePanel).toHaveBeenCalled();
+    expect(mockClose).toHaveBeenCalled();
 
     expect(clearRowSelection).toHaveBeenCalled();
 

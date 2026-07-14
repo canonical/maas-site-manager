@@ -1,36 +1,12 @@
 import ImagesTable from "@/app/images/components/ImagesTable/ImagesTable";
 import { selectedImageFactory } from "@/mocks/factories";
 import { imageResolvers } from "@/testing/resolvers/images";
-import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
+import { mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
 
 const images = selectedImageFactory.buildList(2, { os: "Hannah Montana Linux" });
 const mockServer = setupServer(imageResolvers.selectedImages.handler(images));
 
-const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+const { mockOpen } = await mockSidePanel();
 
 beforeAll(() => {
   mockServer.listen();
@@ -89,7 +65,7 @@ describe("ImagesTable", () => {
       await userEvent.click(screen.getByRole("button", { name: "Delete" }));
 
       await waitFor(() => {
-        expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove available images" }));
+        expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove available images" }));
       });
     });
   });

@@ -1,28 +1,8 @@
 import UserList from "./UserList";
 
-import { renderWithMemoryRouter, screen, userEvent } from "@/utils/test-utils";
+import { mockSidePanel, renderWithMemoryRouter, screen, userEvent } from "@/utils/test-utils";
 
-const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
+const { mockOpen } = await mockSidePanel();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -46,7 +26,7 @@ describe("UserList", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Add user" }));
 
-      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Add user" }));
+      expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Add user" }));
     });
   });
 });

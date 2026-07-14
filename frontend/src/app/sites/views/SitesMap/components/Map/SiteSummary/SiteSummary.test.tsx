@@ -6,28 +6,9 @@ import { SiteMarkerSvg } from "@/app/sites/views/SitesMap/components/Map/SiteMar
 import { siteFactory, statsFactory } from "@/mocks/factories";
 import { sitesResolvers } from "@/testing/resolvers/sites";
 import { apiUrls } from "@/utils/test-urls";
-import { fireEvent, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
+import { fireEvent, mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
 
-const { mockOpenSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: vi.fn(),
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
+const { mockOpen } = await mockSidePanel();
 
 const stats = statsFactory.build();
 const site = siteFactory.build({ url: "https://example.com", stats });
@@ -87,7 +68,7 @@ it("opens the edit site sidebar when the edit button is clicked", async () => {
 
   await userEvent.click(screen.getByRole("button", { name: "Edit" }));
 
-  expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit site" }));
+  expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit site" }));
 });
 
 it("keeps the increased marker size when hovering over the site summary", async () => {

@@ -5,32 +5,12 @@ import SitesTable from "./SitesTable";
 import { TimeZone } from "@/app/apiclient";
 import { enrollmentRequestFactory, siteFactory, sitesQueryResultFactory, statsFactory } from "@/mocks/factories";
 import { enrollmentRequestsResolvers } from "@/testing/resolvers/enrollmentRequests";
-import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
+import { mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
 
 const enrollmentRequests = enrollmentRequestFactory.buildList(2);
 const mockServer = setupServer(enrollmentRequestsResolvers.listEnrollmentRequests.handler(enrollmentRequests));
 
-const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
+const { mockOpen } = await mockSidePanel();
 
 const mockUseSiteDetailsContext = vi.spyOn(await import("@/app/context/SiteDetailsContext"), "useSiteDetailsContext");
 
@@ -232,7 +212,7 @@ describe("SitesTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
       expect(mockSetSiteId).toHaveBeenCalledWith(item.id);
-      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit site" }));
+      expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit site" }));
     });
 
     it("opens the remove sites sidebar when delete is clicked", async () => {
@@ -251,7 +231,7 @@ describe("SitesTable", () => {
 
       await userEvent.click(within(row).getByRole("button", { name: "Delete" }));
 
-      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove sites" }));
+      expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove sites" }));
     });
 
     it("enables bulk remove when a row is selected and opens the remove sidebar", async () => {
@@ -276,7 +256,7 @@ describe("SitesTable", () => {
 
       await userEvent.click(removeButton);
 
-      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove sites" }));
+      expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Remove sites" }));
     });
   });
 });

@@ -15,7 +15,7 @@ import { saveToFile } from "@/utils";
 
 const DEFAULT_PAGE_SIZE = 50;
 
-const TokensCreate = lazySidePanel(() => import("@/app/settings/views/TokensList/components/TokensCreate"));
+const TokensCreate = lazySidePanel(() => import("@/app/settings/views/Tokens/components/TokensCreate"));
 
 const TokensList = () => {
   const { openSidePanel } = useSidePanel();

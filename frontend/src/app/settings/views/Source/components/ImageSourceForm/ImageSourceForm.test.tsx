@@ -4,28 +4,9 @@ import ImageSourceForm from "./ImageSourceForm";
 
 import { BootSourceContext } from "@/app/context/BootSourceContext";
 import { imageSourceResolvers, mockImageSources } from "@/testing/resolvers/imageSources";
-import { render, screen, userEvent, waitFor } from "@/utils/test-utils";
+import { mockSidePanel, render, screen, userEvent, waitFor } from "@/utils/test-utils";
 
-const { mockCloseSidePanel } = vi.hoisted(() => ({
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: vi.fn(),
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
+const { mockClose } = await mockSidePanel();
 
 const mockServer = setupServer(
   imageSourceResolvers.getImageSource.handler(),
@@ -118,6 +99,6 @@ it("closes the side panel and resets selected source when 'Cancel' is clicked", 
     expect(setSelected).toHaveBeenCalledWith(null);
   });
   await waitFor(() => {
-    expect(mockCloseSidePanel).toHaveBeenCalled();
+    expect(mockClose).toHaveBeenCalled();
   });
 });

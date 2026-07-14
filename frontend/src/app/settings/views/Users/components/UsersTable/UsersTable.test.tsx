@@ -1,31 +1,11 @@
 import UsersTable from "./UsersTable";
 
 import { mockUsers, usersResolvers } from "@/testing/resolvers/users";
-import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
+import { mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
 
 const mockServer = setupServer(usersResolvers.listUsers.handler(), usersResolvers.getCurrentUser.handler(mockUsers[0]));
 
-const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
+const { mockOpen } = await mockSidePanel();
 
 const mockUseUserSelectionContext = vi.spyOn(await import("@/app/context"), "useUserSelectionContext");
 const mockUseNavigate = vi.spyOn(await import("@/utils/router"), "useNavigate");
@@ -146,7 +126,7 @@ describe("UsersTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: /Edit/ }));
 
       expect(mockSetSelectedUserId).toHaveBeenCalledWith(editableUser.id);
-      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit user" }));
+      expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Edit user" }));
     });
 
     it("redirects to personal details if a user tries to edit themselves", async () => {
@@ -165,7 +145,7 @@ describe("UsersTable", () => {
 
       expect(mockNavigate).toHaveBeenCalledWith("/account/details");
       expect(mockSetSelectedUserId).not.toHaveBeenCalled();
-      expect(mockOpenSidePanel).not.toHaveBeenCalled();
+      expect(mockOpen).not.toHaveBeenCalled();
     });
 
     it("disables delete and shows a tooltip if a user tries to delete themselves", async () => {
@@ -205,7 +185,7 @@ describe("UsersTable", () => {
       await userEvent.click(within(row).getByRole("button", { name: /Delete/ }));
 
       expect(mockSetSelectedUserId).toHaveBeenCalledWith(editableUser.id);
-      expect(mockOpenSidePanel).toHaveBeenCalledWith(expect.objectContaining({ title: "Delete user" }));
+      expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ title: "Delete user" }));
     });
   });
 });

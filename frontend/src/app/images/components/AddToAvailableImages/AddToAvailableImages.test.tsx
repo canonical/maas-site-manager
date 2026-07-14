@@ -6,7 +6,7 @@ import type { SelectableImage } from "@/app/apiclient";
 import { selectableImageFactory } from "@/mocks/factories";
 import { imageResolvers } from "@/testing/resolvers/images";
 import { apiUrls } from "@/utils/test-urls";
-import { renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
+import { mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
 
 const ubuntuImages = selectableImageFactory.buildList(5, { os: "Ubuntu" });
 const centOsImages = selectableImageFactory.buildList(5, { os: "CentOS" });
@@ -17,31 +17,7 @@ const mockServer = setupServer(
   imageResolvers.addImageToSelection.handler(),
 );
 
-const { mockOpenSidePanel, mockCloseSidePanel } = vi.hoisted(() => ({
-  mockOpenSidePanel: vi.fn(),
-  mockCloseSidePanel: vi.fn(),
-}));
-
-vi.mock("@canonical/maas-react-components", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useSidePanel: () => ({
-      openSidePanel: mockOpenSidePanel,
-      closeSidePanel: mockCloseSidePanel,
-      setSidePanelSize: vi.fn(),
-      isOpen: false,
-      title: "",
-      size: "regular" as const,
-      component: null,
-      props: {},
-    }),
-  };
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+const { mockClose } = await mockSidePanel();
 
 beforeAll(() => {
   mockServer.listen();
@@ -74,7 +50,7 @@ describe("AddToAvailableImages", () => {
       expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     });
     await userEvent.click(screen.getByRole("button", { name: /Cancel/i }));
-    expect(mockCloseSidePanel).toHaveBeenCalled();
+    expect(mockClose).toHaveBeenCalled();
   });
 
   it("enabled submission when form is edited and calls add image on save click", async () => {
