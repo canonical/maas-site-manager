@@ -1,3 +1,4 @@
+// TODO: Upstream the lazy loader and side panel to maas-react-components
 import type { ComponentType } from "react";
 import { lazy, Suspense } from "react";
 
