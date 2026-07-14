@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import (
     Select,
     delete,
+    func,
     insert,
     select,
     update,
@@ -208,6 +209,16 @@ class UserService(Service):
                 hashed_password = row[0]
                 return verify_password(password, hashed_password)
         return False
+
+    async def count_by_provider(self, provider_id: int) -> int:
+        """Counts the number of users associated with a given provider ID."""
+        stmt = (
+            select(func.count())
+            .select_from(User)
+            .where(User.c.provider_id == provider_id)
+        )
+        count = (await self.conn.execute(stmt)).scalar_one()
+        return count
 
     async def delete(self, user_id: int) -> None:
         """Deletes a user by ID."""

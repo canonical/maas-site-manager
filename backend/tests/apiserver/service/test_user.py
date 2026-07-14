@@ -124,3 +124,43 @@ class TestUserService:
         service: UserService,
     ) -> None:
         assert await service.get_by_username("unknown_user") is None
+
+    async def test_count_by_provider(
+        self,
+        factory: Factory,
+        service: UserService,
+    ) -> None:
+        [provider] = await factory.create(
+            "oidc_provider",
+            [
+                {
+                    "name": "provider",
+                    "client_id": "client",
+                    "client_secret": "secret",
+                    "issuer_url": "https://issuer.com/",
+                    "redirect_uri": "https://example.com/callback",
+                    "scopes": "openid profile email",
+                    "enabled": True,
+                    "metadata": {},
+                }
+            ],
+        )
+        provider_id = provider["id"]
+        for index in range(3):
+            user_id = await factory.next_id("user")
+            await factory.create(
+                "user",
+                [
+                    {
+                        "id": user_id,
+                        "email": f"user{user_id}@example.com",
+                        "username": f"user{user_id}",
+                        "full_name": "User",
+                        "password": "hashed",
+                        "is_admin": False,
+                        "provider_id": provider_id,
+                    }
+                ],
+            )
+
+        assert await service.count_by_provider(provider_id) == 3

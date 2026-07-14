@@ -15,6 +15,7 @@ from msm.apiserver.service.images import (
     IndexNotFound,
     IndexService,
 )
+from msm.apiserver.service.oidc import OIDCService
 from msm.apiserver.service.s3 import S3Service
 from msm.apiserver.service.settings import SettingsService
 from msm.apiserver.service.site import (
@@ -76,6 +77,10 @@ class ServiceCollection:
         )
         self.site_profiles = SiteProfileService(connection)
         self.site_state = SiteStateService(connection)
+        self.oidc = OIDCService(
+            connection,
+            users=self.users,
+        )
 
     @property
     def services(self) -> Iterable[Service]:
@@ -100,6 +105,7 @@ class ServiceCollection:
             self.index_service,
             self.site_profiles,
             self.site_state,
+            self.oidc,
         ]
 
     @classmethod
@@ -124,6 +130,7 @@ __all__ = [
     "IndexNotFound",
     "IndexService",
     "InvalidPendingSites",
+    "OIDCService",
     "S3Service",
     "ServiceCollection",
     "SettingsService",
