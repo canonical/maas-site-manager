@@ -5,7 +5,15 @@ import SitesTable from "./SitesTable";
 import { TimeZone } from "@/app/apiclient";
 import { enrollmentRequestFactory, siteFactory, sitesQueryResultFactory, statsFactory } from "@/mocks/factories";
 import { enrollmentRequestsResolvers } from "@/testing/resolvers/enrollmentRequests";
-import { mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
+import {
+  mockSidePanel,
+  renderWithMemoryRouter,
+  screen,
+  setupServer,
+  userEvent,
+  waitFor,
+  within,
+} from "@/utils/test-utils";
 
 const enrollmentRequests = enrollmentRequestFactory.buildList(2);
 const mockServer = setupServer(enrollmentRequestsResolvers.listEnrollmentRequests.handler(enrollmentRequests));

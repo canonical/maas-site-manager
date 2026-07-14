@@ -6,14 +6,14 @@ import * as context from "@/app/context";
 import { imageResolvers } from "@/testing/resolvers/images";
 import { apiUrls } from "@/utils/test-urls";
 import {
-    getByTextContent,
-    mockSidePanel,
-    render,
-    renderWithMemoryRouter,
-    screen,
-    setupServer,
-    userEvent,
-    waitFor,
+  getByTextContent,
+  mockSidePanel,
+  render,
+  renderWithMemoryRouter,
+  screen,
+  setupServer,
+  userEvent,
+  waitFor,
 } from "@/utils/test-utils";
 
 const mockServer = setupServer(imageResolvers.removeImageFromSelection.handler(), imageResolvers.removeImage.handler());

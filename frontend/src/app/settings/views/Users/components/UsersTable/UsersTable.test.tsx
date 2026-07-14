@@ -1,7 +1,15 @@
 import UsersTable from "./UsersTable";
 
 import { mockUsers, usersResolvers } from "@/testing/resolvers/users";
-import { mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor, within } from "@/utils/test-utils";
+import {
+  mockSidePanel,
+  renderWithMemoryRouter,
+  screen,
+  setupServer,
+  userEvent,
+  waitFor,
+  within,
+} from "@/utils/test-utils";
 
 const mockServer = setupServer(usersResolvers.listUsers.handler(), usersResolvers.getCurrentUser.handler(mockUsers[0]));
 

@@ -6,7 +6,15 @@ import { SiteMarkerSvg } from "@/app/sites/views/SitesMap/components/Map/SiteMar
 import { siteFactory, statsFactory } from "@/mocks/factories";
 import { sitesResolvers } from "@/testing/resolvers/sites";
 import { apiUrls } from "@/utils/test-urls";
-import { fireEvent, mockSidePanel, renderWithMemoryRouter, screen, setupServer, userEvent, waitFor } from "@/utils/test-utils";
+import {
+  fireEvent,
+  mockSidePanel,
+  renderWithMemoryRouter,
+  screen,
+  setupServer,
+  userEvent,
+  waitFor,
+} from "@/utils/test-utils";
 
 const { mockOpen } = await mockSidePanel();
 
