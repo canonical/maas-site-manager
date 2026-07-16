@@ -15,11 +15,13 @@ class TestConfigService:
     ) -> None:
         await factory.make_Config("service_identifier", value="12345")
         await factory.make_Config("token_secret_key", value="secret")
+        await factory.make_Config("encryption_key", value="abcde")
         service = ConfigService(db_connection)
         config = await service.get()
         assert config == Config(
             service_identifier="12345",
             token_secret_key="secret",
+            encryption_key="abcde",
         )
 
     async def test_get_no_extra_entries(
@@ -48,10 +50,12 @@ class TestConfigService:
     ) -> None:
         mocker.patch.object(config, "uuid4").return_value = "a-b-c"
         mocker.patch.object(config, "generate_key").return_value = "abcde"
+
         service = ConfigService(db_connection)
         await service.ensure()
         configs = await factory.get("config")
-        assert configs == [
+        assert sorted(configs, key=lambda c: c["name"]) == [
+            {"name": "encryption_key", "value": "abcde"},
             {"name": "service_identifier", "value": "a-b-c"},
             {"name": "token_secret_key", "value": "abcde"},
         ]
@@ -61,10 +65,12 @@ class TestConfigService:
     ) -> None:
         await factory.make_Config("service_identifier", value="12345")
         await factory.make_Config("token_secret_key", value="secret")
+        await factory.make_Config("encryption_key", value="abcde")
         service = ConfigService(db_connection)
         await service.ensure()
         configs = await factory.get("config")
-        assert configs == [
+        assert sorted(configs, key=lambda c: c["name"]) == [
+            {"name": "encryption_key", "value": "abcde"},
             {"name": "service_identifier", "value": "12345"},
             {"name": "token_secret_key", "value": "secret"},
         ]
