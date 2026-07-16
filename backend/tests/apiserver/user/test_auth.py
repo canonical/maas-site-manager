@@ -75,7 +75,10 @@ AUTHENTICATED_ROUTES = (
     ("POST", "/api/v1/worker-refresh"),
 )
 
-UNAUTHENTICATED_ROUTES = (("POST", "/api/v1/login"),)
+UNAUTHENTICATED_ROUTES = (
+    ("POST", "/api/v1/login"),
+    ("GET", "/api/v1/external_auth/callback"),
+)
 
 ADMIN_ROUTES = (
     ("GET", "/api/v1/settings"),

@@ -221,9 +221,7 @@ class TestCallbackHandler:
             code="auth-code", nonce=nonce
         )
 
-    async def test_callback_invalid_state(
-        self, admin_client: Client
-    ) -> None:
+    async def test_callback_invalid_state(self, admin_client: Client) -> None:
         response = await admin_client.get(
             "/external_auth/callback",
             params={"code": "auth-code", "state": make_state()},
