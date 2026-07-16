@@ -1,15 +1,24 @@
+import base64
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from pytest_mock import MockerFixture, MockType
 
+from msm.apiserver.db.models import Config
 from msm.apiserver.db.models.oidc_provider import (
     OIDCProvider,
     OIDCProviderMetadata,
 )
 from msm.apiserver.db.tables import OIDCProvider as OIDCProviderTable
 from msm.apiserver.exceptions.constants import ExceptionCode
+from msm.common.cookie_manager import (
+    MSM_NONCE_COOKIE_NAME,
+    MSM_STATE_COOKIE_NAME,
+)
+from msm.common.encryptor import Encryptor
 from msm.common.enums import OIDCProviderAccessTokenType
+from msm.common.oauth2_client import OAuthTokenData
 from tests.fixtures.client import Client
 from tests.fixtures.factory import Factory
 
@@ -167,3 +176,59 @@ class TestCreateHandler:
         response = await admin_client.post("/external_auth", json={})
 
         assert response.status_code == 422
+
+
+def make_state(target: str = "/dashboard") -> str:
+    encoded_target = base64.urlsafe_b64encode(target.encode()).decode()
+    return f"{encoded_target}.signature"
+
+
+@pytest.mark.asyncio
+class TestCallbackHandler:
+    async def test_callback_success(
+        self,
+        admin_client: Client,
+        api_config: Config,
+        mocker: MockerFixture,
+    ) -> None:
+        encryptor = Encryptor(bytes.fromhex(api_config.encryption_key))
+        state = make_state("/dashboard")
+        nonce = "nonce-123"
+        admin_client.cookies.set(
+            MSM_STATE_COOKIE_NAME, encryptor.encrypt(state)
+        )
+        admin_client.cookies.set(
+            MSM_NONCE_COOKIE_NAME, encryptor.encrypt(nonce)
+        )
+        tokens = OAuthTokenData(
+            access_token="access-token",
+            id_token=Mock(encoded="id-token"),
+            refresh_token="refresh-token",
+        )
+        mock_get_callback = mocker.patch(
+            "msm.apiserver.service.oidc.OIDCService.get_callback",
+            return_value=tokens,
+        )
+
+        response = await admin_client.get(
+            "/external_auth/callback",
+            params={"code": "auth-code", "state": state},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["redirect_target"] == "/dashboard"
+        mock_get_callback.assert_awaited_once_with(
+            code="auth-code", nonce=nonce
+        )
+
+    async def test_callback_invalid_state(
+        self, admin_client: Client
+    ) -> None:
+        response = await admin_client.get(
+            "/external_auth/callback",
+            params={"code": "auth-code", "state": make_state()},
+        )
+
+        assert response.status_code == 401
+        error = response.json()["error"]
+        assert error["code"] == ExceptionCode.INVALID_CREDENTIALS

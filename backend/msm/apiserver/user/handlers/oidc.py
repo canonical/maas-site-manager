@@ -9,11 +9,13 @@ from msm.apiserver.db.models import (
     User,
 )
 from msm.apiserver.dependencies import (
+    cookie_manager,
     services,
 )
 from msm.apiserver.exceptions.catalog import (
     BaseExceptionDetail,
     NotFoundException,
+    UnauthorizedException,
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
@@ -25,9 +27,11 @@ from msm.apiserver.exceptions.responses import (
 from msm.apiserver.service import ServiceCollection
 from msm.apiserver.user.auth import authenticated_admin
 from msm.common.api.oidc import (
+    CallbackTargetResponse,
     OIDCProviderCreateRequest,
     OIDCProviderResponse,
 )
+from msm.common.cookie_manager import EncryptedCookieManager, MSMOAuth2Cookie
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -77,3 +81,49 @@ async def create(
 ) -> OIDCProviderResponse:
     provider = await services.oidc.create(post_request)
     return OIDCProviderResponse.from_model(provider, user_count=0)
+
+
+@v1_router.get(
+    "/external_auth/callback",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def callback(
+    cookie_manager: Annotated[EncryptedCookieManager, Depends(cookie_manager)],
+    services: Annotated[ServiceCollection, Depends(services)],
+    code: str,
+    state: str,
+) -> CallbackTargetResponse:
+    """Handle the OAuth callback by exchanging the authorization code for tokens."""
+    stored_state = cookie_manager.get_cookie(key=MSMOAuth2Cookie.AUTH_STATE)
+    stored_nonce = cookie_manager.get_cookie(key=MSMOAuth2Cookie.AUTH_NONCE)
+    if not stored_state or not stored_nonce or stored_state != state:
+        raise UnauthorizedException(
+            code=ExceptionCode.INVALID_CREDENTIALS,
+            message="Invalid state parameter.",
+            details=[
+                BaseExceptionDetail(
+                    reason=ExceptionCode.INVALID_CREDENTIALS,
+                    messages=["Invalid or missing OAuth state/nonce."],
+                    field="state",
+                    location="query",
+                )
+            ],
+        )
+    # Exchange the authorization code for tokens
+    tokens = await services.oidc.get_callback(code=code, nonce=stored_nonce)
+    cookie_manager.set_auth_cookie(
+        key=MSMOAuth2Cookie.OAUTH2_ACCESS_TOKEN,
+        value=tokens.access_token
+        if isinstance(tokens.access_token, str)
+        else tokens.access_token.encoded,
+    )
+    cookie_manager.set_auth_cookie(
+        key=MSMOAuth2Cookie.OAUTH2_ID_TOKEN, value=tokens.id_token.encoded
+    )
+    cookie_manager.set_auth_cookie(
+        key=MSMOAuth2Cookie.OAUTH2_REFRESH_TOKEN, value=tokens.refresh_token
+    )
+    return CallbackTargetResponse.from_state(state)

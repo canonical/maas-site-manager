@@ -18,5 +18,15 @@ class ConfigService(DBBackedModelService[models.Config]):
         values = {
             "service_identifier": str(uuid4()),
             "token_secret_key": generate_key(),
+            "encryption_key": generate_key(),
         }
         return [{"name": key, "value": values[key]} for key in keys]
+
+    async def get_encryption_key(self) -> bytes:
+        """Return the AES-256-GCM encryption key as raw bytes.
+
+        The key is stored hex-encoded, so it is decoded back into the 32 raw
+        bytes expected by AESGCM.
+        """
+        config = await self.get()
+        return bytes.fromhex(config.encryption_key)

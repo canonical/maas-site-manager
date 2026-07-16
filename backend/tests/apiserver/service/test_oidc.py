@@ -19,6 +19,7 @@ from msm.apiserver.exceptions.catalog import (
     ConflictException,
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
+from msm.apiserver.service.config import ConfigService
 from msm.apiserver.service.oidc import OIDCService
 from msm.apiserver.service.user import UserService
 from msm.common.enums import OIDCProviderAccessTokenType
@@ -48,10 +49,15 @@ def mock_users() -> Mock:
 
 
 @pytest.fixture
+def mock_config() -> Mock:
+    return Mock(spec=ConfigService)
+
+
+@pytest.fixture
 def service(
-    db_connection: AsyncConnection, mock_users: Mock
+    db_connection: AsyncConnection, mock_users: Mock, mock_config: Mock
 ) -> Iterator[OIDCService]:
-    yield OIDCService(db_connection, mock_users)
+    yield OIDCService(db_connection, mock_users, mock_config)
 
 
 def make_create_details(

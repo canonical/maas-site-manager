@@ -21,7 +21,9 @@ from msm.apiserver.exceptions.catalog import (
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.base import Service
+from msm.apiserver.service.config import ConfigService
 from msm.apiserver.service.user import UserService
+from msm.common.encryptor import Encryptor
 from msm.common.oauth2_client import (
     OAuth2Client,
     OAuthTokenData,
@@ -30,11 +32,17 @@ from msm.common.oauth2_client import (
 
 
 class OIDCService(Service):
-    def __init__(self, connection: AsyncConnection, users: UserService):
+    def __init__(
+        self,
+        connection: AsyncConnection,
+        users: UserService,
+        config: ConfigService,
+    ):
         super().__init__(connection)
         # TODO: Cache httpx_client and oauth2_client when we have a service cache
         self.httpx_client = AsyncClient()
         self.users = users
+        self.config = config
 
     async def get_by_enabled(self) -> OIDCProvider | None:
         """Get the enabled OIDC provider, if any."""
@@ -117,6 +125,10 @@ class OIDCService(Service):
                 )
             ],
         )
+
+    async def get_encryptor(self) -> Encryptor:
+        encryption_key = await self.config.get_encryption_key()
+        return Encryptor(encryption_key)
 
     async def _fetch_metadata(self, issuer_url: str) -> OIDCProviderMetadata:
         """Fetch OIDC provider metadata from the well-known endpoint."""

@@ -79,6 +79,7 @@ class ServiceCollection:
         self.site_state = SiteStateService(connection)
         self.oidc = OIDCService(
             connection,
+            config=self.config,
             users=self.users,
         )
 
