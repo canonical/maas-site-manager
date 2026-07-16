@@ -37,7 +37,7 @@ v1_router = APIRouter(prefix="/v1")
 
 
 @v1_router.get(
-    "/external_auth",
+    "/external-auth",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         403: {"model": ForbiddenErrorResponseModel},
@@ -68,7 +68,7 @@ async def get_active_provider(
 
 
 @v1_router.post(
-    "/external_auth",
+    "/external-auth",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},
@@ -84,7 +84,7 @@ async def create(
 
 
 @v1_router.get(
-    "/external_auth/callback",
+    "/external-auth/callback",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         422: {"model": ValidationErrorResponseModel},

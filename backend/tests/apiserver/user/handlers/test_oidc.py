@@ -116,7 +116,7 @@ class TestGetActiveHandler:
         provider = await insert_provider(factory, enabled=True)
         await link_users(factory, provider.id, 2)
 
-        response = await admin_client.get("/external_auth")
+        response = await admin_client.get("/external-auth")
 
         assert response.status_code == 200
         data = response.json()
@@ -126,7 +126,7 @@ class TestGetActiveHandler:
         assert data["user_count"] == 2
 
     async def test_get_active_not_found(self, admin_client: Client) -> None:
-        response = await admin_client.get("/external_auth")
+        response = await admin_client.get("/external-auth")
 
         assert response.status_code == 404
         error = response.json()["error"]
@@ -142,7 +142,7 @@ class TestCreateHandler:
         mock_fetch_metadata: MockType,
     ) -> None:
         response = await admin_client.post(
-            "/external_auth", json=make_create_request()
+            "/external-auth", json=make_create_request()
         )
 
         assert response.status_code == 200
@@ -165,7 +165,7 @@ class TestCreateHandler:
         await insert_provider(factory, name="existing", enabled=True)
 
         response = await admin_client.post(
-            "/external_auth", json=make_create_request(name="new")
+            "/external-auth", json=make_create_request(name="new")
         )
 
         assert response.status_code == 409
@@ -173,7 +173,7 @@ class TestCreateHandler:
         assert error["code"] == ExceptionCode.ALREADY_EXISTS
 
     async def test_create_invalid_request(self, admin_client: Client) -> None:
-        response = await admin_client.post("/external_auth", json={})
+        response = await admin_client.post("/external-auth", json={})
 
         assert response.status_code == 422
 
@@ -211,7 +211,7 @@ class TestCallbackHandler:
         )
 
         response = await admin_client.get(
-            "/external_auth/callback",
+            "/external-auth/callback",
             params={"code": "auth-code", "state": state},
         )
 
@@ -223,7 +223,7 @@ class TestCallbackHandler:
 
     async def test_callback_invalid_state(self, admin_client: Client) -> None:
         response = await admin_client.get(
-            "/external_auth/callback",
+            "/external-auth/callback",
             params={"code": "auth-code", "state": make_state()},
         )
 
