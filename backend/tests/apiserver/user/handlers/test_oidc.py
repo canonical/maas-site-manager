@@ -116,7 +116,7 @@ class TestGetActiveHandler:
         provider = await insert_provider(factory, enabled=True)
         await link_users(factory, provider.id, 2)
 
-        response = await admin_client.get("/external_auth:get_active")
+        response = await admin_client.get("/external_auth")
 
         assert response.status_code == 200
         data = response.json()
@@ -126,7 +126,7 @@ class TestGetActiveHandler:
         assert data["user_count"] == 2
 
     async def test_get_active_not_found(self, admin_client: Client) -> None:
-        response = await admin_client.get("/external_auth:get_active")
+        response = await admin_client.get("/external_auth")
 
         assert response.status_code == 404
         error = response.json()["error"]

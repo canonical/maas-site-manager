@@ -37,14 +37,14 @@ v1_router = APIRouter(prefix="/v1")
 
 
 @v1_router.get(
-    "/external_auth:get_active",
+    "/external_auth",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},
         403: {"model": ForbiddenErrorResponseModel},
         404: {"model": NotFoundErrorResponseModel},
     },
 )
-async def get_active(
+async def get_active_provider(
     services: Annotated[ServiceCollection, Depends(services)],
     authenticated_admin: Annotated[User, Depends(authenticated_admin)],
 ) -> OIDCProviderResponse:
