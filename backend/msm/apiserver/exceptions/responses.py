@@ -224,6 +224,26 @@ class NotFoundErrorResponse(JSONResponse):
         )
 
 
+class ConflictErrorBodyResponse(ErrorBodyResponse):
+    code: ExceptionCode = ExceptionCode.CONFLICT
+    message: str = "Conflict"
+    status_code: int = Field(status.HTTP_409_CONFLICT, exclude=True)
+
+
+class ConflictErrorResponseModel(
+    ErrorResponseModel[ConflictErrorBodyResponse]
+):
+    pass
+
+
+class ConflictErrorResponse(JSONResponse):
+    def __init__(self, err: ConflictErrorResponseModel):
+        super().__init__(
+            content=jsonable_encoder(err, exclude_none=True),
+            status_code=err.error.status_code,
+        )
+
+
 class FileTooLargeErrorBodyResponse(ErrorBodyResponse):
     code: ExceptionCode = ExceptionCode.FILE_TOO_LARGE
     message: str = "Uploaded file is too large"

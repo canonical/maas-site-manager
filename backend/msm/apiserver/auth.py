@@ -137,6 +137,14 @@ class AccessTokenResponse(BaseModel):
     rotation_interval_minutes: int
 
 
+class AuthInfoResponse(BaseModel):
+    """Content for a response returning authentication flow information."""
+
+    auth_url: str | None = None
+    provider_name: str | None = None
+    oidc: bool
+
+
 def token_response(
     config: Config,
     auth_id: UUID,
