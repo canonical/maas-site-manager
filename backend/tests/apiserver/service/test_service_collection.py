@@ -23,7 +23,7 @@ class TestServiceCollection:
         """Test that services property returns all service instances."""
         services = list(collection.services)
 
-        assert len(services) == 17
+        assert len(services) == 18
         assert collection.boot_asset_items in services
         assert collection.boot_asset_versions in services
         assert collection.boot_assets in services
@@ -31,6 +31,7 @@ class TestServiceCollection:
         assert collection.boot_sources in services
         assert collection.config in services
         assert collection.index_service in services
+        assert collection.oidc_revoked_tokens in services
         assert collection.s3 in services
         assert collection.settings in services
         assert collection.sites in services
