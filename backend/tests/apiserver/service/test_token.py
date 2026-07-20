@@ -1,10 +1,11 @@
 from datetime import timedelta
+import hashlib
 import uuid
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from msm.apiserver.service.token import TokenService
+from msm.apiserver.service.token import OIDCRevokedTokenService, TokenService
 from msm.common.jwt import (
     JWT,
     TokenAudience,
@@ -228,3 +229,140 @@ class TestTokenService:
         # SITE token should still be in the database
         db_tokens = await factory.get("token")
         assert len(db_tokens) == 1
+
+
+# Helpers shared across OIDCRevokedTokenService tests
+_METADATA = {
+    "authorization_endpoint": "https://issuer.com/authorize",
+    "token_endpoint": "https://issuer.com/token",
+    "jwks_uri": "https://issuer.com/jwks",
+}
+
+# OIDC users have username == email in this project.
+_OIDC_EMAIL = "oidcuser@example.com"
+
+
+async def _insert_provider(factory: Factory) -> int:
+    """Insert a minimal OIDC provider and return its id."""
+    await factory.create(
+        "oidc_provider",
+        [
+            {
+                "name": "test-provider",
+                "client_id": "client",
+                "client_secret": "secret",
+                "issuer_url": "https://issuer.com/",
+                "redirect_uri": "https://example.com/callback",
+                "scopes": "openid",
+                "token_type": "OPAQUE",
+                "enabled": True,
+                "metadata": _METADATA,
+            }
+        ],
+    )
+    [row] = await factory.get("oidc_provider")
+    return row["id"]
+
+
+async def _insert_oidc_user(factory: Factory) -> None:
+    """Insert an OIDC user whose username equals their email (project convention)."""
+    await factory.make_User(username=_OIDC_EMAIL, email=_OIDC_EMAIL)
+
+
+@pytest.mark.asyncio
+class TestOIDCRevokedTokenService:
+    async def test_create_revoked_token_stores_hash(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        """Raw token must never be stored; only its SHA-256 hash."""
+        provider_id = await _insert_provider(factory)
+        await _insert_oidc_user(factory)
+        raw_token = "super-secret-refresh-token"
+
+        service = OIDCRevokedTokenService(db_connection)
+        result = await service.create_revoked_token(
+            token=raw_token,
+            provider_id=provider_id,
+            email=_OIDC_EMAIL,
+        )
+
+        expected_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        assert result.token_hash == expected_hash
+        assert result.token_hash != raw_token
+        assert result.provider_id == provider_id
+        assert result.user_email == _OIDC_EMAIL
+
+    async def test_create_revoked_token_persisted(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        """Created row must be visible in the database."""
+        provider_id = await _insert_provider(factory)
+        await _insert_oidc_user(factory)
+
+        service = OIDCRevokedTokenService(db_connection)
+        await service.create_revoked_token(
+            token="my-token",
+            provider_id=provider_id,
+            email=_OIDC_EMAIL,
+        )
+
+        rows = await factory.get("oidc_revoked_token")
+        assert len(rows) == 1
+        assert rows[0]["token_hash"] == hashlib.sha256(b"my-token").hexdigest()
+
+    async def test_is_revoked_true(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        """A token whose hash is in the denylist must be reported as revoked."""
+        provider_id = await _insert_provider(factory)
+        await _insert_oidc_user(factory)
+        raw_token = "revoked-token"
+
+        service = OIDCRevokedTokenService(db_connection)
+        await service.create_revoked_token(
+            token=raw_token,
+            provider_id=provider_id,
+            email=_OIDC_EMAIL,
+        )
+
+        assert await service.is_revoked(raw_token) is True
+
+    async def test_is_revoked_false(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        """A token not in the denylist must not be reported as revoked."""
+        service = OIDCRevokedTokenService(db_connection)
+        assert await service.is_revoked("unknown-token") is False
+
+    async def test_is_revoked_different_token(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        """A different token must not be considered revoked even if another is."""
+        provider_id = await _insert_provider(factory)
+        await _insert_oidc_user(factory)
+
+        service = OIDCRevokedTokenService(db_connection)
+        await service.create_revoked_token(
+            token="revoked-token",
+            provider_id=provider_id,
+            email=_OIDC_EMAIL,
+        )
+
+        assert await service.is_revoked("other-token") is False
+
+    async def test_make_oidc_revoked_token_factory(
+        self, factory: Factory, db_connection: AsyncConnection
+    ) -> None:
+        """Factory helper must insert a row and return a valid model."""
+        provider_id = await _insert_provider(factory)
+        await _insert_oidc_user(factory)
+
+        token = await factory.make_OIDCRevokedToken(
+            user_email=_OIDC_EMAIL, provider_id=provider_id
+        )
+
+        assert token.id is not None
+        assert token.provider_id == provider_id
+        assert token.user_email == _OIDC_EMAIL
+        rows = await factory.get("oidc_revoked_token")
+        assert len(rows) == 1

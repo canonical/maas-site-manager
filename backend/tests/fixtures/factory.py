@@ -29,6 +29,7 @@ from msm.apiserver.db.models import (
     BootSourceSelection,
     ConnectionStatus,
     Coordinates,
+    OIDCRevokedToken,
     PendingSite,
     Site,
     SiteData,
@@ -568,6 +569,29 @@ class Factory:
             ],
         )
         return BootAssetItem(**row)
+
+    async def make_OIDCRevokedToken(
+        self,
+        token_hash: str = "a" * 64,
+        user_email: str = "test@example.com",
+        provider_id: int | None = None,
+        revoked_at: datetime | None = None,
+    ) -> OIDCRevokedToken:
+        """Create an OIDCRevokedToken."""
+        if revoked_at is None:
+            revoked_at = self.now
+        [row] = await self.create(
+            "oidc_revoked_token",
+            [
+                {
+                    "token_hash": token_hash,
+                    "revoked_at": revoked_at,
+                    "user_email": user_email,
+                    "provider_id": provider_id,
+                }
+            ],
+        )
+        return OIDCRevokedToken(**row)
 
 
 @pytest.fixture
