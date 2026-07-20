@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from datetime import timedelta
+import hashlib
 from typing import (
     Any,
 )
@@ -9,6 +10,8 @@ from prometheus_client import Counter
 from sqlalchemy import (
     Select,
     delete,
+    exists,
+    insert,
     select,
 )
 
@@ -16,6 +19,7 @@ from msm.apiserver.db import (
     models,
     queries,
 )
+from msm.apiserver.db.tables import OIDCRevokedToken as OIDCRevokedTokenTable
 from msm.apiserver.db.tables import Token
 from msm.apiserver.service.base import Service
 from msm.common.jwt import (
@@ -182,3 +186,41 @@ class TokenService(Service):
             Token.c.created,
             Token.c.site_id,
         ).select_from(Token)
+
+
+class OIDCRevokedTokenService(Service):
+    """Service for managing revoked OIDC refresh tokens."""
+
+    def _hash_token(self, token: str) -> str:
+        """Return the SHA-256 hex digest of a raw token."""
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    async def create_revoked_token(
+        self, token: str, provider_id: int, email: str
+    ) -> models.OIDCRevokedToken:
+        """Revoke a token. Raw token is never stored — only its SHA-256 hash."""
+        token_hash = self._hash_token(token)
+        stmt = insert(OIDCRevokedTokenTable).returning(
+            *OIDCRevokedTokenTable.c.values()
+        )
+        result = await self.conn.execute(
+            stmt,
+            [
+                {
+                    "token_hash": token_hash,
+                    "revoked_at": now_utc(),
+                    "user_email": email,
+                    "provider_id": provider_id,
+                }
+            ],
+        )
+        return models.OIDCRevokedToken(**result.one()._asdict())
+
+    async def is_revoked(self, token: str) -> bool:
+        """Return True if the token's hash exists in the denylist."""
+        token_hash = self._hash_token(token)
+        stmt = select(
+            exists().where(OIDCRevokedTokenTable.c.token_hash == token_hash)
+        )
+        result = await self.conn.execute(stmt)
+        return bool(result.scalar())

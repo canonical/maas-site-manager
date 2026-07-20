@@ -29,6 +29,7 @@ from msm.apiserver.service.temporal import (
     TemporalService,
 )
 from msm.apiserver.service.token import TokenService
+from msm.apiserver.service.token import OIDCRevokedTokenService
 from msm.apiserver.service.user import UserService
 
 
@@ -41,6 +42,7 @@ class ServiceCollection:
         self.config = ConfigService(connection)
         self.sites = SiteService(connection)
         self.tokens = TokenService(connection)
+        self.oidc_revoked_tokens = OIDCRevokedTokenService(connection)
         self.users = UserService(connection)
         self.settings = SettingsService(connection)
         self.temporal_service = TemporalService(
@@ -96,6 +98,7 @@ class ServiceCollection:
             self.temporal_service,
             self.workflow_service,
             self.tokens,
+            self.oidc_revoked_tokens,
             self.users,
             self.sites,
             self.boot_sources,
@@ -131,6 +134,7 @@ __all__ = [
     "IndexNotFound",
     "IndexService",
     "InvalidPendingSites",
+    "OIDCRevokedTokenService",
     "OIDCService",
     "S3Service",
     "ServiceCollection",
