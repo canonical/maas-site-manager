@@ -46,8 +46,7 @@ from msm.apiserver.db.models.site_profiles import (
     SiteProfileStored,
     SiteProfileUpdate,
 )
-from msm.apiserver.db.models.token import Token
-from msm.apiserver.db.models.token import OIDCRevokedToken
+from msm.apiserver.db.models.token import OIDCRevokedToken, Token
 from msm.apiserver.db.models.user import (
     User,
     UserCreate,

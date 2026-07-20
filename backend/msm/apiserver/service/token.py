@@ -19,8 +19,7 @@ from msm.apiserver.db import (
     models,
     queries,
 )
-from msm.apiserver.db.tables import OIDCRevokedToken as OIDCRevokedTokenTable
-from msm.apiserver.db.tables import Token
+from msm.apiserver.db.tables import OIDCRevokedToken as OIDCRevokedTokenTable, Token
 from msm.apiserver.service.base import Service
 from msm.common.jwt import (
     JWT,

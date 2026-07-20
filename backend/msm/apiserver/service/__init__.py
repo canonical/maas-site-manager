@@ -28,8 +28,7 @@ from msm.apiserver.service.temporal import (
     BootSourceWorkflowService,
     TemporalService,
 )
-from msm.apiserver.service.token import TokenService
-from msm.apiserver.service.token import OIDCRevokedTokenService
+from msm.apiserver.service.token import OIDCRevokedTokenService, TokenService
 from msm.apiserver.service.user import UserService
 
 

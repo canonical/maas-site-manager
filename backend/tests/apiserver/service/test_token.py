@@ -261,7 +261,7 @@ async def _insert_provider(factory: Factory) -> int:
         ],
     )
     [row] = await factory.get("oidc_provider")
-    return row["id"]
+    return int(row["id"])
 
 
 async def _insert_oidc_user(factory: Factory) -> None:
