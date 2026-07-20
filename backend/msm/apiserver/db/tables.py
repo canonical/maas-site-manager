@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     Integer,
     MetaData,
+    String,
     Table,
     Text,
     UniqueConstraint,
@@ -344,4 +345,38 @@ OIDCProvider = Table(
     ),
     Column("enabled", Boolean, nullable=False, default=False),
     Column("metadata", JSONB, nullable=False),
+)
+
+
+OIDCRevokedToken = Table(
+    "oidc_revoked_token",
+    METADATA,
+    Column("id", Integer, primary_key=True),
+    Column("token_hash", String(64), nullable=False),
+    Column("revoked_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "user_email",
+        String(150),
+        ForeignKey(
+            "user.username",
+            ondelete="CASCADE",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+        nullable=False,
+    ),
+    Column(
+        "provider_id",
+        Integer,
+        ForeignKey(
+            "oidc_provider.id",
+            ondelete="CASCADE",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+        nullable=False,
+    ),
+    UniqueConstraint("token_hash", "provider_id"),
+    Index(None, "user_email"),
+    Index(None, "provider_id"),
 )

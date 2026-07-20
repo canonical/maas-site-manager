@@ -20,3 +20,13 @@ class Token(BaseModel):
     def is_expired(self) -> bool:
         """Whether the token is expired."""
         return self.expired < now_utc()
+
+
+class OIDCRevokedToken(BaseModel):
+    """A revoked OIDC refresh token entry."""
+
+    id: int
+    token_hash: str
+    revoked_at: AwareDatetime
+    user_email: str
+    provider_id: int

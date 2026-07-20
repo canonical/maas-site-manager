@@ -47,6 +47,7 @@ from msm.apiserver.db.models.site_profiles import (
     SiteProfileUpdate,
 )
 from msm.apiserver.db.models.token import Token
+from msm.apiserver.db.models.token import OIDCRevokedToken
 from msm.apiserver.db.models.user import (
     User,
     UserCreate,
@@ -100,6 +101,7 @@ __all__ = [
     "SiteStateStatusUpdate",
     "SiteUpdate",
     "Token",
+    "OIDCRevokedToken",
     "User",
     "UserCreate",
     "UserUpdate",
