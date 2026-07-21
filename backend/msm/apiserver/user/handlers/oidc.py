@@ -85,7 +85,7 @@ async def create(
     return OIDCProviderResponse.from_model(provider, user_count=0)
 
 
-@v1_router.put(
+@v1_router.patch(
     "/external-auth/{id}",
     responses={
         401: {"model": UnauthorizedErrorResponseModel},

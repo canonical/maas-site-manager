@@ -189,7 +189,7 @@ class TestUpdateHandler:
         provider = await insert_provider(factory, enabled=False)
         await link_users(factory, provider.id, 1)
 
-        response = await admin_client.put(
+        response = await admin_client.patch(
             f"/external-auth/{provider.id}", json={"name": "updated"}
         )
 
@@ -213,7 +213,7 @@ class TestUpdateHandler:
             issuer_url="https://other.com/",
         )
 
-        response = await admin_client.put(
+        response = await admin_client.patch(
             f"/external-auth/{provider.id}", json={"enabled": True}
         )
 
