@@ -10,11 +10,18 @@ from pydantic import BaseModel
 from msm.apiserver.db.models.oidc_provider import (
     OIDCProvider,
     OIDCProviderCreate,
+    OIDCProviderUpdate,
 )
 
 
 class OIDCProviderCreateRequest(OIDCProviderCreate):
     """Request model for creating an OIDC provider."""
+
+    pass
+
+
+class OIDCProviderUpdateRequest(OIDCProviderUpdate):
+    """Request model for updating an OIDC provider."""
 
     pass
 

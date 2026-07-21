@@ -19,6 +19,7 @@ from msm.apiserver.exceptions.catalog import (
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.exceptions.responses import (
+    ConflictErrorResponseModel,
     ForbiddenErrorResponseModel,
     NotFoundErrorResponseModel,
     UnauthorizedErrorResponseModel,
@@ -30,6 +31,7 @@ from msm.common.api.oidc import (
     CallbackTargetResponse,
     OIDCProviderCreateRequest,
     OIDCProviderResponse,
+    OIDCProviderUpdateRequest,
 )
 from msm.common.cookie_manager import EncryptedCookieManager, MSMOAuth2Cookie
 
@@ -81,6 +83,42 @@ async def create(
 ) -> OIDCProviderResponse:
     provider = await services.oidc.create(post_request)
     return OIDCProviderResponse.from_model(provider, user_count=0)
+
+
+@v1_router.put(
+    "/external-auth/{id}",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
+        409: {"model": ConflictErrorResponseModel},
+        422: {"model": ValidationErrorResponseModel},
+    },
+)
+async def update(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_admin: Annotated[User, Depends(authenticated_admin)],
+    id: int,
+    put_request: OIDCProviderUpdateRequest,
+) -> OIDCProviderResponse:
+    provider = await services.oidc.update(id, put_request)
+    user_count = await services.users.count_by_provider(provider.id)
+    return OIDCProviderResponse.from_model(provider, user_count)
+
+
+@v1_router.delete(
+    "/external-auth/{id}",
+    responses={
+        401: {"model": UnauthorizedErrorResponseModel},
+        404: {"model": NotFoundErrorResponseModel},
+        409: {"model": ConflictErrorResponseModel},
+    },
+)
+async def delete(
+    services: Annotated[ServiceCollection, Depends(services)],
+    authenticated_admin: Annotated[User, Depends(authenticated_admin)],
+    id: int,
+) -> None:
+    await services.oidc.delete(id)
 
 
 @v1_router.get(

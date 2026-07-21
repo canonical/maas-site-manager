@@ -178,6 +178,75 @@ class TestCreateHandler:
         assert response.status_code == 422
 
 
+@pytest.mark.asyncio
+class TestUpdateHandler:
+    async def test_update_provider(
+        self,
+        admin_client: Client,
+        factory: Factory,
+        mock_fetch_metadata: MockType,
+    ) -> None:
+        provider = await insert_provider(factory, enabled=False)
+        await link_users(factory, provider.id, 1)
+
+        response = await admin_client.put(
+            f"/external-auth/{provider.id}", json={"name": "updated"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == provider.id
+        assert data["name"] == "updated"
+        assert data["user_count"] == 1
+
+    async def test_update_conflict_when_enabled_exists(
+        self,
+        admin_client: Client,
+        factory: Factory,
+        mock_fetch_metadata: MockType,
+    ) -> None:
+        await insert_provider(factory, name="existing", enabled=True)
+        provider = await insert_provider(
+            factory,
+            name="other",
+            enabled=False,
+            issuer_url="https://other.com/",
+        )
+
+        response = await admin_client.put(
+            f"/external-auth/{provider.id}", json={"enabled": True}
+        )
+
+        assert response.status_code == 409
+        error = response.json()["error"]
+        assert error["code"] == ExceptionCode.ALREADY_EXISTS
+
+
+@pytest.mark.asyncio
+class TestDeleteHandler:
+    async def test_delete_provider(
+        self, admin_client: Client, factory: Factory
+    ) -> None:
+        provider = await insert_provider(factory, enabled=False)
+
+        response = await admin_client.delete(f"/external-auth/{provider.id}")
+
+        assert response.status_code == 200
+        rows = await factory.get("oidc_provider")
+        assert len(rows) == 0
+
+    async def test_delete_conflict_when_enabled(
+        self, admin_client: Client, factory: Factory
+    ) -> None:
+        provider = await insert_provider(factory, enabled=True)
+
+        response = await admin_client.delete(f"/external-auth/{provider.id}")
+
+        assert response.status_code == 409
+        error = response.json()["error"]
+        assert error["code"] == ExceptionCode.ALREADY_EXISTS
+
+
 def make_state(target: str = "/dashboard") -> str:
     encoded_target = base64.urlsafe_b64encode(target.encode()).decode()
     return f"{encoded_target}.signature"
