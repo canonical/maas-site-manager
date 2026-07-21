@@ -40,6 +40,8 @@ AUTHENTICATED_ROUTES = (
     ("GET", "/api/v1/bootasset-items/{id}"),
     ("GET", "/api/v1/external-auth"),
     ("POST", "/api/v1/external-auth"),
+    ("PUT", "/api/v1/external-auth/{id}"),
+    ("DELETE", "/api/v1/external-auth/{id}"),
     ("GET", "/api/v1/selected-images"),
     ("POST", "/api/v1/selected-images:remove"),
     ("GET", "/api/v1/settings"),
@@ -91,6 +93,8 @@ ADMIN_ROUTES = (
     ("PATCH", "/api/v1/users/{id}"),
     ("GET", "/api/v1/external-auth"),
     ("POST", "/api/v1/external-auth"),
+    ("PUT", "/api/v1/external-auth/{id}"),
+    ("DELETE", "/api/v1/external-auth/{id}"),
 )
 
 
