@@ -216,3 +216,34 @@ class TestGetLoginInfo:
         assert data["provider_name"] is None
         assert data["oidc"] is False
         get_client.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_post_logout_revokes_oidc_tokens_and_clears_cookies(
+    app_client: Client, mocker: MockerFixture
+) -> None:
+    get_cookie = mocker.patch(
+        "msm.common.cookie_manager.EncryptedCookieManager.get_cookie",
+        side_effect=["id-token", "refresh-token"],
+    )
+    revoke_token = mocker.patch(
+        "msm.apiserver.service.oidc.OIDCService.revoke_token",
+        return_value=None,
+    )
+    clear_cookie = mocker.patch(
+        "msm.common.cookie_manager.EncryptedCookieManager.clear_cookie",
+        return_value=None,
+    )
+
+    response = await app_client.post("/api/v1/logout")
+
+    assert response.status_code == 204
+    assert not response.content
+    assert get_cookie.call_count == 2
+    revoke_token.assert_awaited_once_with(
+        id_token="id-token", refresh_token="refresh-token"
+    )
+    clear_cookie.assert_any_call(key=MSMOAuth2Cookie.OAUTH2_ACCESS_TOKEN)
+    clear_cookie.assert_any_call(key=MSMOAuth2Cookie.OAUTH2_ID_TOKEN)
+    clear_cookie.assert_any_call(key=MSMOAuth2Cookie.OAUTH2_REFRESH_TOKEN)
+    assert clear_cookie.call_count == 3

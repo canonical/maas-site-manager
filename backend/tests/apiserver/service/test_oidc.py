@@ -21,6 +21,7 @@ from msm.apiserver.exceptions.catalog import (
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.config import ConfigService
 from msm.apiserver.service.oidc import OIDCService
+from msm.apiserver.service.token import OIDCRevokedTokenService
 from msm.apiserver.service.user import UserService
 from msm.common.enums import OIDCProviderAccessTokenType
 from msm.common.oauth2_client import (
@@ -54,10 +55,22 @@ def mock_config() -> Mock:
 
 
 @pytest.fixture
+def mock_revoked_tokens() -> Mock:
+    revoked_tokens = Mock(spec=OIDCRevokedTokenService)
+    revoked_tokens.create_revoked_token = AsyncMock()
+    return revoked_tokens
+
+
+@pytest.fixture
 def service(
-    db_connection: AsyncConnection, mock_users: Mock, mock_config: Mock
+    db_connection: AsyncConnection,
+    mock_users: Mock,
+    mock_config: Mock,
+    mock_revoked_tokens: Mock,
 ) -> Iterator[OIDCService]:
-    yield OIDCService(db_connection, mock_users, mock_config)
+    yield OIDCService(
+        db_connection, mock_users, mock_config, mock_revoked_tokens
+    )
 
 
 def make_create_details(
@@ -421,6 +434,26 @@ class TestOIDCService:
             code="auth-code", nonce="nonce-123"
         )
         mock_users.create.assert_awaited_once()
+
+    async def test_revoke_token_calls_revoked_tokens_service(
+        self,
+        mocker: MockerFixture,
+        service: OIDCService,
+        mock_revoked_tokens: Mock,
+    ) -> None:
+        mock_client = Mock()
+        mock_client.parse_raw_id_token = AsyncMock(
+            return_value=Mock(email="user@example.com")
+        )
+        mock_client.provider = Mock()
+        mock_client.provider.id = 1
+        mocker.patch.object(
+            service, "_get_oauth_client", AsyncMock(return_value=mock_client)
+        )
+        await service.revoke_token("raw-id-token", "raw-refresh-token")
+        mock_revoked_tokens.create_revoked_token.assert_awaited_once_with(
+            token="raw-refresh-token", provider_id=1, email="user@example.com"
+        )
 
     async def test_create_user_if_not_exists_creates_user_when_not_found(
         self,

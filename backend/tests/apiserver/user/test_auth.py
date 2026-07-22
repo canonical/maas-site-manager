@@ -80,6 +80,7 @@ AUTHENTICATED_ROUTES = (
 UNAUTHENTICATED_ROUTES = (
     ("GET", "/api/v1/login-info"),
     ("POST", "/api/v1/login"),
+    ("POST", "/api/v1/logout"),
     ("GET", "/api/v1/external-auth/callback"),
 )
 

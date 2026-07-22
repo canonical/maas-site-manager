@@ -22,6 +22,7 @@ from msm.apiserver.exceptions.catalog import (
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.base import Service
 from msm.apiserver.service.config import ConfigService
+from msm.apiserver.service.token import OIDCRevokedTokenService
 from msm.apiserver.service.user import UserService
 from msm.common.encryptor import Encryptor
 from msm.common.oauth2_client import (
@@ -37,12 +38,14 @@ class OIDCService(Service):
         connection: AsyncConnection,
         users: UserService,
         config: ConfigService,
+        revoked_tokens: OIDCRevokedTokenService,
     ):
         super().__init__(connection)
         # TODO: Cache httpx_client and oauth2_client when we have a service cache
         self.httpx_client = AsyncClient()
         self.users = users
         self.config = config
+        self.revoked_tokens = revoked_tokens
 
     async def get_by_enabled(self) -> OIDCProvider | None:
         """Get the enabled OIDC provider, if any."""
@@ -215,6 +218,16 @@ class OIDCService(Service):
             user=user_info, provider_id=client.provider.id
         )
         return tokens
+
+    async def revoke_token(self, id_token: str, refresh_token: str) -> None:
+        """Revoke the OIDC refresh token when the user logs out."""
+        client = await self._get_oauth_client()
+        id_token_object = await client.parse_raw_id_token(id_token)
+        await self.revoked_tokens.create_revoked_token(
+            token=refresh_token,
+            provider_id=client.provider.id,
+            email=id_token_object.email,
+        )
 
     async def _create_user_if_not_exists(
         self, user: OAuthUserData, provider_id: int

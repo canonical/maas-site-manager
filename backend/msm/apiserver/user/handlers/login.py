@@ -119,3 +119,33 @@ async def get_login_info(
     return AuthInfoResponse(
         oidc=True, auth_url=data.authorization_url, provider_name=provider.name
     )
+
+
+@v1_router.post(
+    "/logout",
+    status_code=204,
+    responses={
+        204: {},
+    },
+)
+async def logout(
+    services: Annotated[ServiceCollection, Depends(services)],
+    cookie_manager: Annotated[EncryptedCookieManager, Depends(cookie_manager)],
+) -> None:
+    oidc_id_token = cookie_manager.get_cookie(
+        key=MSMOAuth2Cookie.OAUTH2_ID_TOKEN
+    )
+    oidc_refresh_token = cookie_manager.get_cookie(
+        key=MSMOAuth2Cookie.OAUTH2_REFRESH_TOKEN
+    )
+    if oidc_id_token and oidc_refresh_token:
+        await services.oidc.revoke_token(
+            id_token=oidc_id_token, refresh_token=oidc_refresh_token
+        )
+
+    for key in (
+        MSMOAuth2Cookie.OAUTH2_ACCESS_TOKEN,
+        MSMOAuth2Cookie.OAUTH2_ID_TOKEN,
+        MSMOAuth2Cookie.OAUTH2_REFRESH_TOKEN,
+    ):
+        cookie_manager.clear_cookie(key=key)

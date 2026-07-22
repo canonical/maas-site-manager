@@ -82,6 +82,7 @@ class ServiceCollection:
             connection,
             config=self.config,
             users=self.users,
+            revoked_tokens=self.oidc_revoked_tokens,
         )
 
     @property
