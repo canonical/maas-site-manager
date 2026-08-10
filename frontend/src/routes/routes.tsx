@@ -1,6 +1,6 @@
 import RequireLogin from "./RequireLogin";
 
-import Layout from "@/app/base/components/Layout";
+import AppLayout from "@/app/base/components/AppLayout/AppLayout";
 import { lazyWithErrorBoundary } from "@/utils/hoc";
 import { createRoutesFromElements, redirect, Route } from "@/utils/router";
 
@@ -22,7 +22,7 @@ const Password = lazyWithErrorBoundary(() => import("@/routes/account/password")
 const ImageSources = lazyWithErrorBoundary(() => import("@/routes/settings/images/source"));
 
 export const routes = createRoutesFromElements(
-  <Route element={<Layout />} path="/">
+  <Route element={<AppLayout />} path="/">
     <Route element={<Logout />} path="logout" />
     <Route element={<Login />} path="login" />
     <Route element={<RequireLogin />}>

@@ -1,55 +1,57 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Suspense } from "react";
 
-import { ContentSection, GenericTable, Placeholder, SidePanel } from "@canonical/maas-react-components";
 import { Application, AppMain } from "@canonical/react-components";
 import classNames from "classnames";
 
-import DocumentTitle from "@/app/base/components/Layout/components/DocumentTitle/DocumentTitle";
-import Navigation from "@/app/base/components/Navigation";
-import SecondaryNavigation from "@/app/base/components/SecondaryNavigation";
-import StatusBar from "@/app/base/components/StatusBar";
-import type { RoutePath } from "@/app/base/routes";
-import { routesConfig } from "@/app/base/routes";
-import { useAuthContext } from "@/app/context";
-import { matchPath, Outlet, useLocation } from "@/utils/router";
+import DocumentTitle from "./components/DocumentTitle/DocumentTitle";
+import { ContentSection, GenericTable, Placeholder, SidePanel } from "@canonical/maas-react-components";
 
-const getPageTitle = (pathname: RoutePath) => {
-  const title = Object.values(routesConfig).find(({ path }) => path === pathname)?.title;
-  return title ? `${title} | MAAS Site Manager` : "MAAS Site Manager";
+type LayoutProps = {
+  className?: string;
+  children: ReactNode;
+  pageTitle: string;
+  view: "settings" | "table";
+  isSecondaryNavVisible: boolean;
+  navigation: ReactNode;
+  secondaryNavigation: ReactNode;
+  statusBar?: ReactNode;
 };
 
-const Layout = (): ReactElement => {
-  const { pathname } = useLocation();
-  const { status } = useAuthContext();
-  const isLoggedIn = status === "authenticated";
-  const isSideNavVisible = matchPath("/settings/*", pathname) || matchPath("/account/*", pathname);
-  const isTableView = pathname.endsWith("/list") || (pathname.startsWith("/settings/") && pathname !== "/settings/map");
-
-  const pageTitle = getPageTitle(pathname as RoutePath);
-
+const Layout = ({
+  className,
+  children,
+  pageTitle,
+  view,
+  isSecondaryNavVisible,
+  navigation,
+  secondaryNavigation,
+  statusBar,
+}: LayoutProps): ReactElement => {
   return (
     <>
       <DocumentTitle>{pageTitle}</DocumentTitle>
       <Application>
-        <Navigation isLoggedIn={isLoggedIn} />
-        <AppMain className="is-maas-site-manager">
+        {navigation}
+        <AppMain className={className}>
           <h1 className="u-visually-hidden">{pageTitle}</h1>
-          <div className={classNames("l-main__nav", { "is-open": isSideNavVisible })}>
-            <SecondaryNavigation isOpen={!!isSideNavVisible} />
+          <div
+            className={classNames("l-main__nav", {
+              "is-open": isSecondaryNavVisible,
+            })}
+          >
+            {secondaryNavigation}
           </div>
           <div className="l-main__content">
             <div className="row">
               <div className="col-12">
-                <Suspense fallback={<LayoutSkeleton view={isTableView ? "table" : "settings"} />}>
-                  <Outlet />
-                </Suspense>
+                <Suspense fallback={<LayoutSkeleton view={view} />}>{children}</Suspense>
               </div>
             </div>
           </div>
         </AppMain>
         <SidePanel />
-        <StatusBar />
+        {statusBar}
       </Application>
     </>
   );
