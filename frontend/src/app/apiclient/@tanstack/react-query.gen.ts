@@ -46,6 +46,9 @@ import {
   deleteV1UsersIdDelete,
   getIdV1UsersIdGet,
   patchV1UsersIdPatch,
+  getActiveProviderV1ExternalAuthGet,
+  createV1ExternalAuthPost,
+  updateV1ExternalAuthIdPatch,
 } from "../sdk.gen";
 import { queryOptions, infiniteQueryOptions, type InfiniteData, type UseMutationOptions } from "@tanstack/react-query";
 import type {
@@ -151,6 +154,13 @@ import type {
   PatchV1UsersIdPatchData,
   PatchV1UsersIdPatchError,
   PatchV1UsersIdPatchResponse,
+  GetActiveProviderV1ExternalAuthGetData,
+  CreateV1ExternalAuthPostData,
+  CreateV1ExternalAuthPostError,
+  CreateV1ExternalAuthPostResponse,
+  UpdateV1ExternalAuthIdPatchData,
+  UpdateV1ExternalAuthIdPatchError,
+  UpdateV1ExternalAuthIdPatchResponse,
 } from "../types.gen";
 import type { AxiosError } from "axios";
 import { client as _heyApiClient } from "../client.gen";
@@ -1857,6 +1867,83 @@ export const patchV1UsersIdPatchMutation = (
   > = {
     mutationFn: async (localOptions) => {
       const { data } = await patchV1UsersIdPatch({
+        ...options,
+        ...localOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getActiveProviderV1ExternalAuthGetQueryKey = (options?: Options<GetActiveProviderV1ExternalAuthGetData>) =>
+  createQueryKey("getActiveProviderV1ExternalAuthGet", options);
+
+/**
+ * Get Active Provider
+ */
+export const getActiveProviderV1ExternalAuthGetOptions = (
+  options?: Options<GetActiveProviderV1ExternalAuthGetData>,
+) => {
+  return queryOptions({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getActiveProviderV1ExternalAuthGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getActiveProviderV1ExternalAuthGetQueryKey(options),
+  });
+};
+
+/**
+ * Create
+ */
+export const createV1ExternalAuthPostMutation = (
+  options?: Partial<Options<CreateV1ExternalAuthPostData>>,
+): UseMutationOptions<
+  CreateV1ExternalAuthPostResponse,
+  AxiosError<CreateV1ExternalAuthPostError>,
+  Options<CreateV1ExternalAuthPostData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateV1ExternalAuthPostResponse,
+    AxiosError<CreateV1ExternalAuthPostError>,
+    Options<CreateV1ExternalAuthPostData>
+  > = {
+    mutationFn: async (localOptions) => {
+      const { data } = await createV1ExternalAuthPost({
+        ...options,
+        ...localOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update
+ */
+export const updateV1ExternalAuthIdPatchMutation = (
+  options?: Partial<Options<UpdateV1ExternalAuthIdPatchData>>,
+): UseMutationOptions<
+  UpdateV1ExternalAuthIdPatchResponse,
+  AxiosError<UpdateV1ExternalAuthIdPatchError>,
+  Options<UpdateV1ExternalAuthIdPatchData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateV1ExternalAuthIdPatchResponse,
+    AxiosError<UpdateV1ExternalAuthIdPatchError>,
+    Options<UpdateV1ExternalAuthIdPatchData>
+  > = {
+    mutationFn: async (localOptions) => {
+      const { data } = await updateV1ExternalAuthIdPatch({
         ...options,
         ...localOptions,
         throwOnError: true,

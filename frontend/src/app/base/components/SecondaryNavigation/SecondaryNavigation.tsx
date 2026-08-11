@@ -130,6 +130,10 @@ const secondaryNavInfo: SecondaryNavInfoType = {
         path: "/settings/map",
       },
       {
+        label: "Single sign-on",
+        path: "/settings/single-sign-on",
+      },
+      {
         label: "Images",
         items: [{ path: "/settings/images/source", label: "Source" }],
       },

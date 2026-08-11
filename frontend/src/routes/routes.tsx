@@ -16,6 +16,7 @@ const Tokens = lazyWithErrorBoundary(() => import("@/routes/tokens/tokens"));
 const Requests = lazyWithErrorBoundary(() => import("@/routes/requests"));
 const Users = lazyWithErrorBoundary(() => import("@/routes/users"));
 const MapSettings = lazyWithErrorBoundary(() => import("@/app/settings/views/MapSettings"));
+const SingleSignOn = lazyWithErrorBoundary(() => import("@/routes/settings/singleSignOn"));
 const Account = lazyWithErrorBoundary(() => import("@/routes/account"));
 const PersonalDetails = lazyWithErrorBoundary(() => import("@/routes/personalDetails"));
 const Password = lazyWithErrorBoundary(() => import("@/routes/account/password"));
@@ -43,6 +44,7 @@ export const routes = createRoutesFromElements(
         <Route element={<Requests />} path="requests" />
         <Route element={<Users />} path="users" />
         <Route element={<MapSettings />} path="map" />
+        <Route element={<SingleSignOn />} path="single-sign-on" />
         <Route path="images">
           <Route element={<RequireLogin />} index loader={() => redirect("/settings/images/source")} />
           <Route element={<ImageSources />} path="source" />

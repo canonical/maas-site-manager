@@ -35,6 +35,10 @@ export const protectedRoutes = {
     path: "/settings/map",
     title: "Map",
   },
+  singleSignOn: {
+    path: "/settings/single-sign-on",
+    title: "OIDC/Single sign-on",
+  },
   settingsImages: {
     path: "/settings/images",
     title: "",

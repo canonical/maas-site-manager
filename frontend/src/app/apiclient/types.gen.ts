@@ -603,6 +603,28 @@ export type ForbiddenErrorResponseModel = {
 };
 
 /**
+ * ConflictErrorBodyResponse
+ */
+export type ConflictErrorBodyResponse = {
+  code?: ExceptionCode;
+  /**
+   * Message
+   */
+  message?: string;
+  /**
+   * Details
+   */
+  details?: Array<BaseExceptionDetail> | null;
+};
+
+/**
+ * ConflictErrorResponseModel
+ */
+export type ConflictErrorResponseModel = {
+  error: ConflictErrorBodyResponse;
+};
+
+/**
  * GetImageSourcesResponse
  */
 export type GetImageSourcesResponse = {
@@ -3904,6 +3926,285 @@ export type PatchV1UsersIdPatchResponses = {
 };
 
 export type PatchV1UsersIdPatchResponse = PatchV1UsersIdPatchResponses[keyof PatchV1UsersIdPatchResponses];
+
+/**
+ * OIDCProviderAccessTokenType
+ *
+ * The vocabulary of possible types for OIDC provider access tokens.
+ */
+export enum OidcProviderAccessTokenType {
+  JWT = "jwt",
+  OPAQUE = "opaque",
+}
+
+/**
+ * OIDCProviderCreateRequest
+ *
+ * Request model for creating an OIDC provider.
+ */
+export type OidcProviderCreateRequest = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Client Id
+   */
+  client_id: string;
+  /**
+   * Client Secret
+   */
+  client_secret: string;
+  /**
+   * Issuer Url
+   */
+  issuer_url: string;
+  /**
+   * Redirect Uri
+   */
+  redirect_uri: string;
+  /**
+   * Scopes
+   */
+  scopes: string;
+  token_type: OidcProviderAccessTokenType;
+  /**
+   * Enabled
+   */
+  enabled: boolean;
+};
+
+/**
+ * OIDCProviderMetadata
+ *
+ * Metadata for an OIDC provider.
+ */
+export type OidcProviderMetadata = {
+  /**
+   * Authorization Endpoint
+   */
+  authorization_endpoint: string;
+  /**
+   * Token Endpoint
+   */
+  token_endpoint: string;
+  /**
+   * Userinfo Endpoint
+   */
+  userinfo_endpoint?: string | null;
+  /**
+   * Introspection Endpoint
+   */
+  introspection_endpoint?: string | null;
+  /**
+   * Revocation Endpoint
+   */
+  revocation_endpoint?: string | null;
+  /**
+   * Jwks Uri
+   */
+  jwks_uri: string;
+};
+
+/**
+ * OIDCProviderResponse
+ *
+ * Response model for getting an OIDC provider.
+ */
+export type OidcProviderResponse = {
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Created
+   */
+  created: string;
+  /**
+   * Updated
+   */
+  updated: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Client Id
+   */
+  client_id: string;
+  /**
+   * Client Secret
+   */
+  client_secret: string;
+  /**
+   * Issuer Url
+   */
+  issuer_url: string;
+  /**
+   * Redirect Uri
+   */
+  redirect_uri: string;
+  /**
+   * Scopes
+   */
+  scopes: string;
+  token_type: OidcProviderAccessTokenType;
+  /**
+   * Enabled
+   */
+  enabled: boolean;
+  metadata: OidcProviderMetadata;
+  /**
+   * User Count
+   */
+  user_count?: number | null;
+};
+
+/**
+ * OIDCProviderUpdateRequest
+ *
+ * Request model for updating an OIDC provider.
+ */
+export type OidcProviderUpdateRequest = {
+  /**
+   * Name
+   */
+  name?: string | null;
+  /**
+   * Client Id
+   */
+  client_id?: string | null;
+  /**
+   * Client Secret
+   */
+  client_secret?: string | null;
+  /**
+   * Issuer Url
+   */
+  issuer_url?: string | null;
+  /**
+   * Redirect Uri
+   */
+  redirect_uri?: string | null;
+  /**
+   * Scopes
+   */
+  scopes?: string | null;
+  token_type?: OidcProviderAccessTokenType | null;
+  /**
+   * Enabled
+   */
+  enabled?: boolean | null;
+};
+
+export type GetActiveProviderV1ExternalAuthGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/v1/external-auth";
+};
+
+export type GetActiveProviderV1ExternalAuthGetErrors = {
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedErrorResponseModel;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenErrorResponseModel;
+  /**
+   * Not Found
+   */
+  404: NotFoundErrorResponseModel;
+};
+
+export type GetActiveProviderV1ExternalAuthGetError =
+  GetActiveProviderV1ExternalAuthGetErrors[keyof GetActiveProviderV1ExternalAuthGetErrors];
+
+export type GetActiveProviderV1ExternalAuthGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: OidcProviderResponse;
+};
+
+export type GetActiveProviderV1ExternalAuthGetResponse =
+  GetActiveProviderV1ExternalAuthGetResponses[keyof GetActiveProviderV1ExternalAuthGetResponses];
+
+export type CreateV1ExternalAuthPostData = {
+  body: OidcProviderCreateRequest;
+  path?: never;
+  query?: never;
+  url: "/v1/external-auth";
+};
+
+export type CreateV1ExternalAuthPostErrors = {
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedErrorResponseModel;
+  /**
+   * Unprocessable Entity
+   */
+  422: ValidationErrorResponseModel;
+};
+
+export type CreateV1ExternalAuthPostError = CreateV1ExternalAuthPostErrors[keyof CreateV1ExternalAuthPostErrors];
+
+export type CreateV1ExternalAuthPostResponses = {
+  /**
+   * Successful Response
+   */
+  200: OidcProviderResponse;
+};
+
+export type CreateV1ExternalAuthPostResponse =
+  CreateV1ExternalAuthPostResponses[keyof CreateV1ExternalAuthPostResponses];
+
+export type UpdateV1ExternalAuthIdPatchData = {
+  body: OidcProviderUpdateRequest;
+  path: {
+    /**
+     * Id
+     */
+    id: number;
+  };
+  query?: never;
+  url: "/v1/external-auth/{id}";
+};
+
+export type UpdateV1ExternalAuthIdPatchErrors = {
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedErrorResponseModel;
+  /**
+   * Not Found
+   */
+  404: NotFoundErrorResponseModel;
+  /**
+   * Conflict
+   */
+  409: ConflictErrorResponseModel;
+  /**
+   * Unprocessable Entity
+   */
+  422: ValidationErrorResponseModel;
+};
+
+export type UpdateV1ExternalAuthIdPatchError =
+  UpdateV1ExternalAuthIdPatchErrors[keyof UpdateV1ExternalAuthIdPatchErrors];
+
+export type UpdateV1ExternalAuthIdPatchResponses = {
+  /**
+   * Successful Response
+   */
+  200: OidcProviderResponse;
+};
+
+export type UpdateV1ExternalAuthIdPatchResponse =
+  UpdateV1ExternalAuthIdPatchResponses[keyof UpdateV1ExternalAuthIdPatchResponses];
 
 export type ClientOptions = {
   baseURL: `${string}://${string}/api` | (string & {});
