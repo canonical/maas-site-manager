@@ -36,7 +36,7 @@ export const useActiveOauthProvider = (options?: Options<GetActiveProviderV1Exte
       GetActiveProviderV1ExternalAuthGetError,
       GetActiveProviderV1ExternalAuthGetResponse
     >),
-    retry: false,
+    retry: false, // Don't retry as the backend returns 404 when no provider is configured
   });
 };
 
