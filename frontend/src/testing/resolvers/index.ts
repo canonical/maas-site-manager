@@ -1,6 +1,7 @@
 import { authResolvers } from "./auth";
 import { enrollmentRequestsResolvers } from "./enrollmentRequests";
 import { imageResolvers } from "./images";
+import { oidcResolvers } from "./oidc";
 import { sitesResolvers } from "./sites";
 import { tileHandler } from "./tiles";
 import { tokensResolvers } from "./tokens";
@@ -41,4 +42,7 @@ export const allResolvers = [
   imageSourceResolvers.createImageSource.handler(),
   imageSourceResolvers.updateImageSource.handler(),
   imageSourceResolvers.deleteImageSource.handler(),
+  oidcResolvers.getActiveProvider.handler(),
+  oidcResolvers.createProvider.handler(),
+  oidcResolvers.updateProvider.handler(),
 ];

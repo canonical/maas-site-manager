@@ -139,6 +139,15 @@ import type {
   PatchV1UsersIdPatchData,
   PatchV1UsersIdPatchResponses,
   PatchV1UsersIdPatchErrors,
+  GetActiveProviderV1ExternalAuthGetData,
+  GetActiveProviderV1ExternalAuthGetResponses,
+  GetActiveProviderV1ExternalAuthGetErrors,
+  CreateV1ExternalAuthPostData,
+  CreateV1ExternalAuthPostResponses,
+  CreateV1ExternalAuthPostErrors,
+  UpdateV1ExternalAuthIdPatchData,
+  UpdateV1ExternalAuthIdPatchResponses,
+  UpdateV1ExternalAuthIdPatchErrors,
 } from "./types.gen";
 import { client as _heyApiClient } from "./client.gen";
 
@@ -1214,4 +1223,81 @@ export const patchV1UsersIdPatch = <ThrowOnError extends boolean = false>(
       },
     },
   );
+};
+
+/**
+ * Get Active Provider
+ */
+export const getActiveProviderV1ExternalAuthGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetActiveProviderV1ExternalAuthGetData, ThrowOnError>,
+) => {
+  return (options?.client ?? _heyApiClient).get<
+    GetActiveProviderV1ExternalAuthGetResponses,
+    GetActiveProviderV1ExternalAuthGetErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/v1/external-auth",
+    ...options,
+  });
+};
+
+/**
+ * Create
+ */
+export const createV1ExternalAuthPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateV1ExternalAuthPostData, ThrowOnError>,
+) => {
+  return (options.client ?? _heyApiClient).post<
+    CreateV1ExternalAuthPostResponses,
+    CreateV1ExternalAuthPostErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/v1/external-auth",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Update
+ */
+export const updateV1ExternalAuthIdPatch = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateV1ExternalAuthIdPatchData, ThrowOnError>,
+) => {
+  return (options.client ?? _heyApiClient).patch<
+    UpdateV1ExternalAuthIdPatchResponses,
+    UpdateV1ExternalAuthIdPatchErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    security: [
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/v1/external-auth/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
 };

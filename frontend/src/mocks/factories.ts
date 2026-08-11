@@ -8,6 +8,7 @@ import type {
   BootSource,
   GetV1SitesGetResponse,
   ImageSource,
+  OidcProviderResponse,
   PendingSite,
   PendingSitesGetResponse,
   SelectableImage,
@@ -19,7 +20,7 @@ import type {
   User,
   UsersGetResponse,
 } from "@/app/apiclient";
-import { ConnectionStatus, TimeZone } from "@/app/apiclient";
+import { ConnectionStatus, OidcProviderAccessTokenType, TimeZone } from "@/app/apiclient";
 import type { SiteMarkerType } from "@/app/sites/views/SitesMap/components/Map/types";
 
 export const connections: ConnectionStatus[] = [
@@ -153,6 +154,34 @@ export const accessTokenFactory = Factory.define<AccessTokenResponse>(({ sequenc
     access_token: chance.hash({ length: 64 }),
     rotation_interval_minutes: 15,
     token_type: "bearer",
+  };
+});
+
+export const oidcProviderFactory = Factory.define<OidcProviderResponse>(({ sequence }) => {
+  const now = new Date();
+  const chance = new Chance(`maas-${sequence}`);
+  const issuerUrl = `https://${chance.word()}.example.com`;
+  return {
+    id: sequence,
+    created: new Date(chance.date({ min: sub(now, { days: 30 }), max: now })).toISOString(),
+    updated: new Date(chance.date({ min: sub(now, { days: 30 }), max: now })).toISOString(),
+    name: `${chance.word()}-oidc`,
+    client_id: chance.hash({ length: 32 }),
+    client_secret: chance.hash({ length: 64 }),
+    issuer_url: issuerUrl,
+    redirect_uri: "http://localhost:3000/api/v1/external-auth/callback",
+    scopes: "openid profile email",
+    token_type: chance.pickone([OidcProviderAccessTokenType.JWT, OidcProviderAccessTokenType.OPAQUE]),
+    enabled: true,
+    metadata: {
+      authorization_endpoint: `${issuerUrl}/authorize`,
+      token_endpoint: `${issuerUrl}/token`,
+      userinfo_endpoint: `${issuerUrl}/userinfo`,
+      introspection_endpoint: `${issuerUrl}/introspect`,
+      revocation_endpoint: `${issuerUrl}/revoke`,
+      jwks_uri: `${issuerUrl}/.well-known/jwks.json`,
+    },
+    user_count: chance.integer({ min: 0, max: 100 }),
   };
 });
 
