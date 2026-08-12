@@ -1,6 +1,6 @@
 import RequireLogin from "./RequireLogin";
 
-import AppLayout from "@/app/base/components/AppLayout/AppLayout";
+import AppLayout from "@/app/base/components/AppLayout";
 import { lazyWithErrorBoundary } from "@/utils/hoc";
 import { createRoutesFromElements, redirect, Route } from "@/utils/router";
 

@@ -1,10 +1,11 @@
+import { Layout } from "@canonical/maas-react-components";
+
 import Navigation from "@/app/base/components/Navigation";
 import SecondaryNavigation from "@/app/base/components/SecondaryNavigation";
 import type { RoutePath } from "@/app/base/routes";
 import { routesConfig } from "@/app/base/routes";
 import { useAuthContext } from "@/app/context";
 import { matchPath, Outlet, useLocation } from "@/utils/router";
-import Layout from "@/app/base/components/Layout";
 
 const getPageTitle = (pathname: RoutePath) => {
   const title = Object.values(routesConfig).find(({ path }) => path === pathname)?.title;
@@ -22,9 +23,9 @@ const AppLayout = () => {
 
   return (
     <Layout
+      className="is-maas-site-manager"
       isSecondaryNavVisible={!!isSideNavVisible}
       navigation={<Navigation isLoggedIn={isLoggedIn} />}
-      className="is-maas-site-manager"
       pageTitle={pageTitle}
       secondaryNavigation={<SecondaryNavigation isOpen={!!isSideNavVisible} />}
       view={isTableView ? "table" : "settings"}
