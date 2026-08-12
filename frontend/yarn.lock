@@ -218,10 +218,10 @@
     hashery "^1.3.0"
     keyv "^5.5.5"
 
-"@canonical/maas-react-components@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@canonical/maas-react-components/-/maas-react-components-2.4.0.tgz#e081c103e8e8f23dafd9b009a5827a8836ad945a"
-  integrity sha512-vgd3wVJIWkgs64ZLxBL3ZcAAxt9ShjgmC3t5tqsp1xckGfAiDxSvbpHQVs08S513ZWxGF7cWGeuLKGno0un/Ww==
+"@canonical/maas-react-components@2.6.0":
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@canonical/maas-react-components/-/maas-react-components-2.6.0.tgz#36db6f9092dd979ea1192744ddee8ffb5afffc73"
+  integrity sha512-7f0ILYt/IhYx9YFcDZsyulMK/9GdXDcrPiqwfHtS9W8tzcWVQCgEC3JsAPBVU5jZh3lQ+8A1Qj9iAXIRYdSTUA==
 
 "@canonical/react-components@3.6.0":
   version "3.6.0"
