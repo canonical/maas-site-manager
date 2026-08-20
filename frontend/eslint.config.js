@@ -303,27 +303,21 @@ export default tseslint.config(
       "react/no-multi-comp": "off",
     },
   },
-  ...compat.extends("plugin:playwright/recommended").map((config) => ({
-    ...config,
-    files: ["tests/**/*.[jt]s?(x)"],
-  })),
   {
-    files: ["tests/**/*.[jt]s?(x)"],
+    files: ["cypress/**/*.ts", "cypress/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-namespace": ["error", { allowDeclarations: true }],
+    },
+  },
+  {
+    files: ["cypress/**/*.ts", "cypress/**/*.tsx"],
 
     plugins: {
       "no-only-tests": noOnlyTests,
     },
 
     rules: {
-      "playwright/no-force-option": "off",
       "no-only-tests/no-only-tests": "error",
-      "prettier/prettier": "error",
-    },
-  },
-  {
-    files: ["cypress/**/*.ts", "cypress/**/*.tsx"],
-    rules: {
-      "@typescript-eslint/no-namespace": ["error", { allowDeclarations: true }],
     },
   },
 );
