@@ -288,14 +288,14 @@ Single and consistent direction of media queries (min-width) makes the code easi
 
 ### Testing
 
-We use [Playwright](https://playwright.dev/) for end-to-end tests and [Vitest](https://vitest.dev/) for unit/integration tests. We prefer integration testing over unit testing as we focus on user-centric testing and avoid testing implementation details. That makes changes and refactoring easier and helps ensure that things continue to work as expected for the end user.
+We use [Cypress](https://www.cypress.io/) for end-to-end tests and [Vitest](https://vitest.dev/) for unit/integration tests. We prefer integration testing over unit testing as we focus on user-centric testing and avoid testing implementation details. That makes changes and refactoring easier and helps ensure that things continue to work as expected for the end user.
 
 #### How to run tests
 
 ##### end-to-end
 
 ```bash
-yarn playwright test
+yarn cypress-run
 ```
 
 ##### unit/integration

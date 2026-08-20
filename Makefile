@@ -17,7 +17,7 @@ e2e-dep e2e-test:
 ci-dep-docker-prepare:
 	$(MAKE) -C backend ci-dep
 	$(MAKE) -C frontend ci-dep
-	chmod -R a+w /var/cache/playwright-browsers /var/cache/yarn || true
+	chmod -R a+w /var/cache/yarn || true
 .PHONY: ci-dep-docker-prepare
 
 

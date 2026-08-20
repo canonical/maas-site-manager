@@ -1,6 +1,6 @@
 #!/usr/bin/env make -f
 
-.PHONY: install-node install-dependencies ci-dep ci-build ci-lint ci-test unit-test e2e-test
+.PHONY: install-node install-dependencies ci-dep ci-build ci-lint ci-test unit-test e2e-dep e2e-test
 
 define PACKAGES
 git \
@@ -37,10 +37,8 @@ endef
 
 ifdef JENKINS_URL
     YARN_CACHE_FOLDER := /var/cache/yarn
-    PLAYWRIGHT_PATH := /var/cache/playwright-browsers
 else
     YARN_CACHE_FOLDER := .cache/yarn
-    PLAYWRIGHT_PATH := .cache/playwright-browsers
 endif
 
 FE_TEST_TIMEOUT = 15000
@@ -82,7 +80,7 @@ unit-test:
 		--outputFile.junit=../junit-frontend.xml
 
 e2e-dep:
-	PLAYWRIGHT_BROWSERS_PATH=$(PLAYWRIGHT_PATH) npx --yes playwright install --with-deps
+	@true
 
 e2e-test:
 	@if [ -z "$(JENKINS_URL)" ]; then \
@@ -91,7 +89,4 @@ e2e-test:
 		sleep 10; \
 	fi; \
 	export PATH=$$(pwd)/node-22/bin:$$PATH && \
-	PLAYWRIGHT_BROWSERS_PATH=$(PLAYWRIGHT_PATH) \
-	PLAYWRIGHT_JUNIT_OUTPUT_NAME=../junit-e2e.xml \
-	npx playwright test --reporter=junit & \
 	yarn cypress-run

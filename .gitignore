@@ -39,10 +39,6 @@ logs
 .dotrun.json
 
 # Frontend testing
-/frontend/test-results/
-/frontend/playwright-report/
-/frontend/playwright/.cache/
-/frontend/tests/.auth/*
 /frontend/cypress/downloads/
 /frontend/cypress/screenshots/
 

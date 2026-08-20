@@ -5,32 +5,6 @@ on:
       - main
       - cypress-debug-*
 jobs:
-  playwright:
-    name: Playwright
-    runs-on: ubuntu-24.04
-    env:
-      VITE_USE_MOCK_DATA: true
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js from .nvmrc
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: frontend/.nvmrc
-      - name: Install dependencies
-        run: yarn install
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        run: yarn playwright-test
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
   cypress:
     name: Cypress
     runs-on: ubuntu-24.04
