@@ -1,9 +1,7 @@
-import { useSidePanel } from "@canonical/maas-react-components";
+import { lazyLoadSidePanel, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon, Tooltip } from "@canonical/react-components";
 
-import { lazySidePanel } from "@/app/base/sidePanel";
-
-const SitesMissingData = lazySidePanel(() => import("@/app/sites/components/SitesMissingData"));
+const SitesMissingData = lazyLoadSidePanel(() => import("@/app/sites/components/SitesMissingData"));
 
 const MAP_Z_INDEX = 18;
 

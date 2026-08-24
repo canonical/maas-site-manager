@@ -1,17 +1,16 @@
 import type { ReactElement } from "react";
 
-import { ContentSection, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
+import { ContentSection, lazyLoadSidePanel, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { Button } from "@canonical/react-components";
 
 import ImagesTable from "../../components/ImagesTable";
 
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context";
 
-const RemoveAvailableImages = lazySidePanel(() => import("@/app/images/components/RemoveAvailableImages"));
-const AddToAvailableImages = lazySidePanel(() => import("@/app/images/components/AddToAvailableImages"));
-const UploadCustomImage = lazySidePanel(() => import("@/app/images/components/UploadCustomImage"));
+const RemoveAvailableImages = lazyLoadSidePanel(() => import("@/app/images/components/RemoveAvailableImages"));
+const AddToAvailableImages = lazyLoadSidePanel(() => import("@/app/images/components/AddToAvailableImages"));
+const UploadCustomImage = lazyLoadSidePanel(() => import("@/app/images/components/UploadCustomImage"));
 
 const ImagesList = (): ReactElement => {
   const { rowSelection } = useRowSelection("images");

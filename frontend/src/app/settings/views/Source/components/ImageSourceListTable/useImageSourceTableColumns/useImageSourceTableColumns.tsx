@@ -1,19 +1,18 @@
-import { Placeholder, useSidePanel } from "@canonical/maas-react-components";
+import { lazyLoadSidePanel, Placeholder, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon, Tooltip } from "@canonical/react-components";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { BootSource } from "@/app/apiclient";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import { useBootSourceContext } from "@/app/context/BootSourceContext";
 import { createAccessor } from "@/utils";
 
-const EditCustomImagesSourceForm = lazySidePanel(
+const EditCustomImagesSourceForm = lazyLoadSidePanel(
   () => import("@/app/settings/views/Source/components/ImageSourceForm/EditCustomImagesSourceForm"),
 );
-const EditImageSourceForm = lazySidePanel(
+const EditImageSourceForm = lazyLoadSidePanel(
   () => import("@/app/settings/views/Source/components/ImageSourceForm/EditImageSourceForm"),
 );
-const DeleteImageSource = lazySidePanel(() => import("@/app/settings/views/Source/components/DeleteImageSource"));
+const DeleteImageSource = lazyLoadSidePanel(() => import("@/app/settings/views/Source/components/DeleteImageSource"));
 
 type BootSourceColumnDef = ColumnDef<BootSource, Partial<BootSource>>;
 

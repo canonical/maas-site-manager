@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { ExternalLink, Placeholder, useSidePanel } from "@canonical/maas-react-components";
+import { ExternalLink, lazyLoadSidePanel, Placeholder, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon } from "@canonical/react-components";
 import type { ColumnDef, OnChangeFn, RowSelectionState } from "@tanstack/react-table";
 
@@ -9,14 +9,13 @@ import LocalTime from "@/app/base/components/LocalTime";
 import SortIndicator from "@/app/base/components/SortIndicator";
 import TableActions from "@/app/base/components/TableActions";
 import TooltipButton from "@/app/base/components/TooltipButton";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus";
 import ConnectionInfo from "@/app/sites/components/SitesTable/ConnectionInfo";
 import ColumnsVisibilityControl from "@/app/sites/components/SitesTable/SitesTableControls/ColumnsVisibilityControl";
 import { createAccessor, getCountryName } from "@/utils";
 
-const RemoveSites = lazySidePanel(() => import("@/app/sites/components/RemoveSites"));
-const EditSite = lazySidePanel(() => import("@/app/sites/components/EditSite"));
+const RemoveSites = lazyLoadSidePanel(() => import("@/app/sites/components/RemoveSites"));
+const EditSite = lazyLoadSidePanel(() => import("@/app/sites/components/EditSite"));
 
 export type SiteColumnDef = ColumnDef<Site, Partial<Site>>;
 
