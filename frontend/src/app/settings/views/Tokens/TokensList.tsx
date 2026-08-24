@@ -1,4 +1,10 @@
-import { ContentSection, ExternalLink, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
+import {
+  ContentSection,
+  ExternalLink,
+  lazyLoadSidePanel,
+  MainToolbar,
+  useSidePanel,
+} from "@canonical/maas-react-components";
 import { Button, Notification } from "@canonical/react-components";
 import pluralize from "pluralize";
 
@@ -9,13 +15,12 @@ import ErrorMessage from "@/app/base/components/ErrorMessage";
 import RemoveButton from "@/app/base/components/RemoveButton";
 import docsUrls from "@/app/base/docsUrls";
 import usePagination from "@/app/base/hooks/usePagination";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context";
 import { saveToFile } from "@/utils";
 
 const DEFAULT_PAGE_SIZE = 50;
 
-const TokensCreate = lazySidePanel(() => import("@/app/settings/views/Tokens/components/TokensCreate"));
+const TokensCreate = lazyLoadSidePanel(() => import("@/app/settings/views/Tokens/components/TokensCreate"));
 
 const TokensList = () => {
   const { openSidePanel } = useSidePanel();

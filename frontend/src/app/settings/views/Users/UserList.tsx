@@ -1,11 +1,10 @@
-import { ContentSection, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
+import { ContentSection, lazyLoadSidePanel, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { SearchBox } from "@canonical/react-components";
 
 import useDebounce from "@/app/base/hooks/useDebouncedValue";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import UsersTable from "@/app/settings/views/Users/components/UsersTable";
 
-const UserAddForm = lazySidePanel(() => import("@/app/settings/views/Users/components/UserForm/UserAddForm"));
+const UserAddForm = lazyLoadSidePanel(() => import("@/app/settings/views/Users/components/UserForm/UserAddForm"));
 
 const UserList = () => {
   const { openSidePanel } = useSidePanel();

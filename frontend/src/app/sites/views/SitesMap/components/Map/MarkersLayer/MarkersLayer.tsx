@@ -1,14 +1,13 @@
-import { useSidePanel } from "@canonical/maas-react-components";
+import { lazyLoadSidePanel, useSidePanel } from "@canonical/maas-react-components";
 import type { GeoJSONSource } from "maplibre-gl";
 
-import { lazySidePanel } from "@/app/base/sidePanel";
 import { useMap } from "@/app/context/MapContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import Popup from "@/app/sites/views/SitesMap/components/Map/MarkersLayer/Popup";
 import SiteSummary from "@/app/sites/views/SitesMap/components/Map/SiteSummary";
 import { useMarkers, usePopup } from "@/app/sites/views/SitesMap/components/Map/hooks";
 
-const SiteDetails = lazySidePanel(() => import("@/app/sites/components/SiteDetails"));
+const SiteDetails = lazyLoadSidePanel(() => import("@/app/sites/components/SiteDetails"));
 
 const markerHeight = 47;
 const markerOffset = parseFloat((markerHeight / 2).toFixed(1));
