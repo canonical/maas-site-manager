@@ -20,7 +20,10 @@ export default defineConfig({
     globals: true,
     server: {
       deps: {
-        inline: ["vitest-canvas-mock"],
+        // Inline maas-react-components so its bundle shares the app's single
+        // react-router instance; otherwise the library's SidePanel useLocation()
+        // reads a separate Router context and throws.
+        inline: ["vitest-canvas-mock", /@canonical\/maas-react-components/],
       },
     },
     setupFiles: ["./mock-web-worker.ts", "./setupTests.ts"],

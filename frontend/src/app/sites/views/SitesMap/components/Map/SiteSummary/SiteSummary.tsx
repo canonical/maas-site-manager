@@ -1,6 +1,6 @@
 import type { DOMAttributes } from "react";
 
-import { ExternalLink, useSidePanel } from "@canonical/maas-react-components";
+import { ExternalLink, lazyLoadSidePanel, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Card, Icon, Notification, Spinner } from "@canonical/react-components";
 import classNames from "classnames";
 import get from "lodash/get";
@@ -8,7 +8,6 @@ import get from "lodash/get";
 import { useSite } from "@/app/api/query/sites";
 import type { Site } from "@/app/apiclient";
 import ErrorMessage from "@/app/base/components/ErrorMessage/ErrorMessage";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
 import AggregatedStatus from "@/app/sites/components/SitesTable/AggregatedStatus/AggregatedStatus";
 import {
@@ -17,7 +16,7 @@ import {
   getLastSeenText,
 } from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
 
-const EditSite = lazySidePanel(() => import("@/app/sites/components/EditSite"));
+const EditSite = lazyLoadSidePanel(() => import("@/app/sites/components/EditSite"));
 
 interface SiteSummaryProps extends DOMAttributes<HTMLElement> {
   id: Site["id"];

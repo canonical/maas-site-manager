@@ -1,4 +1,4 @@
-import { ExternalLink, useSidePanel } from "@canonical/maas-react-components";
+import { ExternalLink, lazyLoadSidePanel, useSidePanel } from "@canonical/maas-react-components";
 import { Button, Icon, Notification, Spinner } from "@canonical/react-components";
 import classNames from "classnames";
 import get from "lodash/get";
@@ -7,7 +7,7 @@ import { useSite } from "@/app/api/query/sites";
 import ErrorMessage from "@/app/base/components/ErrorMessage";
 import LocalTime from "@/app/base/components/LocalTime/LocalTime";
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { lazySidePanel, type ReturnablePanelProps } from "@/app/base/sidePanel";
+import type { ReturnablePanelProps } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context";
 import type { SiteDetailsContextValue } from "@/app/context/SiteDetailsContext";
 import { useSiteDetailsContext } from "@/app/context/SiteDetailsContext";
@@ -18,9 +18,9 @@ import {
 } from "@/app/sites/components/SitesTable/ConnectionInfo/ConnectionInfo";
 import { getCountryName } from "@/utils";
 
-const EditSite = lazySidePanel(() => import("@/app/sites/components/EditSite"));
-const RemoveSites = lazySidePanel(() => import("@/app/sites/components/RemoveSites"));
-const SiteDetailsPanel = lazySidePanel(() => import("@/app/sites/components/SiteDetails"));
+const EditSite = lazyLoadSidePanel(() => import("@/app/sites/components/EditSite"));
+const RemoveSites = lazyLoadSidePanel(() => import("@/app/sites/components/RemoveSites"));
+const SiteDetailsPanel = lazyLoadSidePanel(() => import("@/app/sites/components/SiteDetails"));
 
 const SiteDetailsContent = ({ id }: { id: NonNullable<SiteDetailsContextValue["selected"]> }) => {
   const { data: site, error, isPending } = useSite({ path: { id } });

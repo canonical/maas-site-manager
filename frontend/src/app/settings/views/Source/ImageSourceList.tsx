@@ -1,12 +1,11 @@
-import { ContentSection, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
+import { ContentSection, lazyLoadSidePanel, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { Button } from "@canonical/react-components";
 
 import ImageSourceListTable from "./components/ImageSourceListTable";
 
 import { useImageSources } from "@/app/api/query/imageSources";
-import { lazySidePanel } from "@/app/base/sidePanel";
 
-const AddImageSourceForm = lazySidePanel(
+const AddImageSourceForm = lazyLoadSidePanel(
   () => import("@/app/settings/views/Source/components/ImageSourceForm/AddImageSourceForm"),
 );
 

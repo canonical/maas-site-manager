@@ -1,4 +1,4 @@
-import { MainToolbar, useSidePanel } from "@canonical/maas-react-components";
+import { lazyLoadSidePanel, MainToolbar, useSidePanel } from "@canonical/maas-react-components";
 import { SearchBox } from "@canonical/react-components";
 import classNames from "classnames";
 
@@ -7,11 +7,10 @@ import SitesViewControl from "./SitesViewControl";
 
 import type { UseSitesResult } from "@/app/api/query/sites";
 import RemoveButton from "@/app/base/components/RemoveButton";
-import { lazySidePanel } from "@/app/base/sidePanel";
 import { useRowSelection } from "@/app/context/RowSelectionContext/RowSelectionContext";
 import { useLocation } from "@/utils/router";
 
-const RemoveSites = lazySidePanel(() => import("@/app/sites/components/RemoveSites"));
+const RemoveSites = lazyLoadSidePanel(() => import("@/app/sites/components/RemoveSites"));
 
 const SitesTableControls = ({
   totalSites,
