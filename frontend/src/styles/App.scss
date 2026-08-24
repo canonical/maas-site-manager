@@ -2,10 +2,13 @@
 @use "sass:map";
 @import "@/styles/settings";
 @import "vanilla-framework";
-@include vf-base;
 @import "@/variables";
+@import "@canonical/styles";
+@import "@canonical/styles/fonts";
+@import "@canonical/react-ds-global-form/dist/esm/index.css";
 
 // patterns
+@include vf-base;
 @include vf-b-placeholders;
 @include vf-p-grid;
 @include vf-p-buttons;
