@@ -17,6 +17,7 @@ from msm.apiserver.db.tables import OIDCProvider as OIDCProviderTable
 from msm.apiserver.exceptions.catalog import (
     BadGatewayException,
     ConflictException,
+    UnauthorizedException,
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.config import ConfigService
@@ -26,6 +27,7 @@ from msm.apiserver.service.user import UserService
 from msm.common.enums import OIDCProviderAccessTokenType
 from msm.common.oauth2_client import (
     OAuthCallbackData,
+    OAuthRefreshData,
     OAuthTokenData,
     OAuthUserData,
 )
@@ -515,3 +517,86 @@ class TestOIDCService:
         )
         mock_users.get_by_username.assert_awaited_once_with(user_data.email)
         mock_users.create.assert_not_awaited()
+
+    async def test_validate_access_token_delegates_to_client(
+        self,
+        mocker: MockerFixture,
+        service: OIDCService,
+    ) -> None:
+        mock_client = Mock()
+        mock_client.validate_access_token = AsyncMock(
+            return_value="validated-token"
+        )
+        mocker.patch.object(
+            service, "_get_oauth_client", AsyncMock(return_value=mock_client)
+        )
+
+        result = await service.validate_access_token("access-token")
+
+        assert result == "validated-token"
+        mock_client.validate_access_token.assert_awaited_once_with(
+            access_token="access-token"
+        )
+
+    async def test_refresh_access_token_delegates_to_client(
+        self,
+        mocker: MockerFixture,
+        service: OIDCService,
+    ) -> None:
+        refresh_data = OAuthRefreshData(
+            access_token="new-access", refresh_token="new-refresh"
+        )
+        mock_client = Mock()
+        mock_client.refresh_access_token = AsyncMock(return_value=refresh_data)
+        mocker.patch.object(
+            service, "_get_oauth_client", AsyncMock(return_value=mock_client)
+        )
+
+        result = await service.refresh_access_token("refresh-token")
+
+        assert result == refresh_data
+        mock_client.refresh_access_token.assert_awaited_once_with(
+            refresh_token="refresh-token"
+        )
+
+    async def test_get_user_from_id_token_returns_user(
+        self,
+        mocker: MockerFixture,
+        service: OIDCService,
+        mock_users: Mock,
+    ) -> None:
+        existing_user = Mock()
+        mock_users.get_by_username = AsyncMock(return_value=existing_user)
+        mock_client = Mock()
+        mock_client.parse_raw_id_token = AsyncMock(
+            return_value=Mock(email="user@example.com")
+        )
+        mocker.patch.object(
+            service, "_get_oauth_client", AsyncMock(return_value=mock_client)
+        )
+
+        result = await service.get_user_from_id_token("raw-id-token")
+
+        assert result is existing_user
+        mock_client.parse_raw_id_token.assert_awaited_once_with("raw-id-token")
+        mock_users.get_by_username.assert_awaited_once_with("user@example.com")
+
+    async def test_get_user_from_id_token_raises_when_user_missing(
+        self,
+        mocker: MockerFixture,
+        service: OIDCService,
+        mock_users: Mock,
+    ) -> None:
+        mock_users.get_by_username = AsyncMock(return_value=None)
+        mock_client = Mock()
+        mock_client.parse_raw_id_token = AsyncMock(
+            return_value=Mock(email="user@example.com")
+        )
+        mocker.patch.object(
+            service, "_get_oauth_client", AsyncMock(return_value=mock_client)
+        )
+
+        with pytest.raises(UnauthorizedException) as excinfo:
+            await service.get_user_from_id_token("raw-id-token")
+
+        assert excinfo.value.code == ExceptionCode.INVALID_TOKEN

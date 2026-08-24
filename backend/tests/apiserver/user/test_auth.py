@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from unittest.mock import AsyncMock, Mock
 import uuid
 
 from fastapi import FastAPI
@@ -7,6 +8,7 @@ import pytest
 from msm.apiserver.db.models import User
 from msm.apiserver.db.models.user import Worker
 from msm.apiserver.exceptions.catalog import (
+    BadGatewayException,
     ForbiddenException,
     UnauthorizedException,
 )
@@ -16,7 +18,10 @@ from msm.apiserver.user.auth import (
     authenticated_admin,
     authenticated_user,
     authenticated_worker,
+    oidc_authenticated_user,
 )
+from msm.common.cookie_manager import MSMOAuth2Cookie
+from msm.common.oauth2_client import OAuthRefreshData
 from tests.fixtures.app import get_api_routes
 from tests.fixtures.client import Client
 
@@ -198,3 +203,168 @@ class TestAuthenticatedAdmin:
         assert error.value.message == "Unauthorized credentials."
         assert error.value.code == ExceptionCode.MISSING_PERMISSIONS
         assert error.value.status_code == 403
+
+
+def make_cookie_manager(
+    access_token: str | None = None,
+    id_token: str | None = None,
+    refresh_token: str | None = None,
+) -> Mock:
+    cookies = {
+        MSMOAuth2Cookie.OAUTH2_ACCESS_TOKEN: access_token,
+        MSMOAuth2Cookie.OAUTH2_ID_TOKEN: id_token,
+        MSMOAuth2Cookie.OAUTH2_REFRESH_TOKEN: refresh_token,
+    }
+    manager = Mock()
+    manager.get_cookie = Mock(side_effect=lambda key: cookies.get(key))
+    manager.set_auth_cookie = Mock()
+    manager.clear_cookie = Mock()
+    return manager
+
+
+def make_oidc_services(
+    user: User | Mock | None = None,
+    access_token_valid: bool = True,
+    refresh_result: OAuthRefreshData | None = None,
+    refresh_error: Exception | None = None,
+) -> Mock:
+    oidc = Mock()
+    if access_token_valid:
+        oidc.validate_access_token = AsyncMock(return_value="valid")
+    else:
+        oidc.validate_access_token = AsyncMock(
+            side_effect=UnauthorizedException(
+                code=ExceptionCode.INVALID_TOKEN,
+                message="invalid",
+                details=[],
+            )
+        )
+    if refresh_error is not None:
+        oidc.refresh_access_token = AsyncMock(side_effect=refresh_error)
+    else:
+        oidc.refresh_access_token = AsyncMock(return_value=refresh_result)
+    oidc.get_user_from_id_token = AsyncMock(return_value=user)
+    services = Mock(spec=ServiceCollection)
+    services.oidc = oidc
+    return services
+
+
+@pytest.mark.asyncio
+class TestOIDCAuthenticatedUser:
+    async def test_valid_access_token_returns_user(
+        self, api_user: User
+    ) -> None:
+        cookie_manager = make_cookie_manager(
+            access_token="access",
+            id_token="id",
+            refresh_token="refresh",
+        )
+        services = make_oidc_services(user=api_user, access_token_valid=True)
+
+        user = await oidc_authenticated_user(cookie_manager, services)
+
+        assert user == api_user
+        services.oidc.refresh_access_token.assert_not_awaited()
+        services.oidc.get_user_from_id_token.assert_awaited_once_with("id")
+        cookie_manager.set_auth_cookie.assert_not_called()
+
+    async def test_missing_id_token_rejects_and_clears_cookies(self) -> None:
+        cookie_manager = make_cookie_manager(
+            access_token="access",
+            id_token=None,
+            refresh_token="refresh",
+        )
+        services = make_oidc_services()
+
+        with pytest.raises(UnauthorizedException) as error:
+            await oidc_authenticated_user(cookie_manager, services)
+
+        assert error.value.code == ExceptionCode.NOT_AUTHENTICATED
+        assert cookie_manager.clear_cookie.call_count == 3
+
+    async def test_missing_refresh_token_rejects_and_clears_cookies(
+        self,
+    ) -> None:
+        cookie_manager = make_cookie_manager(
+            access_token="access",
+            id_token="id",
+            refresh_token=None,
+        )
+        services = make_oidc_services()
+
+        with pytest.raises(UnauthorizedException) as error:
+            await oidc_authenticated_user(cookie_manager, services)
+
+        assert error.value.code == ExceptionCode.NOT_AUTHENTICATED
+        assert cookie_manager.clear_cookie.call_count == 3
+
+    async def test_invalid_access_token_refreshes_and_returns_user(
+        self, api_user: User
+    ) -> None:
+        cookie_manager = make_cookie_manager(
+            access_token="expired",
+            id_token="id",
+            refresh_token="refresh",
+        )
+        services = make_oidc_services(
+            user=api_user,
+            access_token_valid=False,
+            refresh_result=OAuthRefreshData(
+                access_token="new-access", refresh_token="new-refresh"
+            ),
+        )
+
+        user = await oidc_authenticated_user(cookie_manager, services)
+
+        assert user == api_user
+        services.oidc.refresh_access_token.assert_awaited_once_with("refresh")
+        cookie_manager.set_auth_cookie.assert_any_call(
+            key=MSMOAuth2Cookie.OAUTH2_ACCESS_TOKEN, value="new-access"
+        )
+        cookie_manager.set_auth_cookie.assert_any_call(
+            key=MSMOAuth2Cookie.OAUTH2_REFRESH_TOKEN, value="new-refresh"
+        )
+
+    async def test_refresh_keeps_refresh_cookie_when_unchanged(
+        self, api_user: User
+    ) -> None:
+        cookie_manager = make_cookie_manager(
+            access_token="expired",
+            id_token="id",
+            refresh_token="refresh",
+        )
+        services = make_oidc_services(
+            user=api_user,
+            access_token_valid=False,
+            refresh_result=OAuthRefreshData(
+                access_token="new-access", refresh_token="refresh"
+            ),
+        )
+
+        await oidc_authenticated_user(cookie_manager, services)
+
+        cookie_manager.set_auth_cookie.assert_called_once_with(
+            key=MSMOAuth2Cookie.OAUTH2_ACCESS_TOKEN, value="new-access"
+        )
+
+    async def test_refresh_failure_rejects_and_clears_cookies(self) -> None:
+        cookie_manager = make_cookie_manager(
+            access_token="expired",
+            id_token="id",
+            refresh_token="refresh",
+        )
+        services = make_oidc_services(
+            access_token_valid=False,
+            refresh_error=BadGatewayException(
+                code=ExceptionCode.PROVIDER_COMMUNICATION_FAILED,
+                message="boom",
+                details=[],
+            ),
+        )
+
+        with pytest.raises(UnauthorizedException) as error:
+            await oidc_authenticated_user(cookie_manager, services)
+
+        assert error.value.code == ExceptionCode.INVALID_TOKEN
+        assert cookie_manager.clear_cookie.call_count == 3
+        services.oidc.get_user_from_id_token.assert_not_awaited()
