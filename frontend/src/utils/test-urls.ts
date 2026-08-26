@@ -26,4 +26,5 @@ export const apiUrls = {
   upstreamImageSource: getApiUrl("/images/upstream-source"),
   settings: getApiUrl("/settings"),
   externalAuth: getApiUrl("/external-auth"),
+  externalAuthCallback: getApiUrl("/external-auth/callback"),
 };

@@ -80,6 +80,10 @@ export const publicRoutes = {
     path: "/login",
     title: "Login",
   },
+  loginCallback: {
+    path: "/login/oidc/callback",
+    title: "Login",
+  },
 } as const;
 
 export const routesConfig = { ...publicRoutes, ...protectedRoutes } as const;

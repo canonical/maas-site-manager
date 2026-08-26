@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 
 import type {
+  CallbackV1ExternalAuthCallbackGetData,
   CreateV1ExternalAuthPostData,
   CreateV1ExternalAuthPostError,
   CreateV1ExternalAuthPostResponse,
@@ -16,6 +17,7 @@ import type {
   UpdateV1ExternalAuthIdPatchResponse,
 } from "@/app/apiclient";
 import {
+  callbackV1ExternalAuthCallbackGetOptions,
   createV1ExternalAuthPostMutation,
   getActiveProviderV1ExternalAuthGetOptions,
   getActiveProviderV1ExternalAuthGetQueryKey,
@@ -26,6 +28,15 @@ import {
 export const useLogin = (mutationOptions?: Options<PostV1LoginPostData>) => {
   return useMutation({
     ...postV1LoginPostMutation(mutationOptions),
+  });
+};
+
+export const useGetCallback = (options: Options<CallbackV1ExternalAuthCallbackGetData>, enabled: boolean) => {
+  return useQuery({
+    ...callbackV1ExternalAuthCallbackGetOptions(options),
+    enabled,
+    retry: false, // Don't retry: an invalid/expired code or state should fail immediately
+    refetchOnWindowFocus: false,
   });
 };
 

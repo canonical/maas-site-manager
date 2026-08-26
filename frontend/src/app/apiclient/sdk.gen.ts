@@ -148,6 +148,9 @@ import type {
   UpdateV1ExternalAuthIdPatchData,
   UpdateV1ExternalAuthIdPatchResponses,
   UpdateV1ExternalAuthIdPatchErrors,
+  CallbackV1ExternalAuthCallbackGetData,
+  CallbackV1ExternalAuthCallbackGetResponses,
+  CallbackV1ExternalAuthCallbackGetErrors,
 } from "./types.gen";
 import { client as _heyApiClient } from "./client.gen";
 
@@ -1299,5 +1302,24 @@ export const updateV1ExternalAuthIdPatch = <ThrowOnError extends boolean = false
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Callback
+ *
+ * Handle the OAuth callback by exchanging the authorization code for tokens.
+ */
+export const callbackV1ExternalAuthCallbackGet = <ThrowOnError extends boolean = false>(
+  options: Options<CallbackV1ExternalAuthCallbackGetData, ThrowOnError>,
+) => {
+  return (options.client ?? _heyApiClient).get<
+    CallbackV1ExternalAuthCallbackGetResponses,
+    CallbackV1ExternalAuthCallbackGetErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/external-auth/callback",
+    ...options,
   });
 };
