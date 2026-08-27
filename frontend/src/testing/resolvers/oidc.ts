@@ -2,15 +2,26 @@ import { http, HttpResponse } from "msw";
 
 import { ExceptionCode } from "@/app/apiclient";
 import type {
+  CallbackTargetResponse,
+  CallbackV1ExternalAuthCallbackGetError,
   CreateV1ExternalAuthPostError,
   GetActiveProviderV1ExternalAuthGetError,
   OidcProviderResponse,
   UpdateV1ExternalAuthIdPatchError,
 } from "@/app/apiclient";
-import { oidcProviderFactory } from "@/mocks/factories";
+import { callbackTargetFactory, oidcProviderFactory } from "@/mocks/factories";
 import { apiUrls } from "@/utils/test-urls";
 
 const mockProvider = oidcProviderFactory.build();
+
+const mockCallbackTarget = callbackTargetFactory.build();
+
+const mockCallbackError: CallbackV1ExternalAuthCallbackGetError = {
+  error: {
+    code: ExceptionCode.INVALID_CREDENTIALS,
+    message: "The provided state or nonce cookies are invalid.",
+  },
+};
 
 const mockGetProviderNotFoundError: GetActiveProviderV1ExternalAuthGetError = {
   error: {
@@ -84,6 +95,21 @@ const oidcResolvers = {
       return http.patch(`${apiUrls.externalAuth}/:id`, () => {
         oidcResolvers.updateProvider.resolved = true;
         return HttpResponse.json(error, { status: 403 });
+      });
+    },
+  },
+  getCallback: {
+    resolved: false,
+    handler: (data: CallbackTargetResponse = mockCallbackTarget) => {
+      return http.get(apiUrls.externalAuthCallback, () => {
+        oidcResolvers.getCallback.resolved = true;
+        return HttpResponse.json(data);
+      });
+    },
+    error: (error: CallbackV1ExternalAuthCallbackGetError = mockCallbackError) => {
+      return http.get(apiUrls.externalAuthCallback, () => {
+        oidcResolvers.getCallback.resolved = true;
+        return HttpResponse.json(error, { status: 401 });
       });
     },
   },

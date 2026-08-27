@@ -6,6 +6,7 @@ import { createRoutesFromElements, redirect, Route } from "@/utils/router";
 
 const Logout = lazyWithErrorBoundary(() => import("@/routes/logout"));
 const Login = lazyWithErrorBoundary(() => import("@/routes/login"));
+const LoginCallback = lazyWithErrorBoundary(() => import("@/routes/loginCallback"));
 const NotFound = lazyWithErrorBoundary(() => import("@/routes/404"));
 const Sites = lazyWithErrorBoundary(() => import("@/routes/sites"));
 const List = lazyWithErrorBoundary(() => import("@/routes/sites/list"));
@@ -26,6 +27,7 @@ export const routes = createRoutesFromElements(
   <Route element={<AppLayout />} path="/">
     <Route element={<Logout />} path="logout" />
     <Route element={<Login />} path="login" />
+    <Route element={<LoginCallback />} path="login/oidc/callback" />
     <Route element={<RequireLogin />}>
       <Route element={<NotFound />} path="*" />
       <Route index loader={() => redirect("/sites")} />

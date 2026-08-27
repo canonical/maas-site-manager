@@ -4097,6 +4097,17 @@ export type OidcProviderUpdateRequest = {
   enabled?: boolean | null;
 };
 
+/**
+ * CallbackTargetResponse
+ * Response model for the OIDC redirect target.
+ */
+export type CallbackTargetResponse = {
+  /**
+   * Redirect Target
+   */
+  redirect_target: string;
+};
+
 export type GetActiveProviderV1ExternalAuthGetData = {
   body?: never;
   path?: never;
@@ -4205,6 +4216,46 @@ export type UpdateV1ExternalAuthIdPatchResponses = {
 
 export type UpdateV1ExternalAuthIdPatchResponse =
   UpdateV1ExternalAuthIdPatchResponses[keyof UpdateV1ExternalAuthIdPatchResponses];
+
+export type CallbackV1ExternalAuthCallbackGetData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * State
+     */
+    state: string;
+  };
+  url: "/v1/external-auth/callback";
+};
+
+export type CallbackV1ExternalAuthCallbackGetErrors = {
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedErrorResponseModel;
+  /**
+   * Unprocessable Entity
+   */
+  422: ValidationErrorResponseModel;
+};
+
+export type CallbackV1ExternalAuthCallbackGetError =
+  CallbackV1ExternalAuthCallbackGetErrors[keyof CallbackV1ExternalAuthCallbackGetErrors];
+
+export type CallbackV1ExternalAuthCallbackGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: CallbackTargetResponse;
+};
+
+export type CallbackV1ExternalAuthCallbackGetResponse =
+  CallbackV1ExternalAuthCallbackGetResponses[keyof CallbackV1ExternalAuthCallbackGetResponses];
 
 export type ClientOptions = {
   baseURL: `${string}://${string}/api` | (string & {});

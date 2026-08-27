@@ -49,6 +49,7 @@ import {
   getActiveProviderV1ExternalAuthGet,
   createV1ExternalAuthPost,
   updateV1ExternalAuthIdPatch,
+  callbackV1ExternalAuthCallbackGet,
 } from "../sdk.gen";
 import { queryOptions, infiniteQueryOptions, type InfiniteData, type UseMutationOptions } from "@tanstack/react-query";
 import type {
@@ -161,6 +162,7 @@ import type {
   UpdateV1ExternalAuthIdPatchData,
   UpdateV1ExternalAuthIdPatchError,
   UpdateV1ExternalAuthIdPatchResponse,
+  CallbackV1ExternalAuthCallbackGetData,
 } from "../types.gen";
 import type { AxiosError } from "axios";
 import { client as _heyApiClient } from "../client.gen";
@@ -1897,6 +1899,32 @@ export const getActiveProviderV1ExternalAuthGetOptions = (
       return data;
     },
     queryKey: getActiveProviderV1ExternalAuthGetQueryKey(options),
+  });
+};
+
+export const callbackV1ExternalAuthCallbackGetQueryKey = (
+  options: Options<CallbackV1ExternalAuthCallbackGetData>,
+) => createQueryKey("callbackV1ExternalAuthCallbackGet", options);
+
+/**
+ * Callback
+ *
+ * Handle the OAuth callback by exchanging the authorization code for tokens.
+ */
+export const callbackV1ExternalAuthCallbackGetOptions = (
+  options: Options<CallbackV1ExternalAuthCallbackGetData>,
+) => {
+  return queryOptions({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await callbackV1ExternalAuthCallbackGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: callbackV1ExternalAuthCallbackGetQueryKey(options),
   });
 };
 

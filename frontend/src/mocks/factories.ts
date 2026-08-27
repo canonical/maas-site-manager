@@ -6,6 +6,7 @@ import { adjectives, animals, colors, starWars, uniqueNamesGenerator } from "uni
 import type {
   AccessTokenResponse,
   BootSource,
+  CallbackTargetResponse,
   GetV1SitesGetResponse,
   ImageSource,
   OidcProviderResponse,
@@ -154,6 +155,12 @@ export const accessTokenFactory = Factory.define<AccessTokenResponse>(({ sequenc
     access_token: chance.hash({ length: 64 }),
     rotation_interval_minutes: 15,
     token_type: "bearer",
+  };
+});
+
+export const callbackTargetFactory = Factory.define<CallbackTargetResponse>(() => {
+  return {
+    redirect_target: "/sites",
   };
 });
 
