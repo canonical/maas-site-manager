@@ -12,12 +12,13 @@ from msm.apiserver.db.models.oidc_provider import (
     OIDCProviderMetadata,
     OIDCProviderUpdate,
 )
-from msm.apiserver.db.models.user import UserCreate
+from msm.apiserver.db.models.user import User, UserCreate
 from msm.apiserver.db.tables import OIDCProvider as OIDCProviderTable
 from msm.apiserver.exceptions.catalog import (
     BadGatewayException,
     BaseExceptionDetail,
     ConflictException,
+    UnauthorizedException,
 )
 from msm.apiserver.exceptions.constants import ExceptionCode
 from msm.apiserver.service.base import Service
@@ -27,9 +28,11 @@ from msm.apiserver.service.user import UserService
 from msm.common.encryptor import Encryptor
 from msm.common.oauth2_client import (
     OAuth2Client,
+    OAuthRefreshData,
     OAuthTokenData,
     OAuthUserData,
 )
+from msm.common.oidc_jwt import OAuthAccessToken
 
 
 class OIDCService(Service):
@@ -228,6 +231,41 @@ class OIDCService(Service):
             provider_id=client.provider.id,
             email=id_token_object.email,
         )
+
+    async def validate_access_token(
+        self, access_token: str
+    ) -> OAuthAccessToken | str:
+        """Validate an OIDC access token."""
+        client = await self._get_oauth_client()
+        return await client.validate_access_token(access_token=access_token)
+
+    async def refresh_access_token(
+        self, refresh_token: str
+    ) -> OAuthRefreshData:
+        """Fetch a new access token using the refresh token."""
+        client = await self._get_oauth_client()
+        return await client.refresh_access_token(refresh_token=refresh_token)
+
+    async def get_user_from_id_token(self, id_token: str) -> User:
+        """Resolve the local user identified by an OIDC id_token."""
+        client = await self._get_oauth_client()
+        id_token_object = await client.parse_raw_id_token(id_token)
+        # OIDC users are identified by their email, stored as the username
+        user = await self.users.get_by_username(id_token_object.email)
+        if user is None:
+            raise UnauthorizedException(
+                code=ExceptionCode.INVALID_TOKEN,
+                message="The token is not valid.",
+                details=[
+                    BaseExceptionDetail(
+                        reason=ExceptionCode.INVALID_TOKEN,
+                        messages=["No user matches the provided id_token."],
+                        field="Authorization",
+                        location="header",
+                    )
+                ],
+            )
+        return user
 
     async def _create_user_if_not_exists(
         self, user: OAuthUserData, provider_id: int
