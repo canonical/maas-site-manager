@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 import pytest
-from pytest_postgresql.executor import PostgreSQLExecutor
+from pytest_postgresql.executors import PostgreSQLExecutor
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import URL, Connection, text
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
