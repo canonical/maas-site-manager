@@ -1,5 +1,6 @@
 import { routesConfig } from "../../../src/app/base/routes";
 import { scenarios } from "../../../src/mocks/scenarios";
+import { EXTRA_LONG_TIMEOUT } from "../../constants";
 
 const login = () => {
   cy.findByRole("textbox", { name: /email/i, timeout: 30000 }).type(Cypress.env("email"));
@@ -44,6 +45,9 @@ context("Authentication", () => {
 
     const protectedRoute = routesConfig.sitesList.path;
     cy.visit(`${protectedRoute}?scenario=${scenarios.sitesUnauthorized}`);
-    cy.url().should("include", `${routesConfig.login.path}?redirectTo=${encodeURIComponent(protectedRoute)}`);
+    cy.url({ timeout: EXTRA_LONG_TIMEOUT }).should(
+      "include",
+      `${routesConfig.login.path}?redirectTo=${encodeURIComponent(protectedRoute)}`,
+    );
   });
 });

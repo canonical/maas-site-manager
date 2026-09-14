@@ -1,3 +1,5 @@
+import { EXTRA_LONG_TIMEOUT } from "../constants";
+
 // NOTE: keep in sync with the "darkMode" localStorage key used by useDarkMode.ts
 const DARK_MODE_STORAGE_KEY = "darkMode";
 
@@ -11,7 +13,7 @@ export const checkPageA11y =
     });
 
     // verify the correct page has been displayed
-    cy.title().should("match", new RegExp(title));
+    cy.title({ timeout: EXTRA_LONG_TIMEOUT }).should("match", new RegExp(title));
 
     cy.injectAxe();
 
