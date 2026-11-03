@@ -48,7 +48,7 @@ install-node:
 ifdef JENKINS_URL
 	sudo apt update && sudo apt install -y curl xz-utils
 endif
-	curl -fsSL https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz -o node.tar.xz
+	curl -fsSL https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.xz -o node.tar.xz
 	mkdir -p node-22 && tar -xf node.tar.xz -C node-22 --strip-components=1
 	rm node.tar.xz
 
