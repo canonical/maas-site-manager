@@ -13,14 +13,17 @@ import type { MemoryRouterProps } from "@/utils/router";
 import { MemoryRouter } from "@/utils/router";
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        // in tests any unsuccessful query should fail immediately without retrying
-        retry: false,
-      },
-    },
-  });
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // in tests any unsuccessful query should fail immediately without retrying
+            retry: false,
+          },
+        },
+      }),
+  );
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -274,10 +274,10 @@ export default tseslint.config(
       "@typescript-eslint/ban-ts-comment": "off",
     },
   },
-  ...compat.extends("plugin:testing-library/react").map((config) => ({
-    ...config,
+  {
+    ...testingLibrary.configs["flat/react"],
     files: ["src/*/*.test.[jt]s?(x)"],
-  })),
+  },
   {
     files: ["src/**/*.test.[jt]s?(x)"],
 

@@ -25,6 +25,9 @@ it("renders invalid time fallback value correctly", () => {
   const originalConsoleError = console.error;
   console.error = vi.fn();
 
+  // timezone-mock >=1.4 turns NaN dates back into epoch 0 in its setters, which
+  // hides the RangeError this test relies on. This test doesn't need a timezone.
+  timezoneMock.unregister();
   render(<DateTime value="" />);
   expect(screen.getByText("Invalid time value")).toBeInTheDocument();
 
