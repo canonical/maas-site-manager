@@ -13,12 +13,10 @@ import { isDev } from "@/constants";
 export type ImageWithId = SelectedImage & { id: number | string };
 
 const generateData = (selectedImages: SelectedImage[]): ImageWithId[] => {
-  return selectedImages.map(
-    (image): ImageWithId => ({
-      ...image,
-      id: image.selection_id ?? `custom-${image.custom_image_id}`,
-    }),
-  );
+  return selectedImages.map((image): ImageWithId => ({
+    ...image,
+    id: image.selection_id ?? `custom-${image.custom_image_id}`,
+  }));
 };
 
 export const ImagesTable = (): ReactElement => {

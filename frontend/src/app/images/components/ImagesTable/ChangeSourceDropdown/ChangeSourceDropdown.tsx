@@ -30,17 +30,15 @@ const ChangeSourceDropdown = ({ image }: { image: SelectedImage }) => {
           hasToggleIcon
           links={[
             "Change source:",
-            ...alternativeImages.map(
-              (alternative): MenuLink => ({
-                disabled: alternative.id === image.boot_source_id,
-                children: alternative.name,
-                onClick: () => {
-                  deleteImagesMutation.mutateAsync({ body: { selection_ids: [image.selection_id!] } }).then(() => {
-                    addImagesToSelection.mutate({ body: { selection_ids: [alternative.selection_id] } });
-                  });
-                },
-              }),
-            ),
+            ...alternativeImages.map((alternative): MenuLink => ({
+              disabled: alternative.id === image.boot_source_id,
+              children: alternative.name,
+              onClick: () => {
+                deleteImagesMutation.mutateAsync({ body: { selection_ids: [image.selection_id!] } }).then(() => {
+                  addImagesToSelection.mutate({ body: { selection_ids: [alternative.selection_id] } });
+                });
+              },
+            })),
           ]}
           onToggleMenu={(open: boolean) => {
             setIsOpen(open);

@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import type { Options } from "@hey-api/client-axios";
 import type { UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
 import { useQueries, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,9 +70,14 @@ const useExportTokensByIds = (
   });
 };
 
-const useExportAllTokens = (
-  options?: Options<GetExportV1TokensExportGetData>,
-): UseQueryResult[] | UseQueryResult<GetExportV1TokensExportGetResponses, GetExportV1TokensExportGetErrors>[] => {
+const combineExportPages = (results: UseQueryResult[]) => ({
+  responses: results.map((result) => result.data).filter((data): data is string => !!data),
+  isLoading: results.some((result) => result.isLoading),
+  isError: results.some((result) => result.isError),
+  error: results.find((result) => result.error)?.error,
+});
+
+const useExportAllTokens = (options?: Options<GetExportV1TokensExportGetData>) => {
   const { data: totalTokens } = useTokenCount(options, !options?.query?.id?.length);
 
   const pagesToLoad = useMemo(() => {
@@ -89,24 +96,25 @@ const useExportAllTokens = (
         })),
       [pagesToLoad, options?.query?.id, totalTokens],
     ),
+    combine: combineExportPages,
   });
 };
 
 export const useExportTokens = (options?: Options<GetExportV1TokensExportGetData>) => {
   const idBasedExport = useExportTokensByIds(options);
-  const allPagesQueries = useExportAllTokens(options);
+  const allPages = useExportAllTokens(options);
 
   const combinedData = useMemo(() => {
     if (options?.query?.id?.length) {
       return idBasedExport.data;
     }
 
-    const allResponses = allPagesQueries.map((q) => q.data).filter((data): data is string => !!data);
-    if (allPagesQueries.some((q) => q.isLoading) || !allResponses.length) return null;
+    const { responses } = allPages;
+    if (allPages.isLoading || !responses.length) return null;
 
     const newLines = /\r\n|\r|\n/g;
-    const header = allResponses[0].split(newLines)[0];
-    const pages = allResponses
+    const header = responses[0].split(newLines)[0];
+    const pages = responses
       .map((response) => {
         const lines = response.split(newLines);
         lines.shift();
@@ -115,13 +123,13 @@ export const useExportTokens = (options?: Options<GetExportV1TokensExportGetData
       .join("");
 
     return [header, pages].join("\n");
-  }, [idBasedExport.data, allPagesQueries, options?.query?.id]);
+  }, [idBasedExport.data, allPages, options?.query?.id]);
 
   return {
     data: combinedData,
-    isLoading: options?.query?.id?.length ? idBasedExport.isLoading : allPagesQueries.some((q) => q.isLoading),
-    isError: options?.query?.id?.length ? idBasedExport.isError : allPagesQueries.some((q) => q.isError),
-    error: options?.query?.id?.length ? idBasedExport.error : allPagesQueries.find((q) => q.error)?.error,
+    isLoading: options?.query?.id?.length ? idBasedExport.isLoading : allPages.isLoading,
+    isError: options?.query?.id?.length ? idBasedExport.isError : allPages.isError,
+    error: options?.query?.id?.length ? idBasedExport.error : allPages.error,
   };
 };
 
