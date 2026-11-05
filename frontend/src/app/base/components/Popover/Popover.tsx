@@ -1,8 +1,8 @@
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode, ReactElement } from "react";
 
 import classNames from "classnames";
-import usePortal from "react-useportal";
+import { createPortal } from "react-dom";
 
 type Props = {
   children: ReactNode;
@@ -42,7 +42,38 @@ const Popover = ({ children, className, content, position = "right" }: Props): R
   const buttonRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const positionStyle = getPositionStyle(buttonRef, position);
-  const { openPortal, closePortal, isOpen, Portal } = usePortal();
+  const [isOpen, setIsOpen] = useState(false);
+  const openPortal = useCallback(() => {
+    setIsOpen(true);
+  }, []);
+  const closePortal = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  // Close on Escape, or on a primary-button press outside both the trigger and the popover content.
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closePortal();
+      }
+    };
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (e.button !== 0 || buttonRef.current?.contains(target) || contentRef.current?.contains(target)) {
+        return;
+      }
+      closePortal();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleMouseDown);
+    };
+  }, [isOpen, closePortal]);
 
   const handleBlur = (e: React.FocusEvent<HTMLElement> | React.MouseEvent<HTMLElement>) => {
     // do not close if the focus is within the tooltip wrapper
@@ -76,8 +107,9 @@ const Popover = ({ children, className, content, position = "right" }: Props): R
       ref={buttonRef}
     >
       {children}
-      {isOpen && content && (
-        <Portal>
+      {isOpen &&
+        content &&
+        createPortal(
           <div
             className={classNames("p-popover", className)}
             onClick={handleClick}
@@ -85,9 +117,9 @@ const Popover = ({ children, className, content, position = "right" }: Props): R
             style={positionStyle}
           >
             {content}
-          </div>
-        </Portal>
-      )}
+          </div>,
+          document.body,
+        )}
     </button>
   );
 };
