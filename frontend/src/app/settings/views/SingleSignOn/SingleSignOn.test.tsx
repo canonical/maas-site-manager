@@ -56,7 +56,7 @@ it("keeps the save button disabled until the form is valid and dirty", async () 
   render(<SingleSignOn />);
 
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeAriaDisabled();
   });
 
   await userEvent.type(screen.getByRole("textbox", { name: /Name/ }), "My provider");
@@ -65,6 +65,6 @@ it("keeps the save button disabled until the form is valid and dirty", async () 
   await userEvent.type(screen.getByRole("textbox", { name: /Issuer URL/ }), "https://issuer.example.com");
 
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save" })).not.toBeAriaDisabled();
   });
 });

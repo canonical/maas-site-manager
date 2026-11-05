@@ -18,6 +18,11 @@ import tseslint from "typescript-eslint";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// These plugins still call context APIs removed in ESLint 10 (e.g. context.getFilename, context.getCwd).
+const reactPlugin = fixupPluginRules(react);
+const reactHooksPlugin = fixupPluginRules(reactHooks);
+const unusedImportsPlugin = fixupPluginRules(unusedImports);
+const noRelativeImportPathsPlugin = fixupPluginRules(noRelativeImportPaths);
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
@@ -39,10 +44,10 @@ export default tseslint.config(
   ),
   {
     plugins: {
-      "unused-imports": unusedImports,
-      "no-relative-import-paths": noRelativeImportPaths,
-      react,
-      "react-hooks": reactHooks,
+      "unused-imports": unusedImportsPlugin,
+      "no-relative-import-paths": noRelativeImportPathsPlugin,
+      react: reactPlugin,
+      "react-hooks": reactHooksPlugin,
       prettier: fixupPluginRules(prettier),
     },
 
@@ -67,12 +72,14 @@ export default tseslint.config(
       },
 
       "import/resolver": {
+        // typescript resolver first: it honours package "exports" type conditions
+        // (e.g. msw 3 maps "msw/browser" to `"node": null`, which the alias/node resolvers reject).
+        typescript: {},
+
         alias: {
           map: [["@", path.resolve(__dirname, "src")]],
           extensions: [".js", ".jsx", ".ts", ".tsx"],
         },
-
-        typescript: {},
 
         node: {
           extensions: [".js", ".jsx", ".ts", ".tsx"],
@@ -106,8 +113,8 @@ export default tseslint.config(
   {
     files: ["src/**/*.ts?(x)"],
     plugins: {
-      "unused-imports": unusedImports,
-      react,
+      "unused-imports": unusedImportsPlugin,
+      react: reactPlugin,
     },
 
     languageOptions: {

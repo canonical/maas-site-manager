@@ -16,10 +16,15 @@ if (useMockData) {
   console.info("msw baseUrl %s", baseURL);
   console.info("msw API URL %s", getApiUrl(""));
   await worker.start({
-    onUnhandledRequest(req) {
-      const url = new URL(req.url);
+    onUnhandledFrame({ frame }) {
+      // msw 3 reports every protocol through frames; HTTP frames carry the original request.
+      if (frame.protocol !== "http") {
+        return;
+      }
+      const { request } = frame.data as { request: Request };
+      const url = new URL(request.url);
       if (url.href.includes(baseURL)) {
-        console.warn("Found an unhandled %s request to %s", req.method, url.href);
+        console.warn("Found an unhandled %s request to %s", request.method, url.href);
       }
     },
   });
@@ -56,7 +61,9 @@ import("@sentry/browser").then((Sentry) =>
   }),
 );
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+// Exported so tests can unmount the app before the jsdom environment is torn down.
+export const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,

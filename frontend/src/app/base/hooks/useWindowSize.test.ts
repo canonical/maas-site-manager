@@ -2,14 +2,12 @@ import useWindowSize from "./useWindowSize";
 
 import { renderHook, act, waitFor } from "@/utils/test-utils";
 
-beforeAll(() => {
-  vi.mock("global/window", () => ({
-    innerWidth: 1024,
-    innerHeight: 768,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }));
-});
+vi.mock("global/window", () => ({
+  innerWidth: 1024,
+  innerHeight: 768,
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+}));
 
 afterAll(() => {
   vi.resetModules();

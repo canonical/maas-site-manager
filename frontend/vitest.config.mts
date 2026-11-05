@@ -15,6 +15,14 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },
+  // mock-web-worker.ts runs maplibre-gl's TypeScript sources, whose style-layer subclasses
+  // redeclare fields set by the base constructor. Vite 8 (Oxc) compiles them with
+  // `useDefineForClassFields: true` semantics, resetting those fields to undefined; this pair
+  // restores the legacy (`useDefineForClassFields: false`) behaviour they rely on.
+  oxc: {
+    typescript: { removeClassFieldsWithoutInitializer: true },
+    assumptions: { setPublicClassFields: true },
+  },
   test: {
     environment: "jsdom",
     globals: true,
@@ -27,7 +35,8 @@ export default defineConfig({
       },
     },
     setupFiles: ["./mock-web-worker.ts", "./setupTests.ts"],
-    exclude: [...configDefaults.exclude, "**/tests/**"],
+    // Vitest 4+ no longer excludes dist/ and cypress/ by default.
+    exclude: [...configDefaults.exclude, "**/dist/**", "**/cypress/**", "**/tests/**"],
     coverage: {
       // exclude index files as they're only used to export other files
       // exclude pages as they're covered by playwright tests

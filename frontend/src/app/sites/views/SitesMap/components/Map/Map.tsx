@@ -1,5 +1,5 @@
 import { Spinner } from "@canonical/react-components";
-import type { LngLatLike } from "maplibre-gl";
+import type { LngLatLike, MapOptions } from "maplibre-gl";
 import { LngLat } from "maplibre-gl";
 import useLocalStorageState from "use-local-storage-state";
 
@@ -72,7 +72,7 @@ const Map: React.FC<MapProps> = ({ markers }) => {
   const customAttribution =
     style === osm ? `<a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>` : undefined;
   const isTest = process.env.NODE_ENV === "test";
-  const initialOptions: maplibregl.MapOptions = {
+  const initialOptions: MapOptions = {
     container: "map",
     style,
     dragRotate: false,

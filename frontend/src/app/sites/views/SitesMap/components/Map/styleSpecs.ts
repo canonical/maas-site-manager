@@ -1,7 +1,9 @@
+import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
+
 import mapStyle from "./map-style.json";
 
 import { basename } from "@/constants";
-export const osm: maplibregl.StyleSpecification = {
+export const osm: StyleSpecification = {
   version: 8,
   sources: {
     osm: {
@@ -21,7 +23,7 @@ export const osm: maplibregl.StyleSpecification = {
   ],
 };
 
-export const naturalEarth: maplibregl.StyleSpecification = {
+export const naturalEarth: StyleSpecification = {
   version: 8,
   glyphs: `${window.location.protocol}//${window.location.host}${basename}assets/fonts/{fontstack}/{range}.pbf`,
   sources: {
@@ -30,5 +32,5 @@ export const naturalEarth: maplibregl.StyleSpecification = {
       url: `pmtiles://${window.location.protocol}//${window.location.host}${basename}natural_earth.vector_v2.pmtiles`,
     },
   },
-  layers: mapStyle.layers as maplibregl.LayerSpecification[],
+  layers: mapStyle.layers as LayerSpecification[],
 };

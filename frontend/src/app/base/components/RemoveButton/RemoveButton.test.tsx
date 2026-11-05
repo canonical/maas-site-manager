@@ -29,7 +29,7 @@ it("can call a provided function on click", async () => {
   const onClick = vi.fn();
   render(<RemoveButton onClick={onClick} />);
   await userEvent.click(screen.getByRole("button", { name: "Remove" }));
-  expect(onClick).toBeCalled();
+  expect(onClick).toHaveBeenCalled();
 });
 
 it("can have different types", () => {

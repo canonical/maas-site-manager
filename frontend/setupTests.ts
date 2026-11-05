@@ -1,21 +1,17 @@
 import "@/testing/customMatchers";
 import { fetch, Request, Response } from "@remix-run/web-fetch";
-import * as matchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
 import { AbortController as NodeAbortController, AbortSignal as NodeAbortSignal } from "abort-controller";
 import { config } from "dotenv";
 import { configMocks, mockResizeObserver } from "jsdom-testing-mocks";
 import { TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder } from "util";
-import { afterEach, expect } from "vitest";
+import { afterEach } from "vitest";
 import "vitest-canvas-mock";
 import "vitest-webgl-canvas-mock";
-//import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 config();
 configMocks({ beforeEach, afterEach, afterAll });
-
-// extends Vitest's expect method with methods from react-testing-library
-expect.extend(matchers);
 
 // use the Web Fetch API in tests which is used by Remix
 // @ts-expect-error because Web Fetch API types differ from jsdom implementation

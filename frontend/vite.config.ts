@@ -2,21 +2,20 @@ import react from "@vitejs/plugin-react-swc";
 import childProcess from "child_process";
 import fs from "fs";
 import * as path from "path";
-import type { NormalizedOutputOptions } from "rollup";
 import AutoImport from "unplugin-auto-import/vite";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import stylelint from "vite-plugin-stylelint";
 
 const commitHash = childProcess.execSync("git rev-parse --short HEAD").toString();
 // https://vitejs.dev/config/
 
-function excludeMsw() {
+function excludeMsw(): Plugin {
   return {
     name: "exclude-msw",
-    resolveId(source: string) {
+    resolveId(source) {
       return source === "virtual-module" ? source : null;
     },
-    renderStart(outputOptions: NormalizedOutputOptions) {
+    renderStart(outputOptions) {
       const outDir = outputOptions.dir;
       if (!outDir) return;
       const msWorker = path.resolve(outDir, "mockServiceWorker.js");
@@ -72,13 +71,19 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 1600,
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           sanitizeFileName: false,
-          manualChunks: {
-            react: ["react", "react-dom", "formik"],
-            canonicalComponents: ["@canonical/react-components", "@canonical/maas-react-components"],
-            yup: ["yup"],
+          // Rolldown (Vite 8) has no object-form `manualChunks`; `codeSplitting.groups` replaces it.
+          codeSplitting: {
+            groups: [
+              { name: "react", test: /[\\/]node_modules[\\/](react|react-dom|scheduler|formik)[\\/]/ },
+              {
+                name: "canonicalComponents",
+                test: /[\\/]node_modules[\\/]@canonical[\\/](react-components|maas-react-components)[\\/]/,
+              },
+              { name: "yup", test: /[\\/]node_modules[\\/]yup[\\/]/ },
+            ],
           },
         },
       },
