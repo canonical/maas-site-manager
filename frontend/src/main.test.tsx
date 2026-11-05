@@ -14,7 +14,14 @@ afterEach(() => {
   mockServer.resetHandlers();
 });
 
-afterAll(() => {
+afterAll(async () => {
+  // Dynamic import: main.tsx mounts on load, so it must not run before beforeAll creates #root.
+  // This resolves to the already-loaded module from the test.
+  // Unmount inside act() so React flushes pending work while jsdom's `window` still exists.
+  const { root } = await import("./main");
+  act(() => {
+    root.unmount();
+  });
   mockServer.close();
 });
 

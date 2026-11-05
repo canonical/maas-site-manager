@@ -61,7 +61,9 @@ import("@sentry/browser").then((Sentry) =>
   }),
 );
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+// Exported so tests can unmount the app before the jsdom environment is torn down.
+export const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
