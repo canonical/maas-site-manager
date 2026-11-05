@@ -16,10 +16,15 @@ if (useMockData) {
   console.info("msw baseUrl %s", baseURL);
   console.info("msw API URL %s", getApiUrl(""));
   await worker.start({
-    onUnhandledRequest(req) {
-      const url = new URL(req.url);
+    onUnhandledFrame({ frame }) {
+      // msw 3 reports every protocol through frames; HTTP frames carry the original request.
+      if (frame.protocol !== "http") {
+        return;
+      }
+      const { request } = frame.data as { request: Request };
+      const url = new URL(request.url);
       if (url.href.includes(baseURL)) {
-        console.warn("Found an unhandled %s request to %s", req.method, url.href);
+        console.warn("Found an unhandled %s request to %s", request.method, url.href);
       }
     },
   });
@@ -36,8 +41,8 @@ if (environment !== "test") {
 // and avoid reinitialising when navigating between pages
 const hasMapResources = localStorage.getItem("hasAcceptedOsmTos");
 if (!hasMapResources || hasMapResources === "false") {
-  import("maplibre-gl").then((maplibregl) => {
-    maplibregl.default.prewarm();
+  import("maplibre-gl").then(({ prewarm }) => {
+    prewarm();
   });
 }
 

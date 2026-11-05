@@ -25,7 +25,7 @@ afterAll(() => {
 
 const renderForm = () => {
   return render(
-    <BootSourceContext.Provider value={{ selected: mockImageSources[0].id, setSelected: jest.fn() }}>
+    <BootSourceContext.Provider value={{ selected: mockImageSources[0].id, setSelected: vi.fn() }}>
       <EditCustomImagesSourceForm />
     </BootSourceContext.Provider>,
   );

@@ -74,7 +74,7 @@ describe("AddToAvailableImages", () => {
       expect(screen.getByRole("form", { name: /Add upstream images to available images/i })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeAriaDisabled();
 
     await userEvent.click(screen.getByRole("tab", { name: "Ubuntu" }));
 
@@ -89,7 +89,7 @@ describe("AddToAvailableImages", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Save" })).not.toBeAriaDisabled();
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Save" }));

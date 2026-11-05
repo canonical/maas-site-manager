@@ -1,3 +1,4 @@
+import type { FeatureCollection } from "geojson";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
@@ -26,7 +27,7 @@ export const createElementFromHTML = (htmlString: string): HTMLDivElement => {
   return div;
 };
 
-export const getGeoJson = (markers: SiteMarkerType[]): GeoJSON.FeatureCollection => ({
+export const getGeoJson = (markers: SiteMarkerType[]): FeatureCollection => ({
   type: "FeatureCollection",
   features: markers
     .filter((marker) => marker.position !== null && marker.position !== undefined)

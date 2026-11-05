@@ -32,18 +32,18 @@ it("requires the password fields when adding a user", () => {
 it("enables the submit button when all required fields are filled in and valid when editing a user", async () => {
   render(<UserAddForm />);
 
-  expect(screen.getByRole("button", { name: "Add user" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Add user" })).toBeAriaDisabled();
 
   await userEvent.type(screen.getByRole("textbox", { name: "Username" }), "user1");
   await userEvent.type(screen.getByRole("textbox", { name: "Email address" }), "user1@example.com");
   await userEvent.type(screen.getByLabelText("Password"), "testpassword");
 
   // Ensure form is still disabled
-  expect(screen.getByRole("button", { name: "Add user" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Add user" })).toBeAriaDisabled();
 
   await userEvent.type(screen.getByLabelText("Password (again)"), "testpassword");
 
-  expect(screen.getByRole("button", { name: "Add user" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Add user" })).not.toBeAriaDisabled();
 });
 
 it("displays an error if a username with invalid characters is entered", async () => {

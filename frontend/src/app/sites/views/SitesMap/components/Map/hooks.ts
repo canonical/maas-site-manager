@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import type { MapSourceDataEvent } from "maplibre-gl";
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 
 import { useMap } from "@/app/context/MapContext";
 import {

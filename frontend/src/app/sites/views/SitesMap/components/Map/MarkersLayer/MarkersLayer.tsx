@@ -1,4 +1,5 @@
 import { lazyLoadSidePanel, useSidePanel } from "@canonical/maas-react-components";
+import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource } from "maplibre-gl";
 
 import { useMap } from "@/app/context/MapContext";
@@ -12,7 +13,7 @@ const SiteDetails = lazyLoadSidePanel(() => import("@/app/sites/components/SiteD
 const markerHeight = 47;
 const markerOffset = parseFloat((markerHeight / 2).toFixed(1));
 
-const createSourceOptions = (geojson: GeoJSON.FeatureCollection) =>
+const createSourceOptions = (geojson: FeatureCollection) =>
   ({
     type: "geojson",
     data: geojson,
@@ -41,7 +42,7 @@ const createClusterLayerOptions = () =>
     },
   }) as const;
 
-const MarkersLayer = ({ geojson }: { geojson: GeoJSON.FeatureCollection }) => {
+const MarkersLayer = ({ geojson }: { geojson: FeatureCollection }) => {
   const map = useMap();
   const { openSidePanel } = useSidePanel();
   const { setSelected: setSiteId } = useSiteDetailsContext();

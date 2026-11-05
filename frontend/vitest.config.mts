@@ -13,7 +13,12 @@ export default defineConfig({
     }) as Plugin,
   ],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "src") },
+      // maplibre-gl 6 restricts its "exports" to ./dist/*; mock-web-worker.ts needs the shipped
+      // TypeScript sources to run the real map worker in-process.
+      { find: /^maplibre-gl\/src\//, replacement: `${path.resolve(__dirname, "node_modules/maplibre-gl/src")}/` },
+    ],
   },
   test: {
     environment: "jsdom",
@@ -27,7 +32,8 @@ export default defineConfig({
       },
     },
     setupFiles: ["./mock-web-worker.ts", "./setupTests.ts"],
-    exclude: [...configDefaults.exclude, "**/tests/**"],
+    // Vitest 4+ no longer excludes dist/ and cypress/ by default.
+    exclude: [...configDefaults.exclude, "**/dist/**", "**/cypress/**", "**/tests/**"],
     coverage: {
       // exclude index files as they're only used to export other files
       // exclude pages as they're covered by playwright tests
