@@ -13,12 +13,15 @@ export default defineConfig({
     }) as Plugin,
   ],
   resolve: {
-    alias: [
-      { find: "@", replacement: path.resolve(__dirname, "src") },
-      // maplibre-gl 6 restricts its "exports" to ./dist/*; mock-web-worker.ts needs the shipped
-      // TypeScript sources to run the real map worker in-process.
-      { find: /^maplibre-gl\/src\//, replacement: `${path.resolve(__dirname, "node_modules/maplibre-gl/src")}/` },
-    ],
+    alias: { "@": path.resolve(__dirname, "src") },
+  },
+  // mock-web-worker.ts runs maplibre-gl's TypeScript sources, whose style-layer subclasses
+  // redeclare fields set by the base constructor. Vite 8 (Oxc) compiles them with
+  // `useDefineForClassFields: true` semantics, resetting those fields to undefined; this pair
+  // restores the legacy (`useDefineForClassFields: false`) behaviour they rely on.
+  oxc: {
+    typescript: { removeClassFieldsWithoutInitializer: true },
+    assumptions: { setPublicClassFields: true },
   },
   test: {
     environment: "jsdom",

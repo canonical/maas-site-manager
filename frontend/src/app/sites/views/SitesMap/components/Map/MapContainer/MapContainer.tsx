@@ -1,4 +1,4 @@
-import * as maplibregl from "maplibre-gl";
+import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 
 import { MapContextProvider } from "@/app/context/MapContext";

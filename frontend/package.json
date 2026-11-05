@@ -39,7 +39,7 @@
     "formik": "2.4.9",
     "human-interval": "2.0.1",
     "lodash": "4.18.1",
-    "maplibre-gl": "6.16.0",
+    "maplibre-gl": "5.11.0",
     "pluralize": "8.0.0",
     "pmtiles": "4.5.0",
     "react": "19.3.1",

@@ -41,8 +41,8 @@ if (environment !== "test") {
 // and avoid reinitialising when navigating between pages
 const hasMapResources = localStorage.getItem("hasAcceptedOsmTos");
 if (!hasMapResources || hasMapResources === "false") {
-  import("maplibre-gl").then(({ prewarm }) => {
-    prewarm();
+  import("maplibre-gl").then((maplibregl) => {
+    maplibregl.default.prewarm();
   });
 }
 
